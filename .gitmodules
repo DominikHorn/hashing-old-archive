@@ -1,0 +1,3 @@
+[submodule "opensource_references/cityhash"]
+	path = opensource_references/cityhash
+	url = https://github.com/google/cityhash
