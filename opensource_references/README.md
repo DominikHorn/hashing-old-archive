@@ -1,3 +1,3 @@
 This folder contains open source reference implementations for various hashing
-families/methods. Where possible, we tried to add implementations as git
-submodules.
+families/methods and code to test them (namely, smhasher). Where possible,
+implementations are added as git submodules.
