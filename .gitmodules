@@ -1,3 +1,9 @@
 [submodule "opensource_references/cityhash"]
 	path = opensource_references/cityhash
 	url = https://github.com/google/cityhash
+[submodule "opensource_references/murmur"]
+	path = opensource_references/murmur
+	url = https://github.com/aappleby/smhasher
+[submodule "opensource_references/smhasher"]
+	path = opensource_references/smhasher
+	url = https://github.com/aappleby/smhasher
