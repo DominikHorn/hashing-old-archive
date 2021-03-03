@@ -7,3 +7,6 @@
 [submodule "opensource_references/smhasher"]
 	path = opensource_references/smhasher
 	url = https://github.com/aappleby/smhasher
+[submodule "opensource_references/fastrange"]
+	path = opensource_references/fastrange
+	url = https://github.com/lemire/fastrange
