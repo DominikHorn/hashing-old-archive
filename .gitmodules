@@ -10,3 +10,6 @@
 [submodule "opensource_references/fastrange"]
 	path = opensource_references/fastrange
 	url = https://github.com/lemire/fastrange
+[submodule "opensource_references/recsplit"]
+	path = opensource_references/recsplit
+	url = https://github.com/vigna/sux
