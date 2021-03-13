@@ -16,3 +16,6 @@
 [submodule "opensource_references/xxHash"]
 	path = opensource_references/xxHash
 	url = https://github.com/Cyan4973/xxHash
+[submodule "opensource_references/aquahash"]
+	path = opensource_references/aquahash
+	url = https://github.com/jandrewrogers/AquaHash.git
