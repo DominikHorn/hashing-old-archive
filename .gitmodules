@@ -19,3 +19,6 @@
 [submodule "opensource_references/aquahash"]
 	path = opensource_references/aquahash
 	url = https://github.com/jandrewrogers/AquaHash.git
+[submodule "opensource_references/farmhash"]
+	path = opensource_references/farmhash
+	url = https://github.com/google/farmhash.git
