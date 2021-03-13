@@ -22,3 +22,6 @@
 [submodule "opensource_references/farmhash"]
 	path = opensource_references/farmhash
 	url = https://github.com/google/farmhash.git
+[submodule "opensource_references/bbhash"]
+	path = opensource_references/bbhash
+	url = https://github.com/rizkg/BBHash.git
