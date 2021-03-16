@@ -25,3 +25,6 @@
 [submodule "opensource_references/bbhash"]
 	path = opensource_references/bbhash
 	url = https://github.com/rizkg/BBHash.git
+[submodule "opensource_references/chd"]
+	path = opensource_references/chd
+	url = https://git.code.sf.net/p/cmph/git
