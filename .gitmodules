@@ -28,3 +28,9 @@
 [submodule "opensource_references/chd"]
 	path = opensource_references/chd
 	url = https://git.code.sf.net/p/cmph/git
+[submodule "opensource_references/sux4j"]
+	path = opensource_references/sux4j
+	url = https://github.com/vigna/Sux4J.git
+[submodule "opensource_references/suxcpp"]
+	path = opensource_references/suxcpp
+	url = https://github.com/vigna/sux.git
