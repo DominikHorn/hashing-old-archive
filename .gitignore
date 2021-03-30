@@ -1,2 +1,10 @@
-# Operating System specific junk
+# IDE 
+
+## CLion
+.idea
+
+## CMake 
+cmake-build-debug
+
+# MacOS
 .DS_Store
