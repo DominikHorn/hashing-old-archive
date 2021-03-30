@@ -6,8 +6,8 @@
 
 int main() {
     // TODO: temporary test
-    for (HashValue i = 0; i < 32; i++) {
-        std::cout << i << " |--xxHash--> " << xxHash(i) << std::endl;
+    for (unsigned long long i = 0; i < 32; i++) {
+        std::cout << i << " |--xxHash--> " << XXH64_hash(i) << std::endl;
     }
 
     return 0;
