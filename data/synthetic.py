@@ -8,7 +8,7 @@ import time
 #   Synthetic dataset generation code
 # -------------------------------------
 
-def update_progress(name, message, progress=0.0, width=40):
+def update_progress(name, message="", progress=0.0, width=40):
     bars = min(width, math.floor(progress * width))
     empty = width - bars
     message = f"{name} [{'=' * bars}{' ' * empty}] - {message}"
@@ -62,7 +62,7 @@ def write_dataset(name, numbers, amount, bytes_per_number=8):
         # each taking up exactly bytes_per_number bytes. Write out in 256 MB chunks
         file.writelines(byte_stream())
 
-    update_progress(filename, message="done", progress=1.0)
+    update_progress(filename, progress=1.0)
     print()
 
 
