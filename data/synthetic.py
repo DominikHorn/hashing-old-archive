@@ -27,9 +27,10 @@ def write_dataset(name, numbers, amount, bytes_per_number=8):
         def byte_stream():
             n = 0
             for e in numbers:
-                yield e.to_bytes(bytes_per_number, byteorder='little')
-                n += 1
-                if n > amount:
+                if n < amount:
+                    yield e.to_bytes(bytes_per_number, byteorder='little')
+                    n += 1
+                else:
                     break
 
         # payload contains all numbers consecutively stored in little endian,
