@@ -93,7 +93,7 @@ def gapped(start=1, delete_probability=0.05):
 
 
 # write datasets
-n = 200 * (10 ** 6)
+n = 2 * (10 ** 8)
 write_dataset(name="debug", numbers=dense(start=1), amount=64, bytes_per_number=8)
 write_dataset(name="dense", numbers=dense(start=1), amount=n, bytes_per_number=8)
 write_dataset(name="dense", numbers=dense(start=1), amount=n, bytes_per_number=4)
