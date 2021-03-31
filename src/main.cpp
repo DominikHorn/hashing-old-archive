@@ -16,16 +16,17 @@
 int main(const int argc, const char* argv[]) {
    try {
       auto args = Args::parse(argc, argv);
+
+      // TODO: tmp (test)
+      for (uint64_t i = 0; i < 32; i++) {
+         const auto val = args.dataset[i];
+         std::cout << val << " |--XXH64--> " << XXH64_hash(val) << std::endl;
+         std::cout << val << " |--XXH3---> " << XXH3_hash(val) << std::endl;
+      }
    } catch (std::string msg) {
       std::cerr << msg << std::endl;
-      exit(-1);
+      return -1;
    }
-
-   // TODO: tmp (test)
-   //   for (unsigned long long i = 0; i < 32; i++) {
-   //      std::cout << i << " |--XXH64--> " << XXH64_hash(i) << std::endl;
-   //      std::cout << i << " |--XXH3---> " << XXH3_hash(i) << std::endl;
-   //   }
 
    return 0;
 }
