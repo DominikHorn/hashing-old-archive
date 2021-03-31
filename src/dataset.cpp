@@ -91,7 +91,7 @@ std::vector<uint64_t> Dataset::load(const std::string& path) const {
       throw "Unimplemented amount of bytes per value in dataset: " + std::to_string(this->bytesPerValue);
    }
 
-   std::cout << "Read " << num_elements << "entries from dataset file" << filepath << std::endl;
+   std::cout << "Read " << num_elements << " entries from dataset file" << filepath << std::endl;
 
    // Sort and deduplicate dataset
    std::sort(dataset.begin(), dataset.end());
