@@ -1,4 +1,5 @@
 import math
+import os
 import random
 import sys
 import time
@@ -11,11 +12,13 @@ import time
 def update_progress(name, message="", progress=0.0, width=40):
     bars = min(width, math.floor(progress * width))
     empty = width - bars
-    message = f"{name} [{'=' * bars}{' ' * empty}] - {message}"
+    prompt = f"{name} [{'=' * bars}{' ' * empty}]"
+    if message != "":
+        prompt += f" - {message}"
 
-    sys.stdout.write(message)
+    sys.stdout.write(prompt)
     sys.stdout.flush()
-    sys.stdout.write('\b' * len(message))
+    sys.stdout.write('\b' * len(prompt))
 
 
 def write_dataset(name, numbers, amount, bytes_per_number=8):
@@ -29,11 +32,12 @@ def write_dataset(name, numbers, amount, bytes_per_number=8):
     :return:
     """
     # write payload to file
+    path = os.path.realpath(os.path.dirname(__file__))
     filename = f"{name}_{bytes_per_number * 8}.ds"
     buffering = 2 ** 10
 
-    with open(filename, 'wb', buffering=buffering) as file:
-        update_progress(name=filename, message="tbd", progress=0.0)
+    with open(f"{path}/{filename}", 'wb', buffering=buffering) as file:
+        update_progress(name=filename, progress=0.0)
 
         # header contains the amount of elements in the list (8 bytes in little endian)
         file.write(amount.to_bytes(8, byteorder='little'))
@@ -90,6 +94,7 @@ def gapped(start=1, delete_probability=0.05):
 
 # write datasets
 n = 200 * (10 ** 6)
+write_dataset(name="debug", numbers=dense(start=1), amount=64, bytes_per_number=8)
 write_dataset(name="dense", numbers=dense(start=1), amount=n, bytes_per_number=8)
 write_dataset(name="dense", numbers=dense(start=1), amount=n, bytes_per_number=4)
 write_dataset(name="gapped5", numbers=gapped(start=1, delete_probability=0.05), amount=n, bytes_per_number=8)
