@@ -97,5 +97,5 @@ std::vector<uint64_t> Dataset::load(const std::string& path) const {
    // TODO: what did the log2(dataset[dataset.size() - 1]) respective - 2 achieve?
    std::cout << "Sorted and deduplicated dataset. " << dataset.size() << " entries remaining" << std::endl;
 
-   return {};
+   return dataset;
 }
