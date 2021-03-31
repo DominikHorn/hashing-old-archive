@@ -54,9 +54,6 @@ std::map<std::string, Dataset> DATASETS = {
 };
 std::vector<std::string> DATASET_NAMES = keys(DATASETS);
 
-// TODO: tmp
-#include <filesystem>
-
 std::vector<uint64_t> Dataset::load(const std::string& path) const {
    const auto filepath = path + this->filename + ".ds";
 
