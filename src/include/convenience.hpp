@@ -6,10 +6,4 @@
    #define packed __attribute__((packed))
 #endif
 
-enum ExitCode
-{
-   MISSING_ARGUMENT = 1,
-   UNKNOWN_DATASET = 2
-};
-
 #endif
