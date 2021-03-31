@@ -20,7 +20,7 @@ typedef struct packed {
  *           xxHash
  * ----------------------------
  */
-#include "../../opensource_references/xxHash/xxhash.h"
+#include "../../hash_functions/xxHash/xxhash.h"
 
 template <typename T>
 HASH_32 forceinline XXH32_hash(T value, XXH32_hash_t seed = 0) {

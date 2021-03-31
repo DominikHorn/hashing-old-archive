@@ -1,33 +1,33 @@
-[submodule "opensource_references/cityhash"]
-	path = opensource_references/cityhash
+[submodule "hash_functions/cityhash"]
+	path = hash_functions/cityhash
 	url = https://github.com/google/cityhash
-[submodule "opensource_references/murmur"]
-	path = opensource_references/murmur
+[submodule "hash_functions/murmur"]
+	path = hash_functions/murmur
 	url = https://github.com/aappleby/smhasher
-[submodule "opensource_references/smhasher"]
-	path = opensource_references/smhasher
+[submodule "hash_functions/smhasher"]
+	path = hash_functions/smhasher
 	url = https://github.com/aappleby/smhasher
-[submodule "opensource_references/fastrange"]
-	path = opensource_references/fastrange
+[submodule "hash_functions/fastrange"]
+	path = hash_functions/fastrange
 	url = https://github.com/lemire/fastrange
-[submodule "opensource_references/xxHash"]
-	path = opensource_references/xxHash
+[submodule "hash_functions/xxHash"]
+	path = hash_functions/xxHash
 	url = https://github.com/Cyan4973/xxHash
-[submodule "opensource_references/aquahash"]
-	path = opensource_references/aquahash
+[submodule "hash_functions/aquahash"]
+	path = hash_functions/aquahash
 	url = https://github.com/jandrewrogers/AquaHash.git
-[submodule "opensource_references/farmhash"]
-	path = opensource_references/farmhash
+[submodule "hash_functions/farmhash"]
+	path = hash_functions/farmhash
 	url = https://github.com/google/farmhash.git
-[submodule "opensource_references/bbhash"]
-	path = opensource_references/bbhash
+[submodule "hash_functions/bbhash"]
+	path = hash_functions/bbhash
 	url = https://github.com/rizkg/BBHash.git
-[submodule "opensource_references/chd"]
-	path = opensource_references/chd
+[submodule "hash_functions/chd"]
+	path = hash_functions/chd
 	url = https://git.code.sf.net/p/cmph/git
-[submodule "opensource_references/sux4j"]
-	path = opensource_references/sux4j
+[submodule "hash_functions/sux4j"]
+	path = hash_functions/sux4j
 	url = https://github.com/vigna/Sux4J.git
-[submodule "opensource_references/suxcpp"]
-	path = opensource_references/suxcpp
+[submodule "hash_functions/suxcpp"]
+	path = hash_functions/suxcpp
 	url = https://github.com/vigna/sux.git
