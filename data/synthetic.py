@@ -92,9 +92,18 @@ def gapped(start=1, delete_probability=0.05):
             yield i
 
 
+# monotone keys with duplicates
+def duplicated(start=1, duplicate_chance=0.4):
+    num = start
+    while True:
+        yield num
+        if random.random() < 1 - duplicate_chance:
+            num += 1
+
+
 # write datasets
 n = 2 * (10 ** 8)
-write_dataset(name="debug", numbers=dense(start=1), amount=64, bytes_per_number=8)
+write_dataset(name="debug", numbers=duplicated(start=1), amount=64, bytes_per_number=8)
 write_dataset(name="dense", numbers=dense(start=1), amount=n, bytes_per_number=8)
 write_dataset(name="dense", numbers=dense(start=1), amount=n, bytes_per_number=4)
 write_dataset(name="gapped5", numbers=gapped(start=1, delete_probability=0.05), amount=n, bytes_per_number=8)
