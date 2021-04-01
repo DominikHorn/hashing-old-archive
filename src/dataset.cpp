@@ -94,7 +94,7 @@ std::vector<uint64_t> Dataset::load(const std::string& path) const {
    std::sort(dataset.begin(), dataset.end());
    dataset.erase(std::unique(dataset.begin(), dataset.end()), dataset.end());
 
-   // TODO: what did the log2(dataset[dataset.size() - 1]) respective - 2 achieve?
+   // TODO: what did the log2(dataset[dataset.size() - 1]) = log2(max(dataset)) respective - 2 achieve?
    std::cout << "Sorted and deduplicated dataset. " << dataset.size() << " entries remaining" << std::endl;
 
    return dataset;
