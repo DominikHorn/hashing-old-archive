@@ -1,7 +1,6 @@
-file(GLOB SRCS CONFIGURE_DEPENDS "*.hpp" "*.cpp")
+file(GLOB SRCS CONFIGURE_DEPENDS "*.cpp")
 add_executable(main ${SRCS})
-
-target_include_directories(main PRIVATE ${CMAKE_SOURCE_DIR}/src/include)
+include_directories("${PROJECT_SOURCE_DIR}/src/include")
 
 # Configure XXHASH
 option(BUILD_SHARED_LIBS "Build shared libs" OFF) #optional
