@@ -75,3 +75,37 @@ struct XXHash {
  *    Multiplicative Hashing
  * ----------------------------
  */
+struct MultHash {
+   static HASH_32 forceinline mult32_hash(const HASH_32& value) {
+      // TODO: this is probably a random prime number, taken from:
+      //  https://github.com/peterboncz/bloomfilter-bsd/blob/c3d854c8c6b2fa7788af19c33fa804f80ac4f6cf/src/dtl/hash.hpp#L64
+      //  (commit c40d84d)
+      //  Investigate & see if we can find a better one/test with different primes?
+      return value * 0x238EF8E3lu;
+   }
+
+   static HASH_64 forceinline mult64_hash(const HASH_64& value) {
+      // TODO: this is a randomly generated prime constant, see if we can find a better one?
+      return value * 0xC7455FEC83DD661Fllu;
+   }
+
+   static HASH_32 forceinline fibonacci32_hash(const HASH_32& value) {
+      // floor(((sqrt(5) - 1) / 2) * 2^32)
+      return value * 0x9E3779B9lu;
+   }
+
+   static HASH_32 forceinline fibonacci_prime32_hash(const HASH_32& value) {
+      // Closest prime to the 32bit fibonacci hash constant (see above)
+      return value * 0x9e3779b1lu;
+   }
+
+   static HASH_64 forceinline fibonacci64_hash(const HASH_64& value) {
+      // floor(((sqrt(5) - 1) / 2) * 2^64)
+      return value * 0x9E3779B97F4A7C15llu;
+   }
+
+   static HASH_64 forceinline fibonacci_prime64_hash(const HASH_64& value) {
+      // Closest prime to the 64bit fibonacci hash constant (see above)
+      return value * 0x9E3779B97F4A7C55llu;
+   }
+};
