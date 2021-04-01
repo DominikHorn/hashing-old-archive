@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "convenience.hpp"
+#include "../convenience/convenience.hpp"
 
 /**
  * ----------------------------
@@ -22,7 +22,7 @@ typedef struct packed {
  * ----------------------------
  */
 #define XXH_INLINE_ALL
-#include "xxhash.h"
+#include "xxHash/xxhash.h"
 
 struct XXHash {
    template<typename T>
