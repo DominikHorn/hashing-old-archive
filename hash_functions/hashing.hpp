@@ -67,7 +67,7 @@ struct XXHash {
    //      return XXH3_128bits_withSeed(&value, sizeof(T), seed);
    //   }
 
-   // TODO: expose other xxhash functionality, especially batching/streaming
+   // TODO: expose other xxhash functionality, especially streaming (?)
 };
 
 /**
