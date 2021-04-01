@@ -1,5 +1,4 @@
-#ifndef HASHING_H
-#define HASHING_H
+#pragma once
 
 #include "convenience.hpp"
 

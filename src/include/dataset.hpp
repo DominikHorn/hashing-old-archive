@@ -1,5 +1,4 @@
-#ifndef DATASET_H
-#define DATASET_H
+#pragma once
 
 #include <map>
 #include <string>
@@ -31,5 +30,3 @@ extern std::map<std::string, Dataset> DATASETS;
 
 /// Names of all datasets known to the application
 extern std::vector<std::string> DATASET_NAMES;
-
-#endif
