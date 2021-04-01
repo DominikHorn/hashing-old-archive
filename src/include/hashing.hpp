@@ -70,3 +70,8 @@ struct XXHash {
    // TODO: expose other xxhash functionality, especially batching/streaming
 };
 
+/**
+ * ----------------------------
+ *    Multiplicative Hashing
+ * ----------------------------
+ */
