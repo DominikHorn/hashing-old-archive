@@ -21,7 +21,8 @@ typedef struct packed {
  *           xxHash
  * ----------------------------
  */
-#include "../../hash_functions/xxHash/xxhash.h"
+#define XXH_INLINE_ALL
+#include "xxhash.h"
 
 struct XXHash {
    template<typename T>
