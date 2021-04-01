@@ -26,33 +26,33 @@ typedef struct packed {
 
 struct XXHash {
    template<typename T>
-   static HASH_32 forceinline XXH32_hash(T value) {
-      return XXH32(&value, sizeof(value), 0);
+   static HASH_32 forceinline XXH32_hash(const T& value) {
+      return XXH32(value, sizeof(value), 0);
    }
 
    template<typename T>
-   static HASH_32 forceinline XXH32_hash_withSeed(T value, HASH_32 seed) {
-      return XXH32(&value, sizeof(value), seed);
+   static HASH_32 forceinline XXH32_hash_withSeed(const T& value, HASH_32 seed) {
+      return XXH32(value, sizeof(value), seed);
    }
 
    template<typename T>
-   static HASH_64 forceinline XXH64_hash(T value) {
+   static HASH_64 forceinline XXH64_hash(const T& value) {
       return XXH64(&value, sizeof(value), 0);
    }
 
    template<typename T>
-   static HASH_64 forceinline XXH64_hash_withSeed(T value, HASH_64 seed) {
-      return XXH64(&value, sizeof(value), seed);
+   static HASH_64 forceinline XXH64_hash_withSeed(const T& value, HASH_64 seed) {
+      return XXH64(value, sizeof(value), seed);
    }
 
    template<typename T>
-   static HASH_64 forceinline XXH3_hash(T value) {
+   static HASH_64 forceinline XXH3_hash(const T& value) {
       return XXH3_64bits(&value, sizeof(T));
    }
 
    template<typename T>
-   static HASH_64 forceinline XXH3_hash_withSeed(T value, HASH_64 seed) {
-      return XXH3_64bits_withSeed(&value, sizeof(T), seed);
+   static HASH_64 forceinline XXH3_hash_withSeed(const T& value, HASH_64 seed) {
+      return XXH3_64bits_withSeed(value, sizeof(T), seed);
    }
 
    // TODO: do we need 128 bit hashing?
