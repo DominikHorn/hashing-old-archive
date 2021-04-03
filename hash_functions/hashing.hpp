@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cassert>
+
 #include "../convenience/convenience.hpp"
 
 /**
@@ -21,6 +23,8 @@ typedef struct packed {
  */
 #define XXH_INLINE_ALL
 #include "xxHash/xxhash.h"
+
+// TODO: also build & benchmark with clang as it supposedly improves performance (at least for xxhash)
 
 struct XXHash {
    // TODO: implement XXHash finalization (probably use a shift operation as with mul?)
