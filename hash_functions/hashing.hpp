@@ -56,16 +56,6 @@ struct HashReduction {
    template<typename T>
    static constexpr T forceinline mult_shift(const T& value, const T& n);
 
-   template<>
-   constexpr HASH_32 forceinline mult_shift(const HASH_32& value, const HASH_32& n) {
-      return ((uint64_t) value * (uint64_t) n) >> 32;
-   }
-
-   template<>
-   constexpr HASH_64 forceinline mult_shift(const HASH_64& value, const HASH_64& n) {
-      return ((__uint128_t) value * (__uint128_t) n) >> 64;
-   }
-
    /**
     * Reduces value to interval [0, 2^p]
     * @tparam T
@@ -78,6 +68,16 @@ struct HashReduction {
       return value >> (sizeof(T) * 8 - p);
    }
 };
+
+template<>
+constexpr HASH_32 forceinline HashReduction::mult_shift(const HASH_32& value, const HASH_32& n) {
+   return ((uint64_t) value * (uint64_t) n) >> 32;
+}
+
+template<>
+constexpr HASH_64 forceinline HashReduction::mult_shift(const HASH_64& value, const HASH_64& n) {
+   return ((__uint128_t) value * (__uint128_t) n) >> 64;
+}
 
 /**
  * ----------------------------
