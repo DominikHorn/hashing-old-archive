@@ -1,7 +1,6 @@
 # Project files
 *.ds
 
-
 # IDE 
 
 ## CLion
@@ -13,6 +12,7 @@ cmake_install.cmake
 Makefile
 CMakeCache.txt
 CMakeFiles/
+hashing.cbp
 
 # MacOS
 .DS_Store
