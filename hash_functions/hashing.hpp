@@ -80,12 +80,12 @@ struct MultHash {
       // TODO: this is probably a random prime number, taken from:
       //  https://github.com/peterboncz/bloomfilter-bsd/blob/c3d854c8c6b2fa7788af19c33fa804f80ac4f6cf/src/dtl/hash.hpp#L64
       //  (commit c40d84d)
-      //  Investigate & see if we can find a better one/test with different primes?
+      //  Investigate & see if we can find a better one (should not really matter?)/test with different primes?
       return value * 0x238EF8E3lu;
    }
 
    static HASH_64 forceinline mult64_hash(const HASH_64& value) {
-      // TODO: this is a randomly generated prime constant, see if we can find a better one?
+      // TODO: this is a randomly generated prime constant, see if we can find a better one? (should not really matter?)
       return value * 0xC7455FEC83DD661Fllu;
    }
 
