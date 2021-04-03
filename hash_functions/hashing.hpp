@@ -6,7 +6,7 @@
 
 /**
  * ----------------------------
- *       Typedefinitions
+ *      General & Typedefs
  * ----------------------------
  */
 typedef std::uint32_t HASH_32;
@@ -87,12 +87,8 @@ struct HashReduction {
 #define XXH_INLINE_ALL
 #include "xxHash/xxhash.h"
 
-// TODO: also build & benchmark with clang as it supposedly improves performance (at least for xxhash)
-
+// TODO: benchmark with clang & gcc builds as clang supposedly improves xxHash performance
 struct XXHash {
-   // TODO: implement XXHash finalization (probably use a shift operation as with mul?)
-   //  i.e., logic to map 32/64 bit results to [0, k], where k is most likely 2^p for some parameter p
-
    template<typename T>
    static constexpr HASH_32 forceinline XXH32_hash(const T& value) {
       return XXH32(value, sizeof(value), 0);
