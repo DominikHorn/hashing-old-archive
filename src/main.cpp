@@ -29,8 +29,8 @@ int main(const int argc, const char* argv[]) {
          std::cout << val << " |--fiboPrime32--> " << MultHash::fibonacci_prime32_hash(val) << std::endl;
          std::cout << val << " |--fiboPrime64--> " << MultHash::fibonacci_prime64_hash(val) << std::endl;
       }
-   } catch (std::string msg) {
-      std::cerr << msg << std::endl;
+   } catch (const std::exception& ex) {
+      std::cerr << ex.what() << std::endl;
       return -1;
    }
 

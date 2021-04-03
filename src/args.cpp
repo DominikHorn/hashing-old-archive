@@ -1,4 +1,5 @@
 #include <iostream>
+#include <stdexcept>
 #include <string>
 
 #include "args.hpp"
@@ -36,7 +37,7 @@ Args Args::parse(const int argc, const char* argv[]) {
    if (const auto raw_datapath = option(argc, argv, "-datapath=")) {
       datapath = *raw_datapath;
    } else {
-      throw "Please specify the path to the data folder using \"-datapath=<PATH_TO_DATA>\"";
+      throw std::runtime_error("Please specify the path to the data folder using \"-datapath=<PATH_TO_DATA>\"");
    }
 
    // Parse dataset parameter
@@ -45,10 +46,10 @@ Args Args::parse(const int argc, const char* argv[]) {
       if (it != DATASETS.end()) {
          dataset = it->second.load(datapath);
       } else {
-         throw "Unknown dataset: " + *raw_dataset;
+         throw std::runtime_error("Unknown dataset: " + *raw_dataset);
       }
    } else {
-      throw "Please specify a dataset using \"-dataset=<DATASET>\"";
+      throw std::runtime_error("Please specify a dataset using \"-dataset=<DATASET>\"");
    }
 
    return Args(over_alloc, bucket_size, dataset, datapath);
