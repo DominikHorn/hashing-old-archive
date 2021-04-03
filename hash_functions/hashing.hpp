@@ -144,7 +144,7 @@ struct MultHash {
     */
 
    /*
-    * TODO: (?) test performance for random, (probably) non prime constant as suggested in
+    * TODO: (?) test performance for random, (likely) non prime constant as suggested in
     *  http://www.vldb.org/pvldb/vol9/p96-richter.pdf
     */
 
