@@ -5,13 +5,12 @@
 #include "args.hpp"
 #include "hashing.hpp"
 
-// TODO: mult+add hashing (theoretical good properties + excellent iff cpu has native 128 bit arithmetic)
 // TODO: murmur (-> widely used baseline)
 // TODO: tabulation hashing (-> robustness benchmarks)
 // TODO: cityhash (-> widely used baseline)
 // TODO: aquahash (-> fast)
 // TODO: farmhash (-> fast(er) than cityhash)
-// TODO: spookyhash (-> murmur competitor)
+// TODO: spookyhash (-> not well known murmur competitor)
 
 int main(const int argc, const char* argv[]) {
    try {
