@@ -2,6 +2,7 @@
 #include <iostream>
 #include <iterator>
 #include <map>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -62,11 +63,11 @@ std::vector<uint64_t> Dataset::load(const std::string& path) const {
    std::streamsize size = input.tellg();
    input.seekg(0, std::ios::beg);
    if (!input.is_open()) {
-      throw "Dataset file at path '" + filepath + "' does not exist";
+      throw std::runtime_error("Dataset file at path '" + filepath + "' does not exist");
    }
    std::vector<unsigned char> buffer(size);
    if (!input.read((char*) buffer.data(), size)) {
-      throw "Failed to read dataset at path '" + filepath + "'";
+      throw std::runtime_error("Failed to read dataset at path '" + filepath + "'");
    }
 
    // Parse file
@@ -85,7 +86,8 @@ std::vector<uint64_t> Dataset::load(const std::string& path) const {
          dataset[i] = read_little_endian_4(buffer, offset);
       }
    else {
-      throw "Unimplemented amount of bytes per value in dataset: " + std::to_string(this->bytesPerValue);
+      throw std::runtime_error("Unimplemented amount of bytes per value in dataset: " +
+                               std::to_string(this->bytesPerValue));
    }
 
    std::cout << "Read " << num_elements << " entries from dataset file" << filepath << std::endl;
