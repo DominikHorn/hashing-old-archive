@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "convenience.hpp"
-#include "dataset.hpp"
+#include "include/dataset.hpp"
 
 /**
  * Helper for extracting all keys from a map

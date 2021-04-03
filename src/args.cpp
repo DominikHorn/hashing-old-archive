@@ -2,9 +2,9 @@
 #include <stdexcept>
 #include <string>
 
-#include "args.hpp"
 #include "convenience.hpp"
 #include "dataset.hpp"
+#include "include/args.hpp"
 
 std::optional<std::string> Args::option(const int argc, const char* argv[], const std::string& option) {
    for (int i = 0; i < argc; i++) {
