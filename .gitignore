@@ -9,6 +9,10 @@
 
 ## CMake 
 cmake-build-*
+cmake_install.cmake
+Makefile
+CMakeCache.txt
+CMakeFiles/
 
 # MacOS
 .DS_Store
