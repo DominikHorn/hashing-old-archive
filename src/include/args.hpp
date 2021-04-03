@@ -1,5 +1,4 @@
-#ifndef ARGS_H
-#define ARGS_H
+#pragma once
 
 #include <map>
 #include <string>
@@ -27,5 +26,3 @@ struct Args {
    Args(const double over_alloc, const int bucket_size, const std::vector<uint64_t> dataset, const std::string datapath)
       : over_alloc(over_alloc), bucket_size(bucket_size), dataset(dataset), datapath(datapath){};
 };
-
-#endif
