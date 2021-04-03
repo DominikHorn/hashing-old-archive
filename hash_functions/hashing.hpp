@@ -23,6 +23,9 @@ typedef struct packed {
 #include "xxHash/xxhash.h"
 
 struct XXHash {
+   // TODO: implement XXHash finalization (probably use a shift operation as with mul?)
+   //  i.e., logic to map 32/64 bit results to [0, k], where k is most likely 2^p for some parameter p
+
    template<typename T>
    static constexpr HASH_32 forceinline XXH32_hash(const T& value) {
       return XXH32(value, sizeof(value), 0);
