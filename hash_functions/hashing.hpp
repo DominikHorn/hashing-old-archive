@@ -9,9 +9,9 @@
  *      General & Typedefs
  * ----------------------------
  */
-typedef std::uint32_t HASH_32;
-typedef std::uint64_t HASH_64;
-typedef __uint128_t HASH_128;
+#define HASH_32 std::uint32_t
+#define HASH_64 std::uint64_t
+#define HASH_128 __uint128_t
 
 /**
  * Implements different reducers to map values from
@@ -172,7 +172,7 @@ struct MultHash {
     *
     * @param value the value to hash
     * @param p hash value is \in [0, 2^p]. NOTE: 0 <= p <= 64
-    * @param a magic hash constant. You should choose a \in [0,2^64] and a is prime. Defaults to 0xC7455FEC83DD661Fllu
+    * @param a magic hash constant. You should choose a \in [0,2^64] and a is prime. Defaults to 0xC7455FEC83DD661F
     */
    static constexpr HASH_64 forceinline mult64_hash(const HASH_64& value,
                                                     const unsigned char p = 64,
@@ -241,8 +241,8 @@ struct MultAddHash {
     * @param value the value to hash
     * @param p how many bits the result should have, i.e., result value \in [0, 2^p].
     *   NOTE: 0 <= p <= 32
-    * @param a magic hash constant. You should choose a \in [0,2^64] and a is prime. Defaults to 0xC16FD7EEC0213493llu
-    * @param b magic hash constant. You should choose b \in [0,2^64] and b is prime. Defaults to 0xA501000042C9A6E3llu
+    * @param a magic hash constant. You should choose a \in [0,2^64] and a is prime. Defaults to 0xC16FD7EEC0213493
+    * @param b magic hash constant. You should choose b \in [0,2^64] and b is prime. Defaults to 0xA501000042C9A6E3
     */
    static constexpr HASH_32 forceinline multadd32_hash(const HASH_32& value,
                                                        const unsigned char p = 32,
