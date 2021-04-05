@@ -30,6 +30,10 @@ int main(const int argc, const char* argv[]) {
          std::cout << val << " |--fibo64---> " << MultHash::fibonacci64_hash(val) << std::endl;
          std::cout << val << " |--fiboPrime32--> " << MultHash::fibonacci_prime32_hash(val) << std::endl;
          std::cout << val << " |--fiboPrime64--> " << MultHash::fibonacci_prime64_hash(val) << std::endl;
+
+         std::cout << std::endl;
+         std::cout << val << " |--multadd32--> " << MultAddHash::multadd32_hash(val) << std::endl;
+         std::cout << val << " |--multadd64--> " << MultAddHash::multadd64_hash(val) << std::endl;
       }
    } catch (const std::exception& ex) {
       std::cerr << ex.what() << std::endl;
