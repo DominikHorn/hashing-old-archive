@@ -39,7 +39,12 @@ int main(const int argc, const char* argv[]) {
          std::cout << val << " |--murmur32_fin--> " << MurmurHash3::finalize_32(val) << std::endl;
          std::cout << val << " |--murmur64_fin--> " << MurmurHash3::finalize_64(val) << std::endl;
          std::cout << val << " |--murmur32------> " << MurmurHash3::murmur3_32(val) << std::endl;
-         //         std::cout << val << " |--murmur64------> " << MurmurHash3::murmur3_64(val) << std::endl;
+         std::cout << val << " |--murmur64_low--> " << HashReduction::lower_half(MurmurHash3::murmur3_64(val))
+                   << std::endl;
+         std::cout << val << " |--murmur64_upp--> " << HashReduction::upper_half(MurmurHash3::murmur3_64(val))
+                   << std::endl;
+         std::cout << val << " |--murmur64_xor--> " << HashReduction::xor_both(MurmurHash3::murmur3_64(val))
+                   << std::endl;
       }
    } catch (const std::exception& ex) {
       std::cerr << ex.what() << std::endl;

@@ -64,6 +64,33 @@ struct HashReduction {
    static constexpr T forceinline shift(const T& value, const unsigned char p = sizeof(T) * 8) {
       return value >> (sizeof(T) * 8 - p);
    }
+
+   /**
+    * Takes the lower 64 bits of a 128 bit hash value
+    * @param value
+    * @return
+    */
+   static constexpr HASH_64 forceinline lower_half(const HASH_128& value) {
+      return (uint64_t) value;
+   }
+
+   /**
+    * Takes the upper 64 bits of a 128 bit hash value
+    * @param value
+    * @return
+    */
+   static constexpr HASH_64 forceinline upper_half(const HASH_128& value) {
+      return (uint64_t) shift(value, 64);
+   }
+
+   /**
+    * xors the upper and lower 64-bits of a 128 bit value to obtain a final 64 bit hash
+    * @param value
+    * @return
+    */
+   static constexpr HASH_64 forceinline xor_both(const HASH_128& value) {
+      return (uint64_t)(value >> 64) ^ (uint64_t) value;
+   }
 };
 
 template<>
