@@ -34,6 +34,10 @@ int main(const int argc, const char* argv[]) {
          std::cout << std::endl;
          std::cout << val << " |--multadd32--> " << MultAddHash::multadd32_hash(val) << std::endl;
          std::cout << val << " |--multadd64--> " << MultAddHash::multadd64_hash(val) << std::endl;
+
+         std::cout << std::endl;
+         std::cout << val << " |--murmur32--> " << MurmurHash::finalize_32(val) << std::endl;
+         std::cout << val << " |--murmur64--> " << MurmurHash::finalize_64(val) << std::endl;
       }
    } catch (const std::exception& ex) {
       std::cerr << ex.what() << std::endl;

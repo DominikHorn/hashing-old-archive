@@ -273,3 +273,70 @@ struct MultAddHash {
       return ((__uint128_t) value * a + b) >> (128 - p);
    }
 };
+
+/**
+ * ----------------------------
+ *      Murmur Hashing
+ * ----------------------------
+ */
+struct MurmurHash {
+   /**
+    * Murmur 32-bit finalizer from
+    * https://github.com/aappleby/smhasher/blob/master/src/MurmurHash3.cpp (commit: 61a0530),
+    * alternatively see ./murmur/src/MurmurHash3.cpp (same repo)
+    *
+    * As done by Richter, Stefan, Victor Alvarez, and Jens Dittrich in "A seven-dimensional
+    * analysis of hashing methods and its implications on query processing."
+    * (PVLDB 9.3 (2015): 96-107.), we simply use the murmur finalizer.
+    * From a quick glance at the remaining murmur code, just using the finalizer
+    * skips some rotate + constant mul + tail reverse-endian xor + ... steps,
+    * a few potentially important operations for hash quality. Therefore:
+    * TODO: investigate impact on quality when using this shortcut
+    *
+    * Code had to be copied from .cpp file to facilitate inlining.
+    * This is afaik okay since Austin Appleby, the author, disclaimed
+    * any copyright (see header comment in MurmurHash3.cpp)
+    *
+    * @param value the value to finalize
+    * @return 32 bit hash
+    */
+   static constexpr HASH_32 forceinline finalize_32(HASH_32 value) {
+      value ^= value >> 16;
+      value *= 0x85ebca6blu;
+      value ^= value >> 13;
+      value *= 0xc2b2ae35lu;
+      value ^= value >> 16;
+
+      return value;
+   }
+
+   /**
+    * Murmur 64-bit finalizer from
+    * https://github.com/aappleby/smhasher/blob/master/src/MurmurHash3.cpp (commit: 61a0530),
+    * alternatively see ./murmur/src/MurmurHash3.cpp (same repo)
+    *
+    * As done by Richter, Stefan, Victor Alvarez, and Jens Dittrich in "A seven-dimensional
+    * analysis of hashing methods and its implications on query processing."
+    * (PVLDB 9.3 (2015): 96-107.), we simply use the murmur finalizer.
+    * From a quick glance at the remaining murmur code, just using the finalizer
+    * skips some rotate + constant mul + tail reverse-endian xor + ... steps,
+    * a few potentially important operations for hash quality. Therefore:
+    * TODO: investigate impact on quality when using this shortcut
+    *
+    * Code had to be copied from .cpp file to facilitate inlining.
+    * This is afaik okay since Austin Appleby, the author, disclaimed
+    * any copyright (see header comment in MurmurHash3.cpp)
+    *
+    * @param value the value to finalize
+    * @return 64 bit hash
+    */
+   static constexpr HASH_64 forceinline finalize_64(HASH_64 value) {
+      value ^= value >> 33;
+      value *= 0xff51afd7ed558ccdllu;
+      value ^= value >> 33;
+      value *= 0xc4ceb9fe1a85ec53llu;
+      value ^= value >> 33;
+
+      return value;
+   }
+};
