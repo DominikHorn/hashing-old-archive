@@ -5,7 +5,6 @@
 #include "args.hpp"
 #include "hashing.hpp"
 
-// TODO: murmur (-> widely used baseline)
 // TODO: tabulation hashing (-> robustness benchmarks)
 // TODO: cityhash (-> widely used baseline)
 // TODO: aquahash (-> fast)
