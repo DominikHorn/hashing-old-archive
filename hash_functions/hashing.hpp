@@ -465,6 +465,7 @@ struct MurmurHash3 {
       h1 += h2;
       h2 += h1;
 
+      // TODO: change to returning 2 64 bit values since 128 bit emulation will probably hurt us performance wise!
       return ((__uint128_t) h1 << 64) | ((__uint128_t) h2);
    }
 
