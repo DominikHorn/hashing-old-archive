@@ -11,7 +11,10 @@
  */
 #define HASH_32 std::uint32_t
 #define HASH_64 std::uint64_t
-#define HASH_128 __uint128_t
+struct HASH_128 {
+   HASH_64 lower;
+   HASH_64 higher;
+};
 
 /**
  * Implements different reducers to map values from
@@ -71,7 +74,7 @@ struct HashReduction {
     * @return
     */
    static constexpr HASH_64 forceinline lower_half(const HASH_128& value) {
-      return (uint64_t) value;
+      return value.lower;
    }
 
    /**
@@ -80,7 +83,7 @@ struct HashReduction {
     * @return
     */
    static constexpr HASH_64 forceinline upper_half(const HASH_128& value) {
-      return (uint64_t) shift(value, 64);
+      return value.higher;
    }
 
    /**
@@ -89,7 +92,7 @@ struct HashReduction {
     * @return
     */
    static constexpr HASH_64 forceinline xor_both(const HASH_128& value) {
-      return (uint64_t)(value >> 64) ^ (uint64_t) value;
+      return value.higher ^ value.lower;
    }
 };
 
@@ -465,8 +468,7 @@ struct MurmurHash3 {
       h1 += h2;
       h2 += h1;
 
-      // TODO: change to returning 2 64 bit values since 128 bit emulation will probably hurt us performance wise!
-      return ((__uint128_t) h1 << 64) | ((__uint128_t) h2);
+      return {.lower = h2, .higher = h1};
    }
 
   private:
