@@ -157,8 +157,6 @@ struct XXHash {
    //   static HASH_128 forceinline XXH3_128_hash_withSeed(T value, HASH_64 seed) {
    //      return XXH3_128bits_withSeed(&value, sizeof(T), seed);
    //   }
-
-   // TODO: expose other xxhash functionality, especially streaming (?)
 };
 
 /**
