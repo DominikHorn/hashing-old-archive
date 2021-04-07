@@ -14,36 +14,41 @@ namespace Benchmark {
     *
     * @tparam HashFunction
     * @tparam Reducer
-    * @tparam Counter
     */
-   template<typename HashFunction, typename Reducer, typename Counter = uint32_t>
-   std::tuple<Counter, Counter, double> measure_collisions(const Args& args, const std::vector<uint64_t> dataset,
-                                                           const HashFunction hash, const Reducer reduce) {
+   template<typename HashFunction, typename Reducer>
+   std::tuple<uint64_t, uint64_t, double, uint64_t>
+   measure_collisions(const Args& args, const std::vector<uint64_t> dataset, const HashFunction hashfn,
+                      const Reducer reduce) {
       // Emulate hashtable with buckets (we only care about amount of elements per bucket)
       const auto n = (uint64_t) std::ceil(dataset.size() * args.over_alloc);
-      std::vector<Counter> collision_counter(n, 0);
+      std::vector<uint32_t> collision_counter(n, 0);
 
       // Hash each value and record entries per bucket
       for (const auto key : dataset) {
-         collision_counter[reduce(hash(key), n)]++;
+         const auto hash = hashfn(key);
+         const auto index = reduce(hash, n);
+         collision_counter[index]++;
+
+         // Our datasets are too small to ever cause unsigned int addition overflow
+         // therefore this check is redundant
+         //         assert(collision_counter[index] != 0);
       }
 
       // Min has to start at max value for its type
-      Counter min = 0;
-      for (auto i = 0; i < sizeof(Counter); i++) {
-         min |= ((Counter) 0xFF) << i * 8;
-      }
-      Counter max = 0;
+      uint64_t min = 0xFFFFFFFFFFFFFFFF;
+      uint64_t max = 0;
+      uint64_t total_collisions = 0;
       double std_dev_square = 0.0;
       const double average = 1.0 / args.over_alloc;
 
-      for (const auto bucketCnt : collision_counter) {
-         min = std::min(bucketCnt, min);
-         max = std::max(bucketCnt, max);
-         std_dev_square += (bucketCnt - average) * (bucketCnt - average);
+      for (const auto bucket_cnt : collision_counter) {
+         min = std::min((uint64_t) bucket_cnt, min);
+         max = std::max((uint64_t) bucket_cnt, max);
+         total_collisions += bucket_cnt > 1 ? 1 : 0; // TODO: think about how to make this branchless (for fun)
+         std_dev_square += (bucket_cnt - average) * (bucket_cnt - average);
       }
       double std_dev = std::sqrt(std_dev_square / (double) dataset.size());
 
-      return {min, max, std_dev};
+      return {min, max, std_dev, total_collisions};
    }
 } // namespace Benchmark
