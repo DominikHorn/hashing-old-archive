@@ -1,6 +1,8 @@
 #pragma once
 
+#include <iostream>
 #include <map>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -11,18 +13,45 @@ struct Args {
   public:
    const double over_alloc;
    const int bucket_size;
-   const std::vector<uint64_t> dataset;
+   const std::string datapath;
 
    /**
     * Parses the given set of command line args
     */
-   static Args parse(const int argc, const char* argv[]);
+   static Args parse(const int argc, const char* argv[]) {
+      double over_alloc = 1.0;
+      int bucket_size = 1;
+      std::string datapath;
+
+      // Parse over_alloc parameter
+      if (const auto raw_over_alloc = option(argc, argv, "-over-alloc=")) {
+         over_alloc = std::stod(*raw_over_alloc);
+      }
+
+      // Parse bucket_size parameter
+      if (const auto raw_bucket_size = option(argc, argv, "-bucket-size=")) {
+         bucket_size = std::stoi(*raw_bucket_size);
+      }
+
+      // Parse datapath parameter
+      if (const auto raw_datapath = option(argc, argv, "-datapath=")) {
+         datapath = *raw_datapath;
+      } else {
+         throw std::runtime_error("Please specify the path to the data folder using \"-datapath=<PATH_TO_DATA>\"");
+      }
+
+      return Args(over_alloc, bucket_size, datapath);
+   }
 
   private:
-   const std::string datapath;
-
-   static std::optional<std::string> option(const int argc, const char* argv[], const std::string& option);
-
-   Args(const double over_alloc, const int bucket_size, const std::vector<uint64_t> dataset, const std::string datapath)
-      : over_alloc(over_alloc), bucket_size(bucket_size), dataset(dataset), datapath(datapath){};
+   static std::optional<std::string> option(const int argc, const char* argv[], const std::string& option) {
+      for (int i = 0; i < argc; i++) {
+         std::string arg = argv[i];
+         auto start = arg.find(option);
+         if (0 == start) {
+            return arg.substr(option.length(), arg.length() - option.length());
+         }
+      }
+      return {};
+   }
 };

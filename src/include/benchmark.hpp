@@ -18,13 +18,14 @@ namespace Benchmark {
     */
    template<typename HashFunction, typename Reducer, typename Counter = uint32_t>
    neverinline std::tuple<Counter, Counter, std::vector<Counter>>
-   measure_collisions(const Args& args, const HashFunction hash, const Reducer reduce) {
+   measure_collisions(const Args& args, const std::vector<uint64_t> dataset, const HashFunction hash,
+                      const Reducer reduce) {
       // Emulate hashtable with buckets (we only care about amount of elements per bucket)
-      const auto n = (uint64_t) std::ceil(args.dataset.size() * args.over_alloc);
+      const auto n = (uint64_t) std::ceil(dataset.size() * args.over_alloc);
       std::vector<Counter> collision_counter(n, 0);
 
       // Hash each value and record entries per bucket
-      for (const auto key : args.dataset) {
+      for (const auto key : dataset) {
          collision_counter[reduce(hash(key), n)]++;
       }
 
@@ -35,15 +36,19 @@ namespace Benchmark {
       }
       Counter max = 0;
       Counter sum = 0;
-      std::vector<Counter> statistics(max + 1, 0);
 
       for (const auto bucketCnt : collision_counter) {
          min = std::min(bucketCnt, min);
          max = std::max(bucketCnt, max);
          sum += bucketCnt;
+      }
+      assert(sum == dataset.size());
+
+      std::vector<Counter> statistics(max + 1, 0);
+      for (const auto bucketCnt : collision_counter) {
+         assert(bucketCnt < statistics.size());
          statistics[bucketCnt]++;
       }
-      assert(sum == args.dataset.size());
 
       return {min, max, statistics};
    }
