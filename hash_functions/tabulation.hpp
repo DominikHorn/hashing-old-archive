@@ -32,18 +32,6 @@ struct TabulationHash {
       return out;
    }
 
-   // TODO: implement
-   //   /**
-   //    * Tabulation hashing using SIMD instructions
-   //    *
-   //    * @tparam T
-   //    * @param value the value to hash
-   //    * @param table tabulation lookup table
-   //    * @return
-   //    */
-   //   template<typename T>
-   //   static T forceinline vectorized_hash(const T value, const T (&table)[sizeof(T)][0xFF]);
-
    /**
     * Initializes a tabulation hash table with random data, depending on seed
     * @tparam T hash output type, e.g., HASH_64
