@@ -12,6 +12,8 @@ int main(const int argc, const char* argv[]) {
    std::ofstream outfile;
 
    try {
+      // TODO: (?) automatically iterate over over_allocation parameter
+      // TODO: log over_allocation in result csv
       auto args = Args::parse(argc, argv);
       outfile.open(args.outfile);
       outfile << "hash,min,max,std_dev,total_collisions,dataset" << std::endl;
