@@ -53,7 +53,7 @@ int main(const int argc, const char* argv[]) {
          measure("multadd64_shift", [p](HASH_64 key) { return MultAddHash::multadd64_hash(key, p); });
          measure("murmur3_128_low",
                  [](HASH_64 key) { return HashReduction::lower_half(MurmurHash3::murmur3_128(key)); });
-         measure("murmur3_128_high",
+         measure("murmur3_128_upp",
                  [](HASH_64 key) { return HashReduction::upper_half(MurmurHash3::murmur3_128(key)); });
          measure("murmur3_128_xor", [](HASH_64 key) { return HashReduction::xor_both(MurmurHash3::murmur3_128(key)); });
          measure("murmur3_fin64", [](HASH_64 key) { return MurmurHash3::finalize_64(key); });
