@@ -55,7 +55,7 @@ int main(const int argc, const char* argv[]) {
                    << std::endl;
 
          std::cout << std::endl;
-         std::cout << val << " |-naive_tab------> " << TabulationHash::naive_hash(i, table) << std::endl;
+         std::cout << val << " |--tabulation----> " << TabulationHash::naive_hash(i, table) << std::endl;
       }
    } catch (const std::exception& ex) {
       std::cerr << ex.what() << std::endl;
