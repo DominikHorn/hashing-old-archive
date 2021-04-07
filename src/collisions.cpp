@@ -12,6 +12,7 @@ int main(const int argc, const char* argv[]) {
    std::ofstream outfile;
 
    try {
+      // TODO: test over-alloc
       // TODO: (?) automatically iterate over over_allocation parameter
       // TODO: log over_allocation in result csv
       auto args = Args::parse(argc, argv);
@@ -69,6 +70,8 @@ int main(const int argc, const char* argv[]) {
    } catch (const std::exception& ex) {
       std::cerr << ex.what() << std::endl;
       outfile.close();
+
+      // TODO: print usage
       return -1;
    }
 
