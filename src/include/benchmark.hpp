@@ -17,9 +17,9 @@ namespace Benchmark {
     * @tparam Counter
     */
    template<typename HashFunction, typename Reducer, typename Counter = uint32_t>
-   neverinline std::tuple<Counter, Counter, std::vector<Counter>>
-   measure_collisions(const Args& args, const std::vector<uint64_t> dataset, const HashFunction hash,
-                      const Reducer reduce) {
+   neverinline std::tuple<Counter, Counter, double> measure_collisions(const Args& args,
+                                                                       const std::vector<uint64_t> dataset,
+                                                                       const HashFunction hash, const Reducer reduce) {
       // Emulate hashtable with buckets (we only care about amount of elements per bucket)
       const auto n = (uint64_t) std::ceil(dataset.size() * args.over_alloc);
       std::vector<Counter> collision_counter(n, 0);
@@ -35,21 +35,16 @@ namespace Benchmark {
          min |= ((Counter) 0xFF) << i * 8;
       }
       Counter max = 0;
-      Counter sum = 0;
+      double std_dev_square = 0.0;
+      const double average = 1.0 / args.over_alloc;
 
       for (const auto bucketCnt : collision_counter) {
          min = std::min(bucketCnt, min);
          max = std::max(bucketCnt, max);
-         sum += bucketCnt;
+         std_dev_square += (bucketCnt - average) * (bucketCnt - average);
       }
-      assert(sum == dataset.size());
+      double std_dev = std::sqrt(std_dev_square / (double) dataset.size());
 
-      std::vector<Counter> statistics(max + 1, 0);
-      for (const auto bucketCnt : collision_counter) {
-         assert(bucketCnt < statistics.size());
-         statistics[bucketCnt]++;
-      }
-
-      return {min, max, statistics};
+      return {min, max, std_dev};
    }
 } // namespace Benchmark

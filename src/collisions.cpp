@@ -16,29 +16,30 @@ int main(const int argc, const char* argv[]) {
       for (auto const& it : DATASETS) {
          std::cout << "benchmarking " << it.first << std::endl;
 
-         // TODO: tmp (prevent overload)
-         if (it.first != "wiki" && it.first != "debug")
+         // TODO: tmp (for debugging, remove for actually benchmarking)
+         if (/*it.first != "wiki" &&*/ it.first != "debug")
             continue;
 
          const auto dataset = it.second.load(args.datapath);
 
          uint32_t min = 0;
          uint32_t max = 0;
-         std::vector<uint32_t> stats = {};
+         double std_dev = 0;
 
-         std::tie(min, max, stats) = Benchmark::measure_collisions(
+         std::tie(min, max, std_dev) = Benchmark::measure_collisions(
             args,
             dataset,
             [](HASH_64 key) { return MultHash::mult64_hash(key); },
             HashReduction::modulo<HASH_64>);
-         std::cout << "mult64_hash (min: " << min << ", max: " << max << ")" << std::endl;
+         std::cout << "mult64_hash (min: " << min << ", max: " << max << ", std_dev: " << std_dev << ")" << std::endl;
 
-         std::tie(min, max, stats) = Benchmark::measure_collisions(
+         std::tie(min, max, std_dev) = Benchmark::measure_collisions(
             args,
             dataset,
             [](HASH_64 key) { return MultHash::fibonacci64_hash(key); },
             HashReduction::modulo<HASH_64>);
-         std::cout << "fibonacci64_hash (min: " << min << ", max: " << max << ")" << std::endl;
+         std::cout << "fibonacci64_hash (min: " << min << ", max: " << max << ", std_dev: " << std_dev << ")"
+                   << std::endl;
       }
    } catch (const std::exception& ex) {
       std::cerr << ex.what() << std::endl;
