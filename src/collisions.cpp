@@ -49,6 +49,8 @@ int main(const int argc, const char* argv[]) {
          measure("fibo64_shift", [p](HASH_64 key) { return MultHash::fibonacci64_hash(key, p); });
          measure("fibo_prime64", [](HASH_64 key) { return MultHash::fibonacci_prime64_hash(key); });
          measure("fibo_prime64_shift", [p](HASH_64 key) { return MultHash::fibonacci_prime64_hash(key, p); });
+         measure("multadd64", [](HASH_64 key) { return MultAddHash::multadd64_hash(key); });
+         measure("multadd64_shift", [p](HASH_64 key) { return MultAddHash::multadd64_hash(key, p); });
       }
 
    } catch (const std::exception& ex) {
