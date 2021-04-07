@@ -14,6 +14,7 @@ struct Args {
    const double over_alloc;
    const int bucket_size;
    const std::string datapath;
+   const std::string outfile;
 
    /**
     * Parses the given set of command line args
@@ -22,6 +23,7 @@ struct Args {
       double over_alloc = 1.0;
       int bucket_size = 1;
       std::string datapath;
+      std::string outfile;
 
       // Parse over_alloc parameter
       if (const auto raw_over_alloc = option(argc, argv, "-over-alloc=")) {
@@ -40,7 +42,14 @@ struct Args {
          throw std::runtime_error("Please specify the path to the data folder using \"-datapath=<PATH_TO_DATA>\"");
       }
 
-      return Args(over_alloc, bucket_size, datapath);
+      // Parse outfile parameter
+      if (const auto raw_outfile = option(argc, argv, "-outfile=")) {
+         outfile = *raw_outfile;
+      } else {
+         throw std::runtime_error("Please specify the path the output csv file \"-outfile=<PATH_TO_DATA>\"");
+      }
+
+      return Args(over_alloc, bucket_size, datapath, outfile);
    }
 
   private:

@@ -1,3 +1,4 @@
+#include <fstream>
 #include <iostream>
 #include <string>
 
@@ -8,15 +9,16 @@
 #include "include/dataset.hpp"
 
 int main(const int argc, const char* argv[]) {
+   std::ofstream outfile;
+
    try {
       auto args = Args::parse(argc, argv);
-
-      // TODO: write to csv file instead of std::cout
+      outfile.open(args.outfile);
+      outfile << "hash,min,max,std_dev,dataset" << std::endl;
 
       for (auto const& it : DATASETS) {
-         std::cout << "benchmarking " << it.first << std::endl;
-
          // TODO: tmp (for debugging, remove for actually benchmarking)
+         std::cout << "benchmarking " << it.first << std::endl;
          if (/*it.first != "wiki" &&*/ it.first != "debug")
             continue;
 
@@ -31,20 +33,22 @@ int main(const int argc, const char* argv[]) {
             dataset,
             [](HASH_64 key) { return MultHash::mult64_hash(key); },
             HashReduction::modulo<HASH_64>);
-         std::cout << "mult64_hash (min: " << min << ", max: " << max << ", std_dev: " << std_dev << ")" << std::endl;
+         outfile << "mult64," << min << "," << max << "," << std_dev << "," << it.first << std::endl;
 
          std::tie(min, max, std_dev) = Benchmark::measure_collisions(
             args,
             dataset,
             [](HASH_64 key) { return MultHash::fibonacci64_hash(key); },
             HashReduction::modulo<HASH_64>);
-         std::cout << "fibonacci64_hash (min: " << min << ", max: " << max << ", std_dev: " << std_dev << ")"
-                   << std::endl;
+         outfile << "fibo64," << min << "," << max << "," << std_dev << "," << it.first << std::endl;
       }
+
    } catch (const std::exception& ex) {
       std::cerr << ex.what() << std::endl;
+      outfile.close();
       return -1;
    }
 
+   outfile.close();
    return 0;
 }
