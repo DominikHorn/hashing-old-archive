@@ -29,7 +29,7 @@ struct MurmurHash3 {
     * @param value the value to finalize
     * @return 32 bit hash
     */
-   static constexpr HASH_32 forceinline finalize_32(HASH_32 value) {
+   static constexpr forceinline HASH_32 finalize_32(HASH_32 value) {
       value ^= value >> 16;
       value *= 0x85ebca6blu;
       value ^= value >> 13;
@@ -51,7 +51,7 @@ struct MurmurHash3 {
     * @param value the value to finalize
     * @return 64 bit hash
     */
-   static constexpr HASH_64 forceinline finalize_64(HASH_64 value) {
+   static constexpr forceinline HASH_64 finalize_64(HASH_64 value) {
       value ^= value >> 33;
       value *= 0xff51afd7ed558ccdllu;
       value ^= value >> 33;
@@ -70,7 +70,7 @@ struct MurmurHash3 {
     * @param seed murmur seed, defaults to 0x238EF8E3 (random 32-bit prime)
     * @return
     */
-   static constexpr HASH_32 murmur3_32(const HASH_32 value, const HASH_32 seed = 0x238EF8E3lu) {
+   static constexpr forceinline HASH_32 murmur3_32(const HASH_32 value, const HASH_32 seed = 0x238EF8E3lu) {
       const auto len = sizeof(HASH_32);
       // nblocks = len / 4 = sizeof(value) / 4  = 4 / 4 = 1
 
@@ -115,7 +115,8 @@ struct MurmurHash3 {
     * @param seed murmur seed, defaults to 0xC7455FEC83DD661F (random 64-bit prime)
     * @return
     */
-   static constexpr HASH_128 murmur3_128(const HASH_64 value, const HASH_64 seed = (HASH_64) 0xC7455FEC83DD661Fllu) {
+   static constexpr forceinline HASH_128 murmur3_128(const HASH_64 value,
+                                                     const HASH_64 seed = (HASH_64) 0xC7455FEC83DD661Fllu) {
       // nblocks = len / 16 = sizeof(value) / 16  = 8 / 16 = 0 (int division)
 
       uint64_t h1 = seed;
@@ -172,12 +173,12 @@ struct MurmurHash3 {
 
   private:
    /// https://github.com/aappleby/smhasher/blob/master/src/MurmurHash3.cpp (commit: 61a0530)
-   static constexpr uint32_t forceinline rotl32(uint32_t x, int8_t r) {
+   static constexpr forceinline uint32_t rotl32(uint32_t x, int8_t r) {
       return (x << r) | (x >> (32 - r));
    }
 
    /// https://github.com/aappleby/smhasher/blob/master/src/MurmurHash3.cpp (commit: 61a0530)
-   static constexpr uint64_t forceinline rotl64(uint64_t x, int8_t r) {
+   static constexpr forceinline uint64_t rotl64(uint64_t x, int8_t r) {
       return (x << r) | (x >> (64 - r));
    }
 };
