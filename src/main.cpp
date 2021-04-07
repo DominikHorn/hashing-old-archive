@@ -12,6 +12,10 @@
 // TODO: aquahash (-> fast)
 
 int main(const int argc, const char* argv[]) {
+   //    Prepare a tabulation hash table
+   HASH_64 table[sizeof(HASH_64)][0xFF] = {0};
+   TabulationHash::gen_table(table);
+
    try {
       auto args = Args::parse(argc, argv);
 
@@ -49,6 +53,9 @@ int main(const int argc, const char* argv[]) {
                    << std::endl;
          std::cout << val << " |--murmur128_xor-> " << HashReduction::xor_both(MurmurHash3::murmur3_128(val))
                    << std::endl;
+
+         std::cout << std::endl;
+         std::cout << val << " |-naive_tab------> " << TabulationHash::naive_hash(i, table) << std::endl;
       }
    } catch (const std::exception& ex) {
       std::cerr << ex.what() << std::endl;

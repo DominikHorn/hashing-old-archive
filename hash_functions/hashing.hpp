@@ -10,5 +10,6 @@
 #include "multadd.hpp"
 #include "murmur.hpp"
 #include "reduction.hpp"
+#include "tabulation.hpp"
 #include "types.hpp"
 #include "xxh.hpp"
