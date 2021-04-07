@@ -46,15 +46,13 @@ struct XXHash {
       return XXH3_64bits_withSeed(value, sizeof(T), seed);
    }
 
-   // TODO: do we need 128 bit hashing?
+   template<typename T>
+   static HASH_128 forceinline XXH3_128_hash(T value) {
+      return XXH3_128bits(&value, sizeof(T));
+   }
 
-   //   template<typename T>
-   //   static HASH_128 forceinline XXH3_128_hash(T value) {
-   //      return XXH3_128bits(&value, sizeof(T));
-   //   }
-   //
-   //   template<typename T>
-   //   static HASH_128 forceinline XXH3_128_hash_withSeed(T value, HASH_64 seed) {
-   //      return XXH3_128bits_withSeed(&value, sizeof(T), seed);
-   //   }
+   template<typename T>
+   static HASH_128 forceinline XXH3_128_hash_withSeed(T value, HASH_64 seed) {
+      return XXH3_128bits_withSeed(&value, sizeof(T), seed);
+   }
 };
