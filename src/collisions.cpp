@@ -23,23 +23,18 @@ int main(const int argc, const char* argv[]) {
             continue;
 
          const auto dataset = it.second.load(args.datapath);
+         const auto measure = [args, dataset](auto hashfn) {
+            return Benchmark::measure_collisions(args, dataset, hashfn, HashReduction::modulo<HASH_64>);
+         };
 
          uint32_t min = 0;
          uint32_t max = 0;
          double std_dev = 0;
 
-         std::tie(min, max, std_dev) = Benchmark::measure_collisions(
-            args,
-            dataset,
-            [](HASH_64 key) { return MultHash::mult64_hash(key); },
-            HashReduction::modulo<HASH_64>);
+         std::tie(min, max, std_dev) = measure([](HASH_64 key) { return MultHash::mult64_hash(key); });
          outfile << "mult64," << min << "," << max << "," << std_dev << "," << it.first << std::endl;
 
-         std::tie(min, max, std_dev) = Benchmark::measure_collisions(
-            args,
-            dataset,
-            [](HASH_64 key) { return MultHash::fibonacci64_hash(key); },
-            HashReduction::modulo<HASH_64>);
+         std::tie(min, max, std_dev) = measure([](HASH_64 key) { return MultHash::fibonacci64_hash(key); });
          outfile << "fibo64," << min << "," << max << "," << std_dev << "," << it.first << std::endl;
       }
 
