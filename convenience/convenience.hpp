@@ -20,6 +20,7 @@
       #define unlikely(expr)
    #endif
 
+   #define neverinline __attribute__((noinline))
    #define packed __attribute__((packed))
    #define prefetch(address, mode, locality) __builtin_prefetch(address, mode, locality)
 #else
