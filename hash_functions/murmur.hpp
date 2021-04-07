@@ -70,7 +70,7 @@ struct MurmurHash3 {
     * @param seed murmur seed, defaults to 0x238EF8E3 (random 32-bit prime)
     * @return
     */
-   static constexpr HASH_32 murmur3_32(const HASH_32& value, const HASH_32& seed = 0x238EF8E3lu) {
+   static constexpr HASH_32 murmur3_32(const HASH_32 value, const HASH_32 seed = 0x238EF8E3lu) {
       const auto len = sizeof(HASH_32);
       // nblocks = len / 4 = sizeof(value) / 4  = 4 / 4 = 1
 
@@ -115,7 +115,7 @@ struct MurmurHash3 {
     * @param seed murmur seed, defaults to 0xC7455FEC83DD661F (random 64-bit prime)
     * @return
     */
-   static constexpr HASH_128 murmur3_128(const HASH_64& value, const HASH_64& seed = (HASH_64) 0xC7455FEC83DD661Fllu) {
+   static constexpr HASH_128 murmur3_128(const HASH_64 value, const HASH_64 seed = (HASH_64) 0xC7455FEC83DD661Fllu) {
       // nblocks = len / 16 = sizeof(value) / 16  = 8 / 16 = 0 (int division)
 
       uint64_t h1 = seed;
