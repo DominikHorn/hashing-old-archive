@@ -16,7 +16,7 @@ namespace Benchmark {
     * @tparam Reducer
     */
    template<typename HashFunction, typename Reducer>
-   std::tuple<uint64_t, uint64_t, double, uint64_t>
+   std::tuple<uint64_t, uint64_t, double, uint64_t, uint64_t, uint64_t> // TODO: return struct instead of tuple
    measure_collisions(const Args& args, const std::vector<uint64_t> dataset, const HashFunction hashfn,
                       const Reducer reduce) {
       // Emulate hashtable with buckets (we only care about amount of elements per bucket)
@@ -37,6 +37,8 @@ namespace Benchmark {
       // Min has to start at max value for its type
       uint64_t min = 0xFFFFFFFFFFFFFFFF;
       uint64_t max = 0;
+      uint64_t empty_buckets = 0;
+      uint64_t colliding_buckets = 0;
       uint64_t total_collisions = 0;
       double std_dev_square = 0.0;
       const double average = 1.0 / args.over_alloc;
@@ -44,11 +46,13 @@ namespace Benchmark {
       for (const auto bucket_cnt : collision_counter) {
          min = std::min((uint64_t) bucket_cnt, min);
          max = std::max((uint64_t) bucket_cnt, max);
-         total_collisions += bucket_cnt > 1 ? 1 : 0; // TODO: think about how to make this branchless (for fun)
+         empty_buckets += bucket_cnt == 0 ? 1 : 0;
+         colliding_buckets += bucket_cnt > 1 ? 1 : 0; // TODO: think about how to make this branchless (for fun)
+         total_collisions += bucket_cnt > bucket_cnt ? 1 : 0;
          std_dev_square += (bucket_cnt - average) * (bucket_cnt - average);
       }
       double std_dev = std::sqrt(std_dev_square / (double) dataset.size());
 
-      return {min, max, std_dev, total_collisions};
+      return {min, max, std_dev, empty_buckets, colliding_buckets, total_collisions};
    }
 } // namespace Benchmark

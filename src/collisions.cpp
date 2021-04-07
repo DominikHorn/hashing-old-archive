@@ -17,7 +17,7 @@ int main(const int argc, const char* argv[]) {
       // TODO: log over_allocation in result csv
       auto args = Args::parse(argc, argv);
       outfile.open(args.outfile);
-      outfile << "hash,min,max,std_dev,total_collisions,dataset" << std::endl;
+      outfile << "hash,min,max,std_dev,empty_buckets,colliding_buckets,total_collisions,dataset" << std::endl;
 
       // Prepare a tabulation hash table
       HASH_64 tabulation_table[sizeof(HASH_64)][0xFF] = {0};
@@ -30,14 +30,16 @@ int main(const int argc, const char* argv[]) {
          const auto measure = [&](std::string method, auto hashfn) {
             uint64_t min = 0;
             uint64_t max = 0;
+            uint64_t empty_buckets = 0;
+            uint64_t colliding_buckets = 0;
             uint64_t total_collisions = 0;
             double std_dev = 0;
 
-            std::tie(min, max, std_dev, total_collisions) =
+            std::tie(min, max, std_dev, empty_buckets, colliding_buckets, total_collisions) =
                Benchmark::measure_collisions(args, dataset, hashfn, HashReduction::modulo<HASH_64>);
 
-            outfile << method << "," << min << "," << max << "," << std_dev << "," << total_collisions << ","
-                    << it.first << std::endl;
+            outfile << method << "," << min << "," << max << "," << std_dev << "," << empty_buckets << ","
+                    << colliding_buckets << "," << total_collisions << "," << it.first << std::endl;
          };
 
          // More significant bits supposedly are of higher quality for multiplicative methods -> compute
