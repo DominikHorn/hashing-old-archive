@@ -51,12 +51,21 @@ int main(const int argc, const char* argv[]) {
    try {
       auto args = Args::parse(argc, argv);
 
-      auto [min, max, sum] = Benchmark::measure_collisions(
+      uint32_t min = 0;
+      uint32_t max = 0;
+      std::vector<uint32_t> stats = {};
+
+      std::tie(min, max, stats) = Benchmark::measure_collisions(
          args,
          [](HASH_64 key) { return MultHash::mult64_hash(key); },
          HashReduction::modulo<HASH_64>);
-      std::cout << "mult64_hash (min, max, sum) : (" << min << ", " << max << ", " << sum << ") " << std::endl;
+      std::cout << "mult64_hash (min: " << min << ", max: " << max << ")" << std::endl;
 
+      std::tie(min, max, stats) = Benchmark::measure_collisions(
+         args,
+         [](HASH_64 key) { return MultHash::fibonacci64_hash(key); },
+         HashReduction::modulo<HASH_64>);
+      std::cout << "fibonacci64_hash (min: " << min << ", max: " << max << ")" << std::endl;
    } catch (const std::exception& ex) {
       std::cerr << ex.what() << std::endl;
       return -1;
