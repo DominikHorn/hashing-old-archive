@@ -11,6 +11,8 @@ int main(const int argc, const char* argv[]) {
    try {
       auto args = Args::parse(argc, argv);
 
+      // TODO: write to csv file instead of std::cout
+
       for (auto const& it : DATASETS) {
          std::cout << "benchmarking " << it.first << std::endl;
 
