@@ -23,10 +23,7 @@ int main(const int argc, const char* argv[]) {
       TabulationHash::gen_table(tabulation_table);
 
       for (auto const& it : DATASETS) {
-         // TODO: tmp (for debugging, remove for actually benchmarking)
          std::cout << "benchmarking " << it.first << std::endl;
-         if (/*it.first != "wiki" &&*/ it.first != "debug")
-            continue;
 
          const auto dataset = it.second.load(args.datapath);
          const auto measure = [&](std::string method, auto hashfn) {
