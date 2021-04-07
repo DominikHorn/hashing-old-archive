@@ -18,6 +18,10 @@ int main(const int argc, const char* argv[]) {
       outfile.open(args.outfile);
       outfile << "hash,min,max,std_dev,total_collisions,dataset" << std::endl;
 
+      // Prepare a tabulation hash table
+      HASH_64 tabulation_table[sizeof(HASH_64)][0xFF] = {0};
+      TabulationHash::gen_table(tabulation_table);
+
       for (auto const& it : DATASETS) {
          // TODO: tmp (for debugging, remove for actually benchmarking)
          std::cout << "benchmarking " << it.first << std::endl;
@@ -62,6 +66,7 @@ int main(const int argc, const char* argv[]) {
          measure("xxh3_128_low", [](HASH_64 key) { return HashReduction::lower_half(XXHash::XXH3_128_hash(key)); });
          measure("xxh3_128_upp", [](HASH_64 key) { return HashReduction::upper_half(XXHash::XXH3_128_hash(key)); });
          measure("xxh3_128_xor", [](HASH_64 key) { return HashReduction::xor_both(XXHash::XXH3_128_hash(key)); });
+         measure("tabulation64", [&](HASH_64 key) { return TabulationHash::naive_hash(key, tabulation_table); });
       }
 
    } catch (const std::exception& ex) {
