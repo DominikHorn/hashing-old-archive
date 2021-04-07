@@ -57,6 +57,11 @@ int main(const int argc, const char* argv[]) {
                  [](HASH_64 key) { return HashReduction::upper_half(MurmurHash3::murmur3_128(key)); });
          measure("murmur3_128_xor", [](HASH_64 key) { return HashReduction::xor_both(MurmurHash3::murmur3_128(key)); });
          measure("murmur3_fin64", [](HASH_64 key) { return MurmurHash3::finalize_64(key); });
+         measure("xxh64", [](HASH_64 key) { return XXHash::XXH64_hash(key); });
+         measure("xxh3", [](HASH_64 key) { return XXHash::XXH3_hash(key); });
+         measure("xxh3_128_low", [](HASH_64 key) { return HashReduction::lower_half(XXHash::XXH3_128_hash(key)); });
+         measure("xxh3_128_upp", [](HASH_64 key) { return HashReduction::upper_half(XXHash::XXH3_128_hash(key)); });
+         measure("xxh3_128_xor", [](HASH_64 key) { return HashReduction::xor_both(XXHash::XXH3_128_hash(key)); });
       }
 
    } catch (const std::exception& ex) {
