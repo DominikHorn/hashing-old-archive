@@ -5,12 +5,6 @@
 #include "args.hpp"
 #include "hashing.hpp"
 
-// TODO: cityhash (-> widely used baseline)
-// TODO: farmhash (-> fast(er) than cityhash)
-// TODO: tabulation hashing (-> robustness benchmarks)
-// TODO: spookyhash (-> not well known murmur competitor)
-// TODO: aquahash (-> fast)
-
 int main(const int argc, const char* argv[]) {
    //    Prepare a tabulation hash table
    HASH_64 table[sizeof(HASH_64)][0xFF] = {0};
