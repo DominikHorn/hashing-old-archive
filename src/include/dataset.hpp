@@ -103,9 +103,11 @@ std::map<std::string, Dataset> DATASETS = {
    {"fb", {.filename = "fb_200M_uint64", .bytesPerValue = BytesPerValue::_64bit}},
    {"books64", {.filename = "books_200M_uint64", .bytesPerValue = BytesPerValue::_64bit}},
    {"books32", {.filename = "books_200M_uint32", .bytesPerValue = BytesPerValue::_32bit}},
-   {"dense32", {.filename = "dense_32", .bytesPerValue = BytesPerValue::_32bit}},
-   {"dense64", {.filename = "dense_64", .bytesPerValue = BytesPerValue::_64bit}},
-   {"gapped5", {.filename = "gapped5_64", .bytesPerValue = BytesPerValue::_64bit}},
-   {"debug", {.filename = "debug_64", .bytesPerValue = BytesPerValue::_64bit}}
+
+   // TODO: Enable synthetic datasets once they're available
+   //   {"dense32", {.filename = "dense_32", .bytesPerValue = BytesPerValue::_32bit}},
+   //   {"dense64", {.filename = "dense_64", .bytesPerValue = BytesPerValue::_64bit}},
+   //   {"gapped5", {.filename = "gapped5_64", .bytesPerValue = BytesPerValue::_64bit}},
+   //   {"debug", {.filename = "debug_64", .bytesPerValue = BytesPerValue::_64bit}}
    //
 };
