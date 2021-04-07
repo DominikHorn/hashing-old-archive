@@ -17,9 +17,8 @@ namespace Benchmark {
     * @tparam Counter
     */
    template<typename HashFunction, typename Reducer, typename Counter = uint32_t>
-   neverinline std::tuple<Counter, Counter, double> measure_collisions(const Args& args,
-                                                                       const std::vector<uint64_t> dataset,
-                                                                       const HashFunction hash, const Reducer reduce) {
+   std::tuple<Counter, Counter, double> measure_collisions(const Args& args, const std::vector<uint64_t> dataset,
+                                                           const HashFunction hash, const Reducer reduce) {
       // Emulate hashtable with buckets (we only care about amount of elements per bucket)
       const auto n = (uint64_t) std::ceil(dataset.size() * args.over_alloc);
       std::vector<Counter> collision_counter(n, 0);
