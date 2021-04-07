@@ -3,7 +3,7 @@
 /**
  * This file simply reexports other file's definitions, i.e.,
  * is meant as the single import source for all relevant
- *classical hash functions
+ * classical hash functions
  */
 
 #include "mult.hpp"
