@@ -15,6 +15,7 @@ int main(const int argc, const char* argv[]) {
       // TODO: test over-alloc
       // TODO: (?) automatically iterate over over_allocation parameter
       // TODO: log over_allocation in result csv
+      // TODO: log used reduction algorithm into results csv
       auto args = Args::parse(argc, argv);
       outfile.open(args.outfile);
       outfile << "hash"
@@ -38,7 +39,9 @@ int main(const int argc, const char* argv[]) {
 
          const auto measure = [&](std::string method, auto hashfn) {
             std::cout << "measuring " << method << " ...";
-            auto stats = Benchmark::measure_collisions(args, dataset, hashfn, HashReduction::modulo<HASH_64>);
+            // TODO: implement better (faster!) reduction algorithm -> magic constant modulo
+            // auto stats = Benchmark::measure_collisions(args, dataset, hashfn, HashReduction::modulo<HASH_64>);
+            auto stats = Benchmark::measure_collisions(args, dataset, hashfn, HashReduction::mult_shift<HASH_64>);
             std::cout << " took " << (stats.inference_nanoseconds / dataset.size()) << "ns per key" << std::endl;
 
             outfile << method << "," << stats.min << "," << stats.max << "," << stats.std_dev << ","
