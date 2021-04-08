@@ -17,7 +17,7 @@ namespace Benchmark {
     */
    template<typename HashFunction, typename Reducer>
    std::tuple<uint64_t, uint64_t, double, uint64_t, uint64_t, uint64_t> // TODO: return struct instead of tuple
-   measure_collisions(const Args& args, const std::vector<uint64_t> dataset, const HashFunction hashfn,
+   measure_collisions(const Args& args, const std::vector<uint64_t>& dataset, const HashFunction hashfn,
                       const Reducer reduce) {
       // Emulate hashtable with buckets (we only care about amount of elements per bucket)
       const auto n = (uint64_t) std::ceil(dataset.size() * args.over_alloc);
