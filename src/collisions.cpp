@@ -28,18 +28,11 @@ int main(const int argc, const char* argv[]) {
 
          const auto dataset = it.second.load(args.datapath);
          const auto measure = [&](std::string method, auto hashfn) {
-            uint64_t min = 0;
-            uint64_t max = 0;
-            uint64_t empty_buckets = 0;
-            uint64_t colliding_buckets = 0;
-            uint64_t total_collisions = 0;
-            double std_dev = 0;
+            auto stats = Benchmark::measure_collisions(args, dataset, hashfn, HashReduction::modulo<HASH_64>);
 
-            std::tie(min, max, std_dev, empty_buckets, colliding_buckets, total_collisions) =
-               Benchmark::measure_collisions(args, dataset, hashfn, HashReduction::modulo<HASH_64>);
-
-            outfile << method << "," << min << "," << max << "," << std_dev << "," << empty_buckets << ","
-                    << colliding_buckets << "," << total_collisions << "," << it.first << std::endl;
+            outfile << method << "," << stats.min << "," << stats.max << "," << stats.std_dev << ","
+                    << stats.empty_buckets << "," << stats.colliding_buckets << "," << stats.total_collisions << ","
+                    << it.first << std::endl;
          };
 
          // More significant bits supposedly are of higher quality for multiplicative methods -> compute
