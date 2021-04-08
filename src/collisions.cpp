@@ -17,7 +17,16 @@ int main(const int argc, const char* argv[]) {
       // TODO: log over_allocation in result csv
       auto args = Args::parse(argc, argv);
       outfile.open(args.outfile);
-      outfile << "hash,min,max,std_dev,empty_buckets,colliding_buckets,total_collisions,dataset" << std::endl;
+      outfile << "hash"
+              << ",min"
+              << ",max"
+              << ",std_dev"
+              << ",empty_buckets"
+              << ",colliding_buckets"
+              << ",total_collisions"
+              << ",nanoseconds_total"
+              << ",nanoseconds_per_key"
+              << ",dataset" << std::endl;
 
       // Prepare a tabulation hash table
       HASH_64 tabulation_table[sizeof(HASH_64)][0xFF] = {0};
@@ -34,7 +43,8 @@ int main(const int argc, const char* argv[]) {
 
             outfile << method << "," << stats.min << "," << stats.max << "," << stats.std_dev << ","
                     << stats.empty_buckets << "," << stats.colliding_buckets << "," << stats.total_collisions << ","
-                    << it.first << std::endl;
+                    << stats.inference_nanoseconds << "," << (stats.inference_nanoseconds / (double) dataset.size())
+                    << "," << it.first << std::endl;
          };
 
          // More significant bits supposedly are of higher quality for multiplicative methods -> compute
