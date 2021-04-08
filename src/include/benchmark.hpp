@@ -3,6 +3,9 @@
 #include <cmath>
 #include <vector>
 
+// TODO: use proper benchmarking
+#include <chrono>
+
 #include "../convenience/convenience.hpp"
 #include "args.hpp"
 
@@ -17,9 +20,11 @@ namespace Benchmark {
       Counter total_collisions;
       PreciseMath std_dev;
 
-      CollisionStats()
-         : min(0xFFFFFFFFFFFFFFFFllu), max(0), empty_buckets(0), colliding_buckets(0), total_collisions(0), std_dev(0) {
-      }
+      double inference_nanoseconds;
+
+      CollisionStats(double inference_nanoseconds)
+         : min(0xFFFFFFFFFFFFFFFFllu), max(0), empty_buckets(0), colliding_buckets(0), total_collisions(0), std_dev(0),
+           inference_nanoseconds(inference_nanoseconds) {}
    };
 
    /**
@@ -37,6 +42,7 @@ namespace Benchmark {
       const auto n = (uint64_t) std::ceil(dataset.size() * args.over_alloc);
       std::vector<uint32_t> collision_counter(n, 0);
 
+      auto start_time = std::chrono::high_resolution_clock::now();
       // Hash each value and record entries per bucket
       for (const auto key : dataset) {
          const auto hash = hashfn(key);
@@ -47,9 +53,12 @@ namespace Benchmark {
          // therefore this check is redundant
          //         assert(collision_counter[index] != 0);
       }
+      auto end_time = std::chrono::high_resolution_clock::now();
+      double inference_nanoseconds =
+         std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
 
       // Min has to start at max value for its type
-      CollisionStats<uint64_t, double> stats{};
+      CollisionStats<uint64_t, double> stats(inference_nanoseconds);
       double std_dev_square_sum = 0.0;
       const double average = 1.0 / args.over_alloc;
 

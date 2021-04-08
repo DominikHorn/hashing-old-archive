@@ -24,11 +24,13 @@ int main(const int argc, const char* argv[]) {
       TabulationHash::gen_table(tabulation_table);
 
       for (auto const& it : DATASETS) {
-         std::cout << "benchmarking " << it.first << std::endl;
-
+         std::cout << "dataset " << it.first << std::endl;
          const auto dataset = it.second.load(args.datapath);
+
          const auto measure = [&](std::string method, auto hashfn) {
+            std::cout << "measuring " << method << " ...";
             auto stats = Benchmark::measure_collisions(args, dataset, hashfn, HashReduction::modulo<HASH_64>);
+            std::cout << " took " << (stats.inference_nanoseconds / dataset.size()) << "ns per key" << std::endl;
 
             outfile << method << "," << stats.min << "," << stats.max << "," << stats.std_dev << ","
                     << stats.empty_buckets << "," << stats.colliding_buckets << "," << stats.total_collisions << ","
