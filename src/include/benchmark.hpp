@@ -48,7 +48,7 @@ namespace Benchmark {
          max = std::max((uint64_t) bucket_cnt, max);
          empty_buckets += bucket_cnt == 0 ? 1 : 0;
          colliding_buckets += bucket_cnt > 1 ? 1 : 0; // TODO: think about how to make this branchless (for fun)
-         total_collisions += bucket_cnt > bucket_cnt ? 1 : 0;
+         total_collisions += bucket_cnt > 1 ? bucket_cnt : 0;
          std_dev_square += (bucket_cnt - average) * (bucket_cnt - average);
       }
       double std_dev = std::sqrt(std_dev_square / (double) dataset.size());
