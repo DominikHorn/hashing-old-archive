@@ -24,7 +24,6 @@ struct MurmurHash3 {
     * analysis of hashing methods and its implications on query processing."
     * (PVLDB 9.3 (2015): 96-107.) only use the finalizer, meaning they skip
     * some computations, which might be important for hash quality. Therefore:
-    * TODO: investigate impact on quality when using this shortcut
     *
     * @param value the value to finalize
     * @return 32 bit hash
@@ -46,7 +45,6 @@ struct MurmurHash3 {
     * analysis of hashing methods and its implications on query processing."
     * (PVLDB 9.3 (2015): 96-107.) only use the finalizer, meaning they skip
     * some computations, which might be important for hash quality. Therefore:
-    * TODO: investigate impact on quality when using this shortcut
     *
     * @param value the value to finalize
     * @return 64 bit hash

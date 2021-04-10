@@ -1,13 +1,10 @@
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <cmath>
 #include <vector>
 
-// TODO: use proper benchmarking
-#include <chrono>
-
 #include "../convenience/convenience.hpp"
-#include "args.hpp"
 
 namespace Benchmark {
    // These are probably to large but these few additional bytes don't hurt
@@ -20,11 +17,11 @@ namespace Benchmark {
       Counter total_collisions;
       PreciseMath std_dev;
 
-      double inference_nanoseconds;
+      double inference_reduction_memaccess_total_time;
 
-      CollisionStats(double inference_nanoseconds)
+      CollisionStats(double inference_reduction_memaccess_total_time)
          : min(0xFFFFFFFFFFFFFFFFllu), max(0), empty_buckets(0), colliding_buckets(0), total_collisions(0), std_dev(0),
-           inference_nanoseconds(inference_nanoseconds) {}
+           inference_reduction_memaccess_total_time(inference_reduction_memaccess_total_time) {}
    };
 
    /**
@@ -36,10 +33,10 @@ namespace Benchmark {
     * @tparam Reducer
     */
    template<typename HashFunction, typename Reducer>
-   CollisionStats<uint64_t, double> measure_collisions(const Args& args, const std::vector<uint64_t>& dataset,
+   CollisionStats<uint64_t, double> measure_collisions(const std::vector<uint64_t>& dataset, const double& over_alloc,
                                                        const HashFunction& hashfn, const Reducer& reduce) {
       // Emulate hashtable with buckets (we only care about amount of elements per bucket)
-      const auto n = (uint64_t) std::ceil(dataset.size() * args.over_alloc);
+      const auto n = (uint64_t) std::ceil(dataset.size() * over_alloc);
       std::vector<uint32_t> collision_counter(n, 0);
 
       auto start_time = std::chrono::steady_clock::now();
@@ -54,13 +51,13 @@ namespace Benchmark {
          //         assert(collision_counter[index] != 0);
       }
       auto end_time = std::chrono::steady_clock::now();
-      double inference_nanoseconds =
+      double inference_reduction_memaccess_total_time =
          std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
 
       // Min has to start at max value for its type
-      CollisionStats<uint64_t, double> stats(inference_nanoseconds);
+      CollisionStats<uint64_t, double> stats(inference_reduction_memaccess_total_time);
       double std_dev_square_sum = 0.0;
-      const double average = 1.0 / args.over_alloc;
+      const double average = 1.0 / over_alloc;
 
       for (const auto bucket_cnt : collision_counter) {
          stats.min = std::min((uint64_t) bucket_cnt, stats.min);

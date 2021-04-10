@@ -10,26 +10,20 @@
 
 #include "convenience.hpp"
 
-enum BytesPerValue
-{
-   _32bit = 4,
-   _64bit = 8
-};
-
 struct Dataset {
   public:
    /// file name of the dataset
    std::string filename;
 
    /// Bytes per value, i.e., 4 for 32-bit integers, 8 for 64 bit integers
-   BytesPerValue bytesPerValue;
+   size_t bytesPerValue;
 
    /**
     * Loads the datasets values into memory
     * @return a sorted and deduplicated list of all members of the dataset
     */
    std::vector<uint64_t> load(const std::string& path) const {
-      const auto filepath = path + this->filename + ".ds";
+      const auto filepath = path + this->filename;
 
       // Read file into memory from disk. Directly map file for more performance
       std::ifstream input(filepath, std::ios::binary | std::ios::ate);
@@ -46,13 +40,13 @@ struct Dataset {
       // Parse file
       uint64_t num_elements = read_little_endian_8(buffer, 0);
       std::vector<uint64_t> dataset(num_elements, 0);
-      if (this->bytesPerValue == BytesPerValue::_64bit)
+      if (this->bytesPerValue == 8)
          for (uint64_t i = 0; i < num_elements; i++) {
             // 8 byte header, 8 bytes per entry
             uint64_t offset = i * 8 + 8;
             dataset[i] = read_little_endian_8(buffer, offset);
          }
-      else if (this->bytesPerValue == BytesPerValue::_32bit)
+      else if (this->bytesPerValue == 4)
          for (uint64_t i = 0; i < num_elements; i++) {
             // 8 byte header, 4 bytes per entry
             uint64_t offset = i * 4 + 8;
@@ -94,20 +88,4 @@ struct Dataset {
       return buffer[offset + 0] | (buffer[offset + 1] << 8) | (buffer[offset + 2] << (2 * 8)) |
          (buffer[offset + 3] << (3 * 8));
    }
-};
-
-std::map<std::string, Dataset> DATASETS = {
-   //
-   {"wiki", {.filename = "wiki_ts_200M_uint64", .bytesPerValue = BytesPerValue::_64bit}},
-   {"osm_cellids", {.filename = "osm_cellids_200M_uint64", .bytesPerValue = BytesPerValue::_64bit}},
-   {"fb", {.filename = "fb_200M_uint64", .bytesPerValue = BytesPerValue::_64bit}},
-   {"books64", {.filename = "books_200M_uint64", .bytesPerValue = BytesPerValue::_64bit}},
-   {"books32", {.filename = "books_200M_uint32", .bytesPerValue = BytesPerValue::_32bit}},
-
-   // TODO: Enable synthetic datasets once they're available
-   //   {"dense32", {.filename = "dense_32", .bytesPerValue = BytesPerValue::_32bit}},
-   //   {"dense64", {.filename = "dense_64", .bytesPerValue = BytesPerValue::_64bit}},
-   //   {"gapped5", {.filename = "gapped5_64", .bytesPerValue = BytesPerValue::_64bit}},
-   //   {"debug", {.filename = "debug_64", .bytesPerValue = BytesPerValue::_64bit}}
-   //
 };

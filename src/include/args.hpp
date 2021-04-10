@@ -6,33 +6,76 @@
 #include <string>
 #include <vector>
 
+#include "dataset.hpp"
+
 /**
  * Parsed command line args of the application
  */
 struct Args {
   public:
-   const double over_alloc;
-   const int bucket_size;
    const std::string datapath;
    const std::string outfile;
+   const std::vector<double> load_factors;
+   const std::vector<Dataset> datasets;
 
    /**
     * Parses the given set of command line args
     */
    static Args parse(const int argc, const char* argv[]) {
-      double over_alloc = 1.0;
-      int bucket_size = 1;
       std::string datapath;
       std::string outfile;
+      std::vector<double> load_factors{};
+      std::vector<Dataset> datasets{};
 
-      // Parse over_alloc parameter
-      if (const auto raw_over_alloc = option(argc, argv, "-over-alloc=")) {
-         over_alloc = std::stod(*raw_over_alloc);
+      // Parse load_factors parameter
+      if (const auto raw_load_factors = option(argc, argv, "-loadfactors=")) {
+         size_t end = 0;
+         std::string s = *raw_load_factors;
+         const std::string delimiter = ",";
+         while (s.length() > 0) {
+            end = s.find(delimiter);
+            size_t next_start = end + delimiter.length();
+            if (end == std::string::npos) {
+               end = s.length();
+               next_start = end;
+            };
+
+            load_factors.push_back(std::stod(s.substr(0, end)));
+
+            s = s.substr(next_start);
+         }
+      } else {
+         throw std::runtime_error("Please specify load factors to benchmark using \"-loadfactors=<COMMA SEPARATED "
+                                  "DOUBLES (PERCENT)>\"");
       }
 
-      // Parse bucket_size parameter
-      if (const auto raw_bucket_size = option(argc, argv, "-bucket-size=")) {
-         bucket_size = std::stoi(*raw_bucket_size);
+      // Parse datasets parameter
+      if (const auto raw_datasets = option(argc, argv, "-datasets=")) {
+         size_t end = 0;
+         std::string s = *raw_datasets;
+         const std::string delimiter = ",";
+         while (s.length() > 0) {
+            end = s.find(delimiter);
+            size_t next_start = end + delimiter.length();
+            if (end == std::string::npos) {
+               end = s.length();
+               next_start = end;
+            };
+
+            size_t colon_pos = s.find(":");
+            if (colon_pos == std::string::npos) {
+               throw std::runtime_error("Wrong datasets format. Datasets are comma separated entries of the form "
+                                        "<FILENAME:BYTES_PER_ENTRY>");
+            }
+            const auto filename = s.substr(0, colon_pos);
+            const size_t bytesPerValue = std::stoi(s.substr(colon_pos + 1, s.length()));
+            datasets.push_back({.filename = filename, .bytesPerValue = bytesPerValue});
+
+            s = s.substr(next_start);
+         }
+      } else {
+         throw std::runtime_error("Please specify datasets to benchmark using \"-datasets=<COMMA SEPARATED "
+                                  "FILENAME:BYTES_PER_ENTRY>\"");
       }
 
       // Parse datapath parameter
@@ -49,7 +92,7 @@ struct Args {
          throw std::runtime_error("Please specify the path the output csv file \"-outfile=<PATH_TO_DATA>\"");
       }
 
-      return Args(over_alloc, bucket_size, datapath, outfile);
+      return Args(datapath, outfile, load_factors, datasets);
    }
 
   private:

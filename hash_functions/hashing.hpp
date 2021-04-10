@@ -6,6 +6,7 @@
  * classical hash functions
  */
 
+#include "city.hpp"
 #include "mult.hpp"
 #include "multadd.hpp"
 #include "murmur.hpp"
