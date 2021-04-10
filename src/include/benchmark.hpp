@@ -43,7 +43,7 @@ namespace Benchmark {
       const auto n = (uint64_t) std::ceil(dataset.size() * args.over_alloc);
       std::vector<uint32_t> collision_counter(n, 0);
 
-      auto start_time = std::chrono::high_resolution_clock::now();
+      auto start_time = std::chrono::steady_clock::now();
       // Hash each value and record entries per bucket
       for (const auto key : dataset) {
          const auto hash = hashfn(key);
@@ -54,7 +54,7 @@ namespace Benchmark {
          // therefore this check is redundant
          //         assert(collision_counter[index] != 0);
       }
-      auto end_time = std::chrono::high_resolution_clock::now();
+      auto end_time = std::chrono::steady_clock::now();
       double inference_nanoseconds =
          std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
 
