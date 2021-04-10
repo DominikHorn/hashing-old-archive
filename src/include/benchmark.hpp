@@ -17,11 +17,11 @@ namespace Benchmark {
       Counter total_collisions;
       PreciseMath std_dev;
 
-      double inference_nanoseconds;
+      double inference_reduction_memaccess_total_time;
 
-      CollisionStats(double inference_nanoseconds)
+      CollisionStats(double inference_reduction_memaccess_total_time)
          : min(0xFFFFFFFFFFFFFFFFllu), max(0), empty_buckets(0), colliding_buckets(0), total_collisions(0), std_dev(0),
-           inference_nanoseconds(inference_nanoseconds) {}
+           inference_reduction_memaccess_total_time(inference_reduction_memaccess_total_time) {}
    };
 
    /**
@@ -51,11 +51,11 @@ namespace Benchmark {
          //         assert(collision_counter[index] != 0);
       }
       auto end_time = std::chrono::steady_clock::now();
-      double inference_nanoseconds =
+      double inference_reduction_memaccess_total_time =
          std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
 
       // Min has to start at max value for its type
-      CollisionStats<uint64_t, double> stats(inference_nanoseconds);
+      CollisionStats<uint64_t, double> stats(inference_reduction_memaccess_total_time);
       double std_dev_square_sum = 0.0;
       const double average = 1.0 / over_alloc;
 

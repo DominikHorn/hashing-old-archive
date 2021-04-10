@@ -43,21 +43,25 @@ int main(const int argc, const char* argv[]) {
 
                std::cout << "measuring modulo(" << method << ") ...";
                auto stats = Benchmark::measure_collisions(dataset, over_alloc, hashfn, HashReduction::modulo<HASH_64>);
-               std::cout << " took " << (stats.inference_nanoseconds / dataset.size()) << "ns per key" << std::endl;
+               std::cout << " took " << (stats.inference_reduction_memaccess_total_time / dataset.size())
+                         << "ns per key" << std::endl;
                outfile << method << "," << stats.min << "," << stats.max << "," << stats.std_dev << ","
                        << stats.empty_buckets << "," << stats.colliding_buckets << "," << stats.total_collisions << ","
-                       << stats.inference_nanoseconds << "," << (stats.inference_nanoseconds / (double) dataset.size())
-                       << "," << load_factor << ","
+                       << stats.inference_reduction_memaccess_total_time << ","
+                       << (stats.inference_reduction_memaccess_total_time / (double) dataset.size()) << ","
+                       << load_factor << ","
                        << "modulo"
                        << "," << it.filename << std::endl;
 
                std::cout << "measuring fastrange(" << method << ") ...";
                stats = Benchmark::measure_collisions(dataset, over_alloc, hashfn, HashReduction::mult_shift<HASH_64>);
-               std::cout << " took " << (stats.inference_nanoseconds / dataset.size()) << "ns per key" << std::endl;
+               std::cout << " took " << (stats.inference_reduction_memaccess_total_time / dataset.size())
+                         << "ns per key" << std::endl;
                outfile << method << "," << stats.min << "," << stats.max << "," << stats.std_dev << ","
                        << stats.empty_buckets << "," << stats.colliding_buckets << "," << stats.total_collisions << ","
-                       << stats.inference_nanoseconds << "," << (stats.inference_nanoseconds / (double) dataset.size())
-                       << "," << load_factor << ","
+                       << stats.inference_reduction_memaccess_total_time << ","
+                       << (stats.inference_reduction_memaccess_total_time / (double) dataset.size()) << ","
+                       << load_factor << ","
                        << "fastrange"
                        << "," << it.filename << std::endl;
             };
