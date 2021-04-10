@@ -36,6 +36,7 @@ namespace Benchmark {
     * @tparam Reducer
     */
    template<typename HashFunction, typename Reducer>
+   // TODO: pass hashfn & reducer by reference? -> verify inlining etc works properly!
    CollisionStats<uint64_t, double> measure_collisions(const Args& args, const std::vector<uint64_t>& dataset,
                                                        const HashFunction hashfn, const Reducer reduce) {
       // Emulate hashtable with buckets (we only care about amount of elements per bucket)
