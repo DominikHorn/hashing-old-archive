@@ -81,6 +81,42 @@ struct HashReduction {
    static constexpr forceinline HASH_64 xor_both(const HASH_128 value) {
       return value.higher ^ value.lower;
    }
+
+   /**
+    * Hash 128 input bits down to 64 bits of output, intended to be a
+    * reasonably good hash function.
+    *
+    * This code was taken from CityHash:
+    * Copyright (c) 2011 Google, Inc.
+    *
+    * Permission is hereby granted, free of charge, to any person obtaining a copy
+    * of this software and associated documentation files (the "Software"), to deal
+    * in the Software without restriction, including without limitation the rights
+    * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    * copies of the Software, and to permit persons to whom the Software is
+    * furnished to do so, subject to the following conditions:
+    *
+    * The above copyright notice and this permission notice shall be included in
+    * all copies or substantial portions of the Software.
+    *
+    * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    * THE SOFTWARE.
+    */
+   static constexpr forceinline HASH_64 hash_128_to_64(const HASH_128& x) {
+      // Murmur-inspired hashing.
+      const HASH_64 kMul = 0x9ddfea08eb382d69ULL;
+      HASH_64 a = (x.lower ^ x.higher) * kMul;
+      a ^= (a >> 47);
+      HASH_64 b = (x.higher ^ a) * kMul;
+      b ^= (b >> 47);
+      b *= kMul;
+      return b;
+   }
 };
 
 template<>

@@ -24,6 +24,7 @@ int main(const int argc, const char* argv[]) {
               << ",nanoseconds_total"
               << ",nanoseconds_per_key"
               << ",load_factor"
+              << ",reducer"
               << ",dataset" << std::endl;
 
       // Prepare a tabulation hash table
@@ -38,18 +39,27 @@ int main(const int argc, const char* argv[]) {
             const auto over_alloc = 1.0 / load_factor;
 
             const auto measure = [&](std::string method, auto hashfn) {
-               std::cout << "measuring " << method << " ...";
-               // TODO: iterate over reduction algorithms and log into result csv
                // TODO: implement better (faster!) reduction algorithm -> magic constant modulo
-               // auto stats = Benchmark::measure_collisions(args, dataset, hashfn, HashReduction::modulo<HASH_64>);
-               auto stats =
-                  Benchmark::measure_collisions(dataset, over_alloc, hashfn, HashReduction::mult_shift<HASH_64>);
-               std::cout << " took " << (stats.inference_nanoseconds / dataset.size()) << "ns per key" << std::endl;
 
+               std::cout << "measuring modulo(" << method << ") ...";
+               auto stats = Benchmark::measure_collisions(dataset, over_alloc, hashfn, HashReduction::modulo<HASH_64>);
+               std::cout << " took " << (stats.inference_nanoseconds / dataset.size()) << "ns per key" << std::endl;
                outfile << method << "," << stats.min << "," << stats.max << "," << stats.std_dev << ","
                        << stats.empty_buckets << "," << stats.colliding_buckets << "," << stats.total_collisions << ","
                        << stats.inference_nanoseconds << "," << (stats.inference_nanoseconds / (double) dataset.size())
-                       << "," << load_factor << "," << it.filename << std::endl;
+                       << "," << load_factor << ","
+                       << "modulo"
+                       << "," << it.filename << std::endl;
+
+               std::cout << "measuring fastrange(" << method << ") ...";
+               stats = Benchmark::measure_collisions(dataset, over_alloc, hashfn, HashReduction::mult_shift<HASH_64>);
+               std::cout << " took " << (stats.inference_nanoseconds / dataset.size()) << "ns per key" << std::endl;
+               outfile << method << "," << stats.min << "," << stats.max << "," << stats.std_dev << ","
+                       << stats.empty_buckets << "," << stats.colliding_buckets << "," << stats.total_collisions << ","
+                       << stats.inference_nanoseconds << "," << (stats.inference_nanoseconds / (double) dataset.size())
+                       << "," << load_factor << ","
+                       << "fastrange"
+                       << "," << it.filename << std::endl;
             };
 
             // More significant bits supposedly are of higher quality for multiplicative methods -> compute
