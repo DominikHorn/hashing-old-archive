@@ -3,10 +3,30 @@
 #include <cmath>
 #include <vector>
 
+// TODO: use proper benchmarking
+#include <chrono>
+
 #include "../convenience/convenience.hpp"
 #include "args.hpp"
 
 namespace Benchmark {
+   // These are probably to large but these few additional bytes don't hurt
+   template<typename Counter, typename PreciseMath>
+   struct CollisionStats {
+      Counter min;
+      Counter max;
+      Counter empty_buckets;
+      Counter colliding_buckets;
+      Counter total_collisions;
+      PreciseMath std_dev;
+
+      double inference_nanoseconds;
+
+      CollisionStats(double inference_nanoseconds)
+         : min(0xFFFFFFFFFFFFFFFFllu), max(0), empty_buckets(0), colliding_buckets(0), total_collisions(0), std_dev(0),
+           inference_nanoseconds(inference_nanoseconds) {}
+   };
+
    /**
     * Returns min, max and sum of elements hashed into a dataset.size() * over_alloc sized hashtable
     * using HashFunction to obtain a hash value and Reducer to reduce the hash value to an index into
@@ -16,13 +36,13 @@ namespace Benchmark {
     * @tparam Reducer
     */
    template<typename HashFunction, typename Reducer>
-   std::tuple<uint64_t, uint64_t, double, uint64_t, uint64_t, uint64_t> // TODO: return struct instead of tuple
-   measure_collisions(const Args& args, const std::vector<uint64_t>& dataset, const HashFunction hashfn,
-                      const Reducer reduce) {
+   CollisionStats<uint64_t, double> measure_collisions(const Args& args, const std::vector<uint64_t>& dataset,
+                                                       const HashFunction& hashfn, const Reducer& reduce) {
       // Emulate hashtable with buckets (we only care about amount of elements per bucket)
       const auto n = (uint64_t) std::ceil(dataset.size() * args.over_alloc);
       std::vector<uint32_t> collision_counter(n, 0);
 
+      auto start_time = std::chrono::steady_clock::now();
       // Hash each value and record entries per bucket
       for (const auto key : dataset) {
          const auto hash = hashfn(key);
@@ -33,26 +53,25 @@ namespace Benchmark {
          // therefore this check is redundant
          //         assert(collision_counter[index] != 0);
       }
+      auto end_time = std::chrono::steady_clock::now();
+      double inference_nanoseconds =
+         std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
 
       // Min has to start at max value for its type
-      uint64_t min = 0xFFFFFFFFFFFFFFFF;
-      uint64_t max = 0;
-      uint64_t empty_buckets = 0;
-      uint64_t colliding_buckets = 0;
-      uint64_t total_collisions = 0;
-      double std_dev_square = 0.0;
+      CollisionStats<uint64_t, double> stats(inference_nanoseconds);
+      double std_dev_square_sum = 0.0;
       const double average = 1.0 / args.over_alloc;
 
       for (const auto bucket_cnt : collision_counter) {
-         min = std::min((uint64_t) bucket_cnt, min);
-         max = std::max((uint64_t) bucket_cnt, max);
-         empty_buckets += bucket_cnt == 0 ? 1 : 0;
-         colliding_buckets += bucket_cnt > 1 ? 1 : 0; // TODO: think about how to make this branchless (for fun)
-         total_collisions += bucket_cnt > 1 ? bucket_cnt : 0;
-         std_dev_square += (bucket_cnt - average) * (bucket_cnt - average);
+         stats.min = std::min((uint64_t) bucket_cnt, stats.min);
+         stats.max = std::max((uint64_t) bucket_cnt, stats.max);
+         stats.empty_buckets += bucket_cnt == 0 ? 1 : 0;
+         stats.colliding_buckets += bucket_cnt > 1 ? 1 : 0; // TODO: think about how to make this branchless (for fun)
+         stats.total_collisions += bucket_cnt > 1 ? bucket_cnt : 0;
+         std_dev_square_sum += (bucket_cnt - average) * (bucket_cnt - average);
       }
-      double std_dev = std::sqrt(std_dev_square / (double) dataset.size());
+      stats.std_dev = std::sqrt(std_dev_square_sum / (double) dataset.size());
 
-      return {min, max, std_dev, empty_buckets, colliding_buckets, total_collisions};
+      return stats;
    }
 } // namespace Benchmark

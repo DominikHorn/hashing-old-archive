@@ -15,31 +15,39 @@ int main(const int argc, const char* argv[]) {
       // TODO: test over-alloc
       // TODO: (?) automatically iterate over over_allocation parameter
       // TODO: log over_allocation in result csv
+      // TODO: log used reduction algorithm into results csv
       auto args = Args::parse(argc, argv);
       outfile.open(args.outfile);
-      outfile << "hash,min,max,std_dev,empty_buckets,colliding_buckets,total_collisions,dataset" << std::endl;
+      outfile << "hash"
+              << ",min"
+              << ",max"
+              << ",std_dev"
+              << ",empty_buckets"
+              << ",colliding_buckets"
+              << ",total_collisions"
+              << ",nanoseconds_total"
+              << ",nanoseconds_per_key"
+              << ",dataset" << std::endl;
 
       // Prepare a tabulation hash table
       HASH_64 tabulation_table[sizeof(HASH_64)][0xFF] = {0};
       TabulationHash::gen_table(tabulation_table);
 
       for (auto const& it : DATASETS) {
-         std::cout << "benchmarking " << it.first << std::endl;
-
+         std::cout << "dataset " << it.first << std::endl;
          const auto dataset = it.second.load(args.datapath);
+
          const auto measure = [&](std::string method, auto hashfn) {
-            uint64_t min = 0;
-            uint64_t max = 0;
-            uint64_t empty_buckets = 0;
-            uint64_t colliding_buckets = 0;
-            uint64_t total_collisions = 0;
-            double std_dev = 0;
+            std::cout << "measuring " << method << " ...";
+            // TODO: implement better (faster!) reduction algorithm -> magic constant modulo
+            // auto stats = Benchmark::measure_collisions(args, dataset, hashfn, HashReduction::modulo<HASH_64>);
+            auto stats = Benchmark::measure_collisions(args, dataset, hashfn, HashReduction::mult_shift<HASH_64>);
+            std::cout << " took " << (stats.inference_nanoseconds / dataset.size()) << "ns per key" << std::endl;
 
-            std::tie(min, max, std_dev, empty_buckets, colliding_buckets, total_collisions) =
-               Benchmark::measure_collisions(args, dataset, hashfn, HashReduction::modulo<HASH_64>);
-
-            outfile << method << "," << min << "," << max << "," << std_dev << "," << empty_buckets << ","
-                    << colliding_buckets << "," << total_collisions << "," << it.first << std::endl;
+            outfile << method << "," << stats.min << "," << stats.max << "," << stats.std_dev << ","
+                    << stats.empty_buckets << "," << stats.colliding_buckets << "," << stats.total_collisions << ","
+                    << stats.inference_nanoseconds << "," << (stats.inference_nanoseconds / (double) dataset.size())
+                    << "," << it.first << std::endl;
          };
 
          // More significant bits supposedly are of higher quality for multiplicative methods -> compute
