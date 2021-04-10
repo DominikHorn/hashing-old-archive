@@ -96,6 +96,7 @@
    #define uint64_in_expected_order(x) (x)
 #endif
 
+// TODO: replace this with convenience/likely(expr)
 #if !defined(LIKELY)
    #if HAVE_BUILTIN_EXPECT
       #define LIKELY(x) (__builtin_expect(!!(x), 1))
