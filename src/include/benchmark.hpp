@@ -71,4 +71,41 @@ namespace Benchmark {
 
       return stats;
    }
+
+   struct ThroughputStats {
+      double total_inference_reduction_time;
+
+      ThroughputStats(double total_inference_reduction_time)
+         : total_inference_reduction_time(total_inference_reduction_time) {}
+   };
+
+   /**
+    * measures throughput when hashing into a dataset.size() * over_alloc sized hashtable
+    * using HashFunction to obtain a hash value and Reducer to reduce the hash value to an index into
+    * the hashtable.
+    *
+    * Does not actually perform hashtable insert/lookup!
+    *
+    * @tparam HashFunction
+    * @tparam Reducer
+    */
+   template<typename HashFunction, typename Reducer>
+   ThroughputStats measure_throughput(const std::vector<uint64_t>& dataset, const double& over_alloc,
+                                      const HashFunction& hashfn, const Reducer& reduce) {
+      // Emulate hashtable with buckets (we only care about amount of elements per bucket)
+      const auto n = (uint64_t) std::ceil(dataset.size() * over_alloc);
+
+      auto start_time = std::chrono::steady_clock::now();
+      // Hash each value and record entries per bucket
+      for (const auto key : dataset) {
+         // Ensure the compiler does not simply remove this index
+         // calculation during optimization.
+         volatile uint64_t index = reduce(hashfn(key), n);
+      }
+      auto end_time = std::chrono::steady_clock::now();
+      double total_inference_reduction_time =
+         std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
+
+      return {total_inference_reduction_time};
+   }
 } // namespace Benchmark

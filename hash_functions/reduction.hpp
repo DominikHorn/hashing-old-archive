@@ -10,6 +10,14 @@
  */
 struct HashReduction {
    /**
+    * NOOP reduction, i.e., don't do anything
+    */
+   template<typename T>
+   static constexpr forceinline T do_nothing(const T value, const T n) {
+      return value;
+   }
+
+   /**
     * standard modulo reduction. NOTE that modulo is really slow on modern CPU,
     * especially if n is not known at compile time, as a division has to be
     * performed in this case.
