@@ -12,7 +12,6 @@ int main(const int argc, const char* argv[]) {
    std::ofstream outfile;
 
    try {
-      // TODO: iterate over reduction algorithms and log into result csv
       auto args = Args::parse(argc, argv);
       outfile.open(args.outfile);
       outfile << "hash"
@@ -40,6 +39,7 @@ int main(const int argc, const char* argv[]) {
 
             const auto measure = [&](std::string method, auto hashfn) {
                std::cout << "measuring " << method << " ...";
+               // TODO: iterate over reduction algorithms and log into result csv
                // TODO: implement better (faster!) reduction algorithm -> magic constant modulo
                // auto stats = Benchmark::measure_collisions(args, dataset, hashfn, HashReduction::modulo<HASH_64>);
                auto stats =
@@ -84,8 +84,6 @@ int main(const int argc, const char* argv[]) {
    } catch (const std::exception& ex) {
       std::cerr << ex.what() << std::endl;
       outfile.close();
-
-      // TODO: print usage
       return -1;
    }
 

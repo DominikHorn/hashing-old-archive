@@ -1,10 +1,8 @@
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <cmath>
 #include <vector>
-
-// TODO: use proper benchmarking
-#include <chrono>
 
 #include "../convenience/convenience.hpp"
 
