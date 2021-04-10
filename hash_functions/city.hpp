@@ -180,6 +180,11 @@ struct CityHash {
       return h;
    }
 
+   template<typename T>
+   static forceinline HASH_64 CityHash64(const T& value) {
+      return CityHash64((char*) &value, sizeof(T));
+   }
+
    static forceinline HASH_64 CityHash64(const char* s, size_t len) {
       if (len <= 32) {
          if (len <= 16) {
@@ -285,6 +290,11 @@ struct CityHash {
       x = HashLen16(x, v.lower);
       y = HashLen16(y + z, w.lower);
       return HASH_128(HashLen16(x + v.higher, w.higher) + y, HashLen16(x + w.higher, y + v.higher));
+   }
+
+   template<typename T>
+   static forceinline HASH_128 CityHash128(const T& value) {
+      return CityHash128((char*) &value, sizeof(T));
    }
 
    static forceinline HASH_128 CityHash128(const char* s, size_t len) {
