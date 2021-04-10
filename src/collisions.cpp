@@ -92,6 +92,12 @@ int main(const int argc, const char* argv[]) {
             measure("xxh3_128_city",
                     [](HASH_64 key) { return HashReduction::hash_128_to_64(XXHash::XXH3_128_hash(key)); });
             measure("tabulation64", [&](HASH_64 key) { return TabulationHash::naive_hash(key, tabulation_table); });
+            measure("city64", [](HASH_64 key) { return CityHash::CityHash64(key); });
+            measure("city128_low", [](HASH_64 key) { return HashReduction::lower_half(CityHash::CityHash128(key)); });
+            measure("city128_upp", [](HASH_64 key) { return HashReduction::upper_half(CityHash::CityHash128(key)); });
+            measure("city128_xor", [](HASH_64 key) { return HashReduction::xor_both(CityHash::CityHash128(key)); });
+            measure("city128_city",
+                    [](HASH_64 key) { return HashReduction::hash_128_to_64(CityHash::CityHash128(key)); });
          }
       }
 
