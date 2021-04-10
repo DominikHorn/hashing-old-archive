@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "dataset.hpp"
+
 /**
  * Parsed command line args of the application
  */
@@ -14,6 +16,7 @@ struct Args {
    const std::string datapath;
    const std::string outfile;
    const std::vector<double> load_factors;
+   const std::vector<Dataset> datasets;
 
    /**
     * Parses the given set of command line args
@@ -22,6 +25,7 @@ struct Args {
       std::string datapath;
       std::string outfile;
       std::vector<double> load_factors{};
+      std::vector<Dataset> datasets{};
 
       // Parse load_factors parameter
       if (const auto raw_load_factors = option(argc, argv, "-loadfactors=")) {
@@ -45,6 +49,35 @@ struct Args {
                                   "DOUBLES (PERCENT)>\"");
       }
 
+      // Parse datasets parameter
+      if (const auto raw_datasets = option(argc, argv, "-datasets=")) {
+         size_t end = 0;
+         std::string s = *raw_datasets;
+         const std::string delimiter = ",";
+         while (s.length() > 0) {
+            end = s.find(delimiter);
+            size_t next_start = end + delimiter.length();
+            if (end == std::string::npos) {
+               end = s.length();
+               next_start = end;
+            };
+
+            size_t colon_pos = s.find(":");
+            if (colon_pos == std::string::npos) {
+               throw std::runtime_error("Wrong datasets format. Datasets are comma separated entries of the form "
+                                        "<FILENAME:BYTES_PER_ENTRY>");
+            }
+            const auto filename = s.substr(0, colon_pos);
+            const size_t bytesPerValue = std::stoi(s.substr(colon_pos + 1, s.length()));
+            datasets.push_back({.filename = filename, .bytesPerValue = bytesPerValue});
+
+            s = s.substr(next_start);
+         }
+      } else {
+         throw std::runtime_error("Please specify datasets to benchmark using \"-datasets=<COMMA SEPARATED "
+                                  "FILENAME:BYTES_PER_ENTRY>\"");
+      }
+
       // Parse datapath parameter
       if (const auto raw_datapath = option(argc, argv, "-datapath=")) {
          datapath = *raw_datapath;
@@ -59,7 +92,7 @@ struct Args {
          throw std::runtime_error("Please specify the path the output csv file \"-outfile=<PATH_TO_DATA>\"");
       }
 
-      return Args(datapath, outfile, load_factors);
+      return Args(datapath, outfile, load_factors, datasets);
    }
 
   private:

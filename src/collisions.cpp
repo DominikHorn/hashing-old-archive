@@ -31,12 +31,12 @@ int main(const int argc, const char* argv[]) {
       HASH_64 tabulation_table[sizeof(HASH_64)][0xFF] = {0};
       TabulationHash::gen_table(tabulation_table);
 
-      for (auto const& it : DATASETS) {
-         std::cout << "dataset " << it.first << std::endl;
-         const auto dataset = it.second.load(args.datapath);
+      for (const auto& it : args.datasets) {
+         std::cout << "dataset " << it.filename << std::endl;
+         const auto dataset = it.load(args.datapath);
 
          for (auto load_factor : args.load_factors) {
-            const auto over_alloc = (double) dataset.size() / load_factor;
+            const auto over_alloc = 1.0 / load_factor;
 
             const auto measure = [&](std::string method, auto hashfn) {
                std::cout << "measuring " << method << " ...";
@@ -49,7 +49,7 @@ int main(const int argc, const char* argv[]) {
                outfile << method << "," << stats.min << "," << stats.max << "," << stats.std_dev << ","
                        << stats.empty_buckets << "," << stats.colliding_buckets << "," << stats.total_collisions << ","
                        << stats.inference_nanoseconds << "," << (stats.inference_nanoseconds / (double) dataset.size())
-                       << "," << load_factor << "," << it.first << std::endl;
+                       << "," << load_factor << "," << it.filename << std::endl;
             };
 
             // More significant bits supposedly are of higher quality for multiplicative methods -> compute
