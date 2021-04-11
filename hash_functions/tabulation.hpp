@@ -24,10 +24,10 @@ struct TabulationHash {
     * @return
     */
    template<typename T>
-   static forceinline unroll_loops T naive_hash(const T value, const T (&table)[sizeof(T)][0xFF], const T seed = 0) {
+   static forceinline unroll_loops T naive_hash(const T& value, const T (&table)[sizeof(T)][0xFF], const T& seed = 0) {
       T out = seed;
       for (auto i = 0; i < sizeof(T); i++) {
-         out ^= table[i][(uint8_t)(value >> 8 * i)];
+         out ^= table[i][(uint8_t) (value >> 8 * i)];
       }
       return out;
    }
