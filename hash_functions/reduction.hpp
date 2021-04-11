@@ -40,9 +40,9 @@ struct HashReduction {
    }
 
    template<typename T>
-   static constexpr forceinline T magic_modulo(const T& value, const libdivide::divider<T>& fast_d) {
+   static constexpr forceinline T magic_modulo(const T& value, const T& n, const libdivide::divider<T>& fast_d) {
       const auto div = value / fast_d; // Operator overloading ensures this is not an actual division
-      const auto remainder = value - div * fast_d.div.divisor;
+      const auto remainder = value - div * n;
       return remainder;
    }
 
@@ -50,6 +50,7 @@ struct HashReduction {
    static forceinline libdivide::divider<T> make_magic_divider(const T& divisor) {
       // TODO: similar to https://github.com/peterboncz/bloomfilter-bsd/blob/master/src/dtl/div.hpp,
       //  we might want to filter out certain generated dividers to gain extra speed
+      // TODO: investigate branchless vs branchfull
       return {divisor};
    }
 

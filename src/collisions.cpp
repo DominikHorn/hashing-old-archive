@@ -1,4 +1,3 @@
-#include <fstream>
 #include <iostream>
 #include <string>
 
@@ -6,7 +5,6 @@
 
 #include "include/args.hpp"
 #include "include/benchmark.hpp"
-#include "include/dataset.hpp"
 
 int main(const int argc, const char* argv[]) {
    std::ofstream outfile;
@@ -37,10 +35,10 @@ int main(const int argc, const char* argv[]) {
 
          for (auto load_factor : args.load_factors) {
             const auto over_alloc = 1.0 / load_factor;
+            const auto hashtable_size = static_cast<size_t>(dataset.size() * over_alloc);
+            const auto magic_div = HashReduction::make_magic_divider(static_cast<HASH_64>(hashtable_size));
 
-            const auto measure = [&](std::string method, auto hashfn) {
-               // TODO: implement better (faster!) reduction algorithm -> magic constant modulo
-
+            const auto measure = [&](const std::string& method, auto hashfn) {
                std::cout << "measuring modulo(" << method << ") ...";
                auto stats = Benchmark::measure_collisions(dataset, over_alloc, hashfn, HashReduction::modulo<HASH_64>);
                std::cout << " took " << (stats.inference_reduction_memaccess_total_time / dataset.size())
@@ -48,9 +46,28 @@ int main(const int argc, const char* argv[]) {
                outfile << method << "," << stats.min << "," << stats.max << "," << stats.std_dev << ","
                        << stats.empty_buckets << "," << stats.colliding_buckets << "," << stats.total_collisions << ","
                        << stats.inference_reduction_memaccess_total_time << ","
-                       << (stats.inference_reduction_memaccess_total_time / (double) dataset.size()) << ","
+                       << (stats.inference_reduction_memaccess_total_time / static_cast<double>(dataset.size())) << ","
                        << load_factor << ","
                        << "modulo"
+                       << "," << it.filename << std::endl;
+
+               // TODO: fast modulo collision measurement is only necessary to ensure that magic_modulo is implemented
+               //  correctly. Remove this for actual experiment (wasteful).
+               std::cout << "measuring fast_modulo(" << method << ") ...";
+               stats = Benchmark::measure_collisions(dataset,
+                                                     over_alloc,
+                                                     hashfn,
+                                                     [&magic_div](const HASH_64& value, const HASH_64& n) {
+                                                        return HashReduction::magic_modulo(value, n, magic_div);
+                                                     });
+               std::cout << " took " << (stats.inference_reduction_memaccess_total_time / dataset.size())
+                         << "ns per key" << std::endl;
+               outfile << method << "," << stats.min << "," << stats.max << "," << stats.std_dev << ","
+                       << stats.empty_buckets << "," << stats.colliding_buckets << "," << stats.total_collisions << ","
+                       << stats.inference_reduction_memaccess_total_time << ","
+                       << (stats.inference_reduction_memaccess_total_time / static_cast<double>(dataset.size())) << ","
+                       << load_factor << ","
+                       << "fast_modulo"
                        << "," << it.filename << std::endl;
 
                std::cout << "measuring fastrange(" << method << ") ...";
@@ -60,7 +77,7 @@ int main(const int argc, const char* argv[]) {
                outfile << method << "," << stats.min << "," << stats.max << "," << stats.std_dev << ","
                        << stats.empty_buckets << "," << stats.colliding_buckets << "," << stats.total_collisions << ","
                        << stats.inference_reduction_memaccess_total_time << ","
-                       << (stats.inference_reduction_memaccess_total_time / (double) dataset.size()) << ","
+                       << (stats.inference_reduction_memaccess_total_time / static_cast<double>(dataset.size())) << ","
                        << load_factor << ","
                        << "fastrange"
                        << "," << it.filename << std::endl;
@@ -68,7 +85,6 @@ int main(const int argc, const char* argv[]) {
 
             // More significant bits supposedly are of higher quality for multiplicative methods -> compute
             // how much we need to shift to throw away as few "high quality" bits as possible
-            const auto hashtable_size = dataset.size() * over_alloc;
             const auto p = (sizeof(hashtable_size) * 8) - __builtin_clz(hashtable_size - 1);
 
             measure("mult64", [](HASH_64 key) { return MultHash::mult64_hash(key); });
