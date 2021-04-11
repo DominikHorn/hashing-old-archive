@@ -31,6 +31,3 @@
 [submodule "hash_functions/suxcpp"]
 	path = hash_functions/suxcpp
 	url = https://github.com/vigna/sux.git
-[submodule "libdivide"]
-	path = libdivide
-	url = https://github.com/ridiculousfish/libdivide.git
