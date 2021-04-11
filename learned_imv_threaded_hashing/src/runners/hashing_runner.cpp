@@ -2037,7 +2037,7 @@ void * hash_thread(void * param)
         #if HASH_MORSE_SIZE
             morse_driven(param, hash_pfun[fid].fun_ptr, &overflowbuf);
         #else
-            hash_pfun[fid].fun_ptr(&build_data, &args->relR, NULL);
+            hash_pfun[fid].fun_ptr(&build_data, &args->relR);
         #endif
 
             BARRIER_ARRIVE(args->barrier, rv);
@@ -2089,7 +2089,7 @@ void * hash_thread(void * param)
             #if HASH_MORSE_SIZE
                 //TODO: to be done
             #else
-                args->num_results = hash_pfun1[fid].fun_ptr(NULL, &args->relS, &build_data);
+                args->num_results = hash_pfun1[fid].fun_ptr(&args->relS, &build_data);
             #endif
             }
 
