@@ -1,4 +1,3 @@
-#include <fstream>
 #include <iostream>
 #include <string>
 
@@ -42,14 +41,15 @@ int main(const int argc, const char* argv[]) {
                std::cout << " took " << (stats.total_inference_reduction_time / dataset.size()) << "ns per key ("
                          << stats.total_inference_reduction_time << " ns total)" << std::endl;
                outfile << method << "," << stats.total_inference_reduction_time << ","
-                       << (stats.total_inference_reduction_time / (double) dataset.size()) << "," << load_factor << ","
+                       << (stats.total_inference_reduction_time / static_cast<double>(dataset.size())) << ","
+                       << load_factor << ","
                        << "do_nothing"
                        << "," << it.filename << std::endl;
             };
 
             // More significant bits supposedly are of higher quality for multiplicative methods -> compute
             // how much we need to shift to throw away as few "high quality" bits as possible
-            const auto hashtable_size = dataset.size() * over_alloc;
+            const size_t hashtable_size = dataset.size() * over_alloc;
             const auto p = (sizeof(hashtable_size) * 8) - __builtin_clz(hashtable_size - 1);
 
             measure("mult64", [](HASH_64 key) { return MultHash::mult64_hash(key); });
