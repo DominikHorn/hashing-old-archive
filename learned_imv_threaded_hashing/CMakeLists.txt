@@ -146,7 +146,7 @@ set(CTEST_OUTPUT_ON_FAILURE "1")
 
 
 add_executable(hashing_runner src/runners/hashing_runner.cpp)
-target_include_directories(hasing_runner PUBLIC
+target_include_directories(hashing_runner PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
   PRIVATE src)
