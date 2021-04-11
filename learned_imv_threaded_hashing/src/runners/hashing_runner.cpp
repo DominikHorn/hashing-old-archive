@@ -2085,14 +2085,14 @@ void * hash_thread(void * param)
 
             if(args->tid == 0){
                 gettimeofday(&args->partition_end_time, NULL);
+            }
 
             #if HASH_MORSE_SIZE
                 //TODO: to be done
             #else
                 args->num_results = hash_pfun1[fid].fun_ptr(&args->relS, &build_data);
             #endif
-            }
-
+            
             BARRIER_ARRIVE(args->barrier, rv);
             // probe phase finished, thread-0 checkpoints the time
             if(args->tid == 0){
