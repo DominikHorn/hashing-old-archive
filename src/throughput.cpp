@@ -32,7 +32,7 @@ int main(const int argc, const char* argv[]) {
          for (auto load_factor : args.load_factors) {
             const auto over_alloc = 1.0 / load_factor;
 
-            const auto measure = [&](std::string method, auto hashfn) {
+            const auto measure = [&](const std::string& method, const auto& hashfn) {
                // TODO: measure with reducers?
 
                std::cout << "measuring " << method << " ...";
@@ -49,7 +49,7 @@ int main(const int argc, const char* argv[]) {
 
             // More significant bits supposedly are of higher quality for multiplicative methods -> compute
             // how much we need to shift to throw away as few "high quality" bits as possible
-            const size_t hashtable_size = dataset.size() * over_alloc;
+            const auto hashtable_size = static_cast<size_t>(dataset.size() * over_alloc);
             const auto p = (sizeof(hashtable_size) * 8) - __builtin_clz(hashtable_size - 1);
 
             measure("mult64", [](HASH_64 key) { return MultHash::mult64_hash(key); });
