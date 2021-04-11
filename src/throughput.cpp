@@ -31,11 +31,11 @@ int main(const int argc, const char* argv[]) {
 
          for (auto load_factor : args.load_factors) {
             const auto over_alloc = 1.0 / load_factor;
+            const auto hashtable_size = static_cast<size_t>(dataset.size() * over_alloc);
+            const auto magic_div = HashReduction::make_magic_divider(static_cast<HASH_64>(hashtable_size));
 
             const auto measure = [&](const std::string& method, const auto& hashfn) {
-               // TODO: measure with reducers?
-
-               std::cout << "measuring " << method << " ...";
+               std::cout << "measuring do_nothing(" << method << ") ...";
                auto stats =
                   Benchmark::measure_throughput(dataset, over_alloc, hashfn, HashReduction::do_nothing<HASH_64>);
                std::cout << " took " << (stats.total_inference_reduction_time / dataset.size()) << "ns per key ("
@@ -45,11 +45,43 @@ int main(const int argc, const char* argv[]) {
                        << load_factor << ","
                        << "do_nothing"
                        << "," << it.filename << std::endl;
+
+               std::cout << "measuring modulo(" << method << ") ...";
+               stats = Benchmark::measure_throughput(dataset, over_alloc, hashfn, HashReduction::modulo<HASH_64>);
+               std::cout << " took " << (stats.total_inference_reduction_time / dataset.size()) << "ns per key ("
+                         << stats.total_inference_reduction_time << " ns total)" << std::endl;
+               outfile << method << "," << stats.total_inference_reduction_time << ","
+                       << (stats.total_inference_reduction_time / static_cast<double>(dataset.size())) << ","
+                       << load_factor << ","
+                       << "modulo"
+                       << "," << it.filename << std::endl;
+
+               std::cout << "measuring fast_modulo(" << method << ") ...";
+               stats = Benchmark::measure_throughput(dataset, over_alloc, hashfn,
+                                                     [&magic_div](const HASH_64& value, const HASH_64& n) {
+                                                        return HashReduction::magic_modulo(value, n, magic_div);
+                                                     });
+               std::cout << " took " << (stats.total_inference_reduction_time / dataset.size()) << "ns per key ("
+                         << stats.total_inference_reduction_time << " ns total)" << std::endl;
+               outfile << method << "," << stats.total_inference_reduction_time << ","
+                       << (stats.total_inference_reduction_time / static_cast<double>(dataset.size())) << ","
+                       << load_factor << ","
+                       << "fast_modulo"
+                       << "," << it.filename << std::endl;
+
+               std::cout << "measuring fastrange(" << method << ") ...";
+               stats = Benchmark::measure_throughput(dataset, over_alloc, hashfn, HashReduction::mult_shift<HASH_64>);
+               std::cout << " took " << (stats.total_inference_reduction_time / dataset.size()) << "ns per key ("
+                         << stats.total_inference_reduction_time << " ns total)" << std::endl;
+               outfile << method << "," << stats.total_inference_reduction_time << ","
+                       << (stats.total_inference_reduction_time / static_cast<double>(dataset.size())) << ","
+                       << load_factor << ","
+                       << "fastrange"
+                       << "," << it.filename << std::endl;
             };
 
             // More significant bits supposedly are of higher quality for multiplicative methods -> compute
             // how much we need to shift to throw away as few "high quality" bits as possible
-            const auto hashtable_size = static_cast<size_t>(dataset.size() * over_alloc);
             const auto p = (sizeof(hashtable_size) * 8) - __builtin_clz(hashtable_size - 1);
 
             measure("mult64", [](HASH_64 key) { return MultHash::mult64_hash(key); });
