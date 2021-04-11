@@ -35,7 +35,7 @@ int main(const int argc, const char* argv[]) {
             const auto magic_div = HashReduction::make_magic_divider(static_cast<HASH_64>(hashtable_size));
 
             const auto measure = [&](const std::string& method, const auto& hashfn) {
-               std::cout << "measuring do_nothing(" << method << ") ...";
+               std::cout << "measuring do_nothing(" << method << ") ..." << std::flush;
                auto stats =
                   Benchmark::measure_throughput(dataset, over_alloc, hashfn, HashReduction::do_nothing<HASH_64>);
                std::cout << " took " << (stats.total_inference_reduction_time / dataset.size()) << "ns per key ("
@@ -46,7 +46,7 @@ int main(const int argc, const char* argv[]) {
                        << "do_nothing"
                        << "," << it.filename << std::endl;
 
-               std::cout << "measuring modulo(" << method << ") ...";
+               std::cout << "measuring modulo(" << method << ") ..." << std::flush;
                stats = Benchmark::measure_throughput(dataset, over_alloc, hashfn, HashReduction::modulo<HASH_64>);
                std::cout << " took " << (stats.total_inference_reduction_time / dataset.size()) << "ns per key ("
                          << stats.total_inference_reduction_time << " ns total)" << std::endl;
@@ -56,7 +56,7 @@ int main(const int argc, const char* argv[]) {
                        << "modulo"
                        << "," << it.filename << std::endl;
 
-               std::cout << "measuring fast_modulo(" << method << ") ...";
+               std::cout << "measuring fast_modulo(" << method << ") ..." << std::flush;
                stats = Benchmark::measure_throughput(dataset, over_alloc, hashfn,
                                                      [&magic_div](const HASH_64& value, const HASH_64& n) {
                                                         return HashReduction::magic_modulo(value, n, magic_div);
@@ -69,7 +69,7 @@ int main(const int argc, const char* argv[]) {
                        << "fast_modulo"
                        << "," << it.filename << std::endl;
 
-               std::cout << "measuring fastrange(" << method << ") ...";
+               std::cout << "measuring fastrange(" << method << ") ..." << std::flush;
                stats = Benchmark::measure_throughput(dataset, over_alloc, hashfn, HashReduction::mult_shift<HASH_64>);
                std::cout << " took " << (stats.total_inference_reduction_time / dataset.size()) << "ns per key ("
                          << stats.total_inference_reduction_time << " ns total)" << std::endl;

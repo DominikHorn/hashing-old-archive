@@ -39,7 +39,7 @@ int main(const int argc, const char* argv[]) {
             const auto magic_div = HashReduction::make_magic_divider(static_cast<HASH_64>(hashtable_size));
 
             const auto measure = [&](const std::string& method, auto hashfn) {
-               std::cout << "measuring modulo(" << method << ") ...";
+               std::cout << "measuring modulo(" << method << ") ..." << std::flush;
                auto stats = Benchmark::measure_collisions(dataset, over_alloc, hashfn, HashReduction::modulo<HASH_64>);
                std::cout << " took " << (stats.inference_reduction_memaccess_total_time / dataset.size())
                          << "ns per key" << std::endl;
@@ -53,7 +53,7 @@ int main(const int argc, const char* argv[]) {
 
                // TODO: fast modulo collision measurement is only necessary to ensure that magic_modulo is implemented
                //  correctly. Remove this for actual experiment (wasteful).
-               std::cout << "measuring fast_modulo(" << method << ") ...";
+               std::cout << "measuring fast_modulo(" << method << ") ..." << std::flush;
                stats = Benchmark::measure_collisions(dataset,
                                                      over_alloc,
                                                      hashfn,
@@ -70,7 +70,7 @@ int main(const int argc, const char* argv[]) {
                        << "fast_modulo"
                        << "," << it.filename << std::endl;
 
-               std::cout << "measuring fastrange(" << method << ") ...";
+               std::cout << "measuring fastrange(" << method << ") ..." << std::flush;
                stats = Benchmark::measure_collisions(dataset, over_alloc, hashfn, HashReduction::mult_shift<HASH_64>);
                std::cout << " took " << (stats.inference_reduction_memaccess_total_time / dataset.size())
                          << "ns per key" << std::endl;
