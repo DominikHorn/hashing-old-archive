@@ -44,8 +44,8 @@ struct Prefetcher {
    /**
     * Prefetches a cache line starting at address, if possible on CPU
     */
-   static forceinline void prefetch_address(const void* address, Mode mode = Mode::WRITE,
-                                            Locality locality = Locality::NONE) {
+   template<Mode mode = WRITE, Locality locality = NONE>
+   static forceinline void prefetch_address(const void* address) {
       prefetch(address, mode, locality);
    }
 
@@ -54,12 +54,13 @@ struct Prefetcher {
     * NOTE: does not guarantee that the entire block actually is in cache afterwards
     * (missing prefetch instruction, evictions we don't control etc)
     *
-    * @tparam CacheLineSize cache line size in bytes. Defaults to 64
+    * @tparam mode hint for the compiler how the prefetched memory will be used. Either read or write
+    * @tparam locality hint for the compiler
+    * @tparam cache_line_size cache line size in bytes. Defaults to 64
     */
-   template<size_t CacheLineSize = 64>
-   static forceinline unroll_loops void refetch_block(const void* address, const size_t size, Mode mode = Mode::WRITE,
-                                                      Locality locality = Locality::NONE) {
-      for (auto ptr = (uint8_t*) address; ptr < (uint8_t*) address + size; ptr += CacheLineSize) {
+   template<Mode mode = WRITE, Locality locality = NONE, size_t cache_line_size = 64>
+   static forceinline unroll_loops void prefetch_block(const void* address, const size_t size) {
+      for (auto ptr = (uint8_t*) address; ptr < (uint8_t*) address + size; ptr += cache_line_size) {
          prefetch(ptr, mode, locality);
       }
    }
