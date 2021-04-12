@@ -36,7 +36,7 @@ namespace Benchmark {
    CollisionStats<uint64_t, double> measure_collisions(const std::vector<uint64_t>& dataset, const double& over_alloc,
                                                        const HashFunction& hashfn, const Reducer& reduce) {
       // Emulate hashtable with buckets (we only care about amount of elements per bucket)
-      const auto n = static_cast<uint64_t>(std::ceil(static_cast<long double>(dataset.size()) * over_alloc));
+      const auto n = static_cast<uint64_t>(static_cast<double>(dataset.size()) * static_cast<double>(over_alloc));
       std::vector<uint32_t> collision_counter(n, 0);
 
       auto start_time = std::chrono::steady_clock::now();

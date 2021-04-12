@@ -43,7 +43,8 @@ int main(const int argc, const char* argv[]) {
 
          for (auto load_factor : args.load_factors) {
             const auto over_alloc = 1.0 / load_factor;
-            const auto hashtable_size = static_cast<uint64_t>(static_cast<long double>(dataset.size()) * over_alloc);
+            const auto hashtable_size =
+               static_cast<uint64_t>(static_cast<double>(dataset.size()) * static_cast<double>(over_alloc));
             const auto magic_div = HashReduction::make_magic_divider(static_cast<HASH_64>(hashtable_size));
             const auto magic_branchfree_div =
                HashReduction::make_branchfree_magic_divider(static_cast<HASH_64>(hashtable_size));
