@@ -1,3 +1,6 @@
+set(CMAKE_MINIMUM_REQUIRED_VERSION 3.5.2)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 add_executable(collisions collisions.cpp)
 target_include_directories(collisions PRIVATE
         ${PROJECT_SOURCE_DIR}/convenience
