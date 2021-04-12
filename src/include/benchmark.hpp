@@ -63,7 +63,7 @@ namespace Benchmark {
          stats.min = std::min(static_cast<uint64_t>(bucket_cnt), stats.min);
          stats.max = std::max(static_cast<uint64_t>(bucket_cnt), stats.max);
          stats.empty_buckets += bucket_cnt == 0 ? 1 : 0;
-         stats.colliding_buckets += bucket_cnt > 1 ? 1 : 0; // TODO: think about how to make this branchless (for fun)
+         stats.colliding_buckets += bucket_cnt > 1 ? 1 : 0;
          stats.total_collisions += bucket_cnt > 1 ? bucket_cnt : 0;
          std_dev_square_sum += (bucket_cnt - average) * (bucket_cnt - average);
       }
