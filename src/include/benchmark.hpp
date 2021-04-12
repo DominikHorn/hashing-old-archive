@@ -100,7 +100,7 @@ namespace Benchmark {
       for (const auto key : dataset) {
          // Ensure the compiler does not simply remove this index
          // calculation during optimization.
-         volatile uint64_t index = reduce(hashfn(key), n);
+         Barrier::DoNotOptimize(reduce(hashfn(key), n));
       }
       auto end_time = std::chrono::steady_clock::now();
       double total_inference_reduction_time =

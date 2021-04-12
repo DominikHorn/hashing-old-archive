@@ -28,6 +28,31 @@
    #error GNUC is the only supported compiler atm
 #endif
 
+/**
+ * Memory barrier code taken from google-benchmark
+ * See google-benchmark.license.txt for the code's apache license
+ * statement.
+ *
+ * NOTE: this code is slightly modified from its original source!
+ */
+namespace Barrier {
+#if defined(__GNUC__) || defined(__clang__)
+   template<class Tp>
+   forceinline void DoNotOptimize(Tp const& value) {
+      asm volatile("" : : "r,m"(value) : "memory");
+   }
+
+   template<class Tp>
+   forceinline void DoNotOptimize(Tp& value) {
+   #if defined(__clang__)
+      asm volatile("" : "+r,m"(value) : : "memory");
+   #else
+      asm volatile("" : "+m,r"(value) : : "memory");
+   #endif
+   }
+#endif
+} // namespace Barrier
+
 struct Prefetcher {
    enum Locality
    {
