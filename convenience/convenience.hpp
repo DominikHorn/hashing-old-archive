@@ -24,6 +24,7 @@
    #define packed __attribute__((packed))
    #define prefetch(address, mode, locality) __builtin_prefetch(address, mode, locality)
 #else
+// TODO: we will need clang support, therefore verify that the above primitives all work with clang
    #error GNUC is the only supported compiler atm
 #endif
 
