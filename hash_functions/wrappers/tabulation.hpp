@@ -26,10 +26,10 @@ struct TabulationHash {
    template<typename T>
    static forceinline T small_hash(const T& value, const T (&table)[0xFF], const T& seed = 0) {
       return seed ^
-         (table[static_cast<uint8_t>(value >> 8 * 0)] | table[static_cast<uint8_t>(value >> 8 * 1)] |
-          table[static_cast<uint8_t>(value >> 8 * 2)] | table[static_cast<uint8_t>(value >> 8 * 3)] |
-          table[static_cast<uint8_t>(value >> 8 * 4)] | table[static_cast<uint8_t>(value >> 8 * 5)] |
-          table[static_cast<uint8_t>(value >> 8 * 6)] | table[static_cast<uint8_t>(value >> 8 * 7)]);
+         (table[static_cast<uint8_t>(value >> 8 * 0)] ^ table[static_cast<uint8_t>(value >> 8 * 1)] ^
+          table[static_cast<uint8_t>(value >> 8 * 2)] ^ table[static_cast<uint8_t>(value >> 8 * 3)] ^
+          table[static_cast<uint8_t>(value >> 8 * 4)] ^ table[static_cast<uint8_t>(value >> 8 * 5)] ^
+          table[static_cast<uint8_t>(value >> 8 * 6)] ^ table[static_cast<uint8_t>(value >> 8 * 7)]);
    }
 
    /**
