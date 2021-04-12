@@ -73,6 +73,7 @@ struct Dataset {
    std::vector<uint64_t> load_shuffled(const std::string& path, const uint64_t seed = 0xC7455FEC83DD661FLLU) const {
       auto dataset = load(path);
       shuffle(dataset, seed);
+      std::cout << "Fisher-Yates shuffled dataset " << dataset.size() << std::endl;
       return dataset;
    }
 
@@ -86,15 +87,9 @@ struct Dataset {
       std::default_random_engine gen(seed);
       std::uniform_int_distribution<uint64_t> dist(0);
 
-      const auto swap = [&](auto a, auto b) {
-         const auto tmp = dataset[a];
-         dataset[a] = b;
-         dataset[b] = tmp;
-      };
-
+      // Fisher-Yates shuffle
       for (size_t i = dataset.size() - 1; i > 0; i--) {
-         auto j = dist(gen) % i;
-         swap(i, j);
+         std::swap(dataset[i], dataset[dist(gen) % i]);
       }
    }
 
