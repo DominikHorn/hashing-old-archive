@@ -3,6 +3,10 @@
 #include <cstddef>
 #include <cstdint>
 
+#if (defined(__GNUC__) || defined(__clang__)) && (defined(__x86_64__) || defined(__i386__))
+   #include <x86intrin.h>
+#endif
+
 /// prevent unused warnings
 #define UNUSED(x) (void) (x)
 
@@ -59,7 +63,7 @@ namespace Barrier {
 #endif
 } // namespace Barrier
 
-struct Prefetcher {
+struct Cache {
    enum Locality
    {
       NONE = 0,
@@ -90,10 +94,28 @@ struct Prefetcher {
     * @tparam locality hint for the compiler
     * @tparam cache_line_size cache line size in bytes. Defaults to 64
     */
-   template<Mode mode = WRITE, Locality locality = NONE, size_t cache_line_size = 64>
+   template<Mode mode = WRITE, Locality locality = NONE,
+            size_t cache_line_size = 64> // TODO: extract these into defines!
    static forceinline unroll_loops void prefetch_block(const void* address, const size_t size) {
-      for (auto ptr = (std::uint8_t*) address; ptr < (std::uint8_t*) address + size; ptr += cache_line_size) {
+      for (auto* ptr = (std::uint8_t*) address; ptr < (std::uint8_t*) address + size; ptr += cache_line_size) {
          prefetch(ptr, mode, locality);
       }
+   }
+
+   /**
+    * Clears the cache of all addresses contained in [start, start+size]
+    * @param start
+    * @param size
+    */
+   template<size_t cache_line_size = 64>
+   static forceinline void clearcache(const void* start, const size_t size) {
+#if (defined(__GNUC__) || defined(__clang__)) && (defined(__x86_64__) || defined(__i386__))
+      const auto* addr = (std::uint8_t*) start;
+      for (auto* ptr = addr; ptr < addr + size; ptr += cache_line_size) {
+         _mm_clflush(start);
+      }
+#else
+   #error "clearcache() not implemented on your system"
+#endif
    }
 };

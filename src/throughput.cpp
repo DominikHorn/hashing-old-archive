@@ -82,8 +82,10 @@ int main(const int argc, const char* argv[]) {
             measure("fibo64_shift", [p](HASH_64 key) { return MultHash::fibonacci64_hash(key, p); });
             measure("fibo_prime64", [](HASH_64 key) { return MultHash::fibonacci_prime64_hash(key); });
             measure("fibo_prime64_shift", [p](HASH_64 key) { return MultHash::fibonacci_prime64_hash(key, p); });
+
             measure("multadd64", [](HASH_64 key) { return MultAddHash::multadd64_hash(key); });
             measure("multadd64_shift", [p](HASH_64 key) { return MultAddHash::multadd64_hash(key, p); });
+
             measure("murmur3_128_low",
                     [](HASH_64 key) { return HashReduction::lower_half(MurmurHash3::murmur3_128(key)); });
             measure("murmur3_128_upp",
@@ -93,6 +95,7 @@ int main(const int argc, const char* argv[]) {
             measure("murmur3_128_city",
                     [](HASH_64 key) { return HashReduction::hash_128_to_64(MurmurHash3::murmur3_128(key)); });
             measure("murmur3_fin64", [](HASH_64 key) { return MurmurHash3::finalize_64(key); });
+
             measure("xxh64", [](HASH_64 key) { return XXHash::XXH64_hash(key); });
             measure("xxh3", [](HASH_64 key) { return XXHash::XXH3_hash(key); });
             measure("xxh3_128_low", [](HASH_64 key) { return HashReduction::lower_half(XXHash::XXH3_128_hash(key)); });
@@ -101,21 +104,19 @@ int main(const int argc, const char* argv[]) {
             measure("xxh3_128_city",
                     [](HASH_64 key) { return HashReduction::hash_128_to_64(XXHash::XXH3_128_hash(key)); });
 
-            // TODO: tabulation_table truely is not in cache
+            Cache::clearcache((void*) small_tabulation_table, sizeof(small_tabulation_table));
             measure("tabulation_small_cold64",
                     [&](HASH_64 key) { return TabulationHash::small_hash(key, small_tabulation_table); });
-            // TODO: tabulation_table truely is not in cache
+            Cache::clearcache((void*) large_tabulation_table, sizeof(large_tabulation_table));
             measure("tabulation_large_cold64",
                     [&](HASH_64 key) { return TabulationHash::large_hash(key, large_tabulation_table); });
 
             // tabulation_table should entirely be in cache due to the previous tabulation64 run; However, just to be sure:
-            Prefetcher::prefetch_block<Prefetcher::READ, Prefetcher::HIGH>(&small_tabulation_table,
-                                                                           sizeof(small_tabulation_table));
+            Cache::prefetch_block<Cache::READ, Cache::HIGH>(&small_tabulation_table, sizeof(small_tabulation_table));
             measure("tabulation_small_hot64",
                     [&](HASH_64 key) { return TabulationHash::small_hash(key, small_tabulation_table); });
             // tabulation_table should entirely be in cache due to the previous tabulation64 run; However, just to be sure:
-            Prefetcher::prefetch_block<Prefetcher::READ, Prefetcher::HIGH>(&large_tabulation_table,
-                                                                           sizeof(large_tabulation_table));
+            Cache::prefetch_block<Cache::READ, Cache::HIGH>(&large_tabulation_table, sizeof(large_tabulation_table));
             measure("tabulation_large_hot64",
                     [&](HASH_64 key) { return TabulationHash::large_hash(key, large_tabulation_table); });
 
@@ -125,6 +126,7 @@ int main(const int argc, const char* argv[]) {
             measure("city128_xor", [](HASH_64 key) { return HashReduction::xor_both(CityHash::CityHash128(key)); });
             measure("city128_city",
                     [](HASH_64 key) { return HashReduction::hash_128_to_64(CityHash::CityHash128(key)); });
+
             measure("meow64_low", [](HASH_64 key) { return MeowHash::hash64(key); });
             measure("meow64_upp", [](HASH_64 key) { return MeowHash::hash64<1>(key); });
          }
