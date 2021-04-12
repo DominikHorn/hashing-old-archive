@@ -6,6 +6,7 @@
 
 #include "include/args.hpp"
 #include "include/benchmark.hpp"
+#include "include/random_hash.hpp"
 
 int main(const int argc, const char* argv[]) {
    std::ofstream outfile;
@@ -38,41 +39,43 @@ int main(const int argc, const char* argv[]) {
 
          for (auto load_factor : args.load_factors) {
             const auto over_alloc = 1.0 / load_factor;
-            const auto hashtable_size = static_cast<size_t>(static_cast<long double>(dataset.size()) * over_alloc);
+            const auto hashtable_size = static_cast<uint64_t>(static_cast<long double>(dataset.size()) * over_alloc);
             const auto magic_div = HashReduction::make_magic_divider(static_cast<HASH_64>(hashtable_size));
             const auto magic_branchfree_div =
                HashReduction::make_branchfree_magic_divider(static_cast<HASH_64>(hashtable_size));
 
-            const auto measure_hashfn = [&](const std::string& method, auto hashfn) {
-               const auto measure_hashfn_with_reducer = [&](const std::string& reducer, const auto& reducerfn) {
-                  // Measure & log
-                  std::cout << std::setw(55) << std::right << reducer + "(" + method + ") ... " << std::flush;
-                  const auto stats = Benchmark::measure_collisions(dataset, over_alloc, hashfn, reducerfn);
-                  std::cout << (static_cast<long double>(stats.inference_reduction_memaccess_total_ns) /
-                                static_cast<long double>(dataset.size()))
-                            << "ns/key ("
-                            << (static_cast<long double>(stats.inference_reduction_memaccess_total_ns) /
-                                static_cast<long double>(1000000000.0))
-                            << " s total)" << std::endl;
+            const auto measure_hashfn_with_reducer = [&](const std::string& hash_name, const auto& hashfn,
+                                                         const std::string& reducer_name, const auto& reducerfn) {
+               // Measure & log
+               std::cout << std::setw(55) << std::right << reducer_name + "(" + hash_name + ") ... " << std::flush;
+               const auto stats = Benchmark::measure_collisions(dataset, over_alloc, hashfn, reducerfn);
+               std::cout << (static_cast<long double>(stats.inference_reduction_memaccess_total_ns) /
+                             static_cast<long double>(dataset.size()))
+                         << "ns/key ("
+                         << (static_cast<long double>(stats.inference_reduction_memaccess_total_ns) /
+                             static_cast<long double>(1000000000.0))
+                         << " s total)" << std::endl;
 
-                  // Write to csv
-                  outfile << method << "," << stats.min << "," << stats.max << "," << stats.std_dev << ","
-                          << stats.empty_buckets << "," << stats.colliding_buckets << "," << stats.total_collisions
-                          << "," << stats.inference_reduction_memaccess_total_ns << ","
-                          << (static_cast<long double>(stats.inference_reduction_memaccess_total_ns) /
-                              static_cast<long double>(dataset.size()))
-                          << "," << load_factor << "," << reducer << "," << it.filename << std::endl;
-               };
+               // Write to csv
+               outfile << hash_name << "," << stats.min << "," << stats.max << "," << stats.std_dev << ","
+                       << stats.empty_buckets << "," << stats.colliding_buckets << "," << stats.total_collisions << ","
+                       << stats.inference_reduction_memaccess_total_ns << ","
+                       << (static_cast<long double>(stats.inference_reduction_memaccess_total_ns) /
+                           static_cast<long double>(dataset.size()))
+                       << "," << load_factor << "," << reducer_name << "," << it.filename << std::endl;
+            };
 
-               measure_hashfn_with_reducer("fastrange", HashReduction::fastrange<HASH_64>);
+            const auto measure_hashfn = [&](const std::string& hash_name, auto hashfn) {
+               measure_hashfn_with_reducer(hash_name, hashfn, "fastrange", HashReduction::fastrange<HASH_64>);
 
                // TODO: disable the following two for benchmark (Only required to verify branchless fast modulo)
-               measure_hashfn_with_reducer("modulo", HashReduction::modulo<HASH_64>);
-               measure_hashfn_with_reducer("fast_modulo", [&magic_div](const HASH_64& value, const HASH_64& n) {
-                  return HashReduction::magic_modulo(value, n, magic_div);
-               });
+               measure_hashfn_with_reducer(hash_name, hashfn, "modulo", HashReduction::modulo<HASH_64>);
+               measure_hashfn_with_reducer(hash_name, hashfn, "fast_modulo",
+                                           [&magic_div](const HASH_64& value, const HASH_64& n) {
+                                              return HashReduction::magic_modulo(value, n, magic_div);
+                                           });
 
-               measure_hashfn_with_reducer("branchless_fast_modulo",
+               measure_hashfn_with_reducer(hash_name, hashfn, "branchless_fast_modulo",
                                            [&magic_branchfree_div](const HASH_64& value, const HASH_64& n) {
                                               return HashReduction::magic_modulo(value, n, magic_branchfree_div);
                                            });
@@ -81,6 +84,12 @@ int main(const int argc, const char* argv[]) {
             // More significant bits supposedly are of higher quality for multiplicative methods -> compute
             // how much we need to shift to throw away as few "high quality" bits as possible
             const auto p = (sizeof(hashtable_size) * 8) - __builtin_clz(hashtable_size - 1);
+
+            // Uniform random baseline (random prime constant)
+            RandomHash rhash(hashtable_size);
+            measure_hashfn_with_reducer(
+               "uniform_random", [&](HASH_64 key) { return rhash.next(); }, "do_nothing",
+               HashReduction::do_nothing<HASH_64>);
 
             measure_hashfn("mult64", [](HASH_64 key) { return MultHash::mult64_hash(key); });
             measure_hashfn("mult64_shift", [p](HASH_64 key) { return MultHash::mult64_hash(key, p); });
