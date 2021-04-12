@@ -36,7 +36,7 @@
 #include <nmmintrin.h>
 #include <string.h> // for memcpy and memset
 
-#include "../convenience/convenience.hpp"
+#include "convenience.hpp"
 #include "reduction.hpp"
 #include "types.hpp"
 

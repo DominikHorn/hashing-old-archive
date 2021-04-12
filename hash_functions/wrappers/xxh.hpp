@@ -4,7 +4,7 @@
 #define XXH_INLINE_ALL
 #include "xxHash/xxhash.h"
 
-#include "../convenience/convenience.hpp"
+#include "convenience.hpp"
 #include "types.hpp"
 
 /**

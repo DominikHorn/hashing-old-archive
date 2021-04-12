@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../convenience/convenience.hpp"
-#include "types.hpp"
+#include "convenience.hpp"
+#include "wrappers/types.hpp"
 
 // TODO: we might need those
 //#define LIBDIVIDE_SSE2
