@@ -1,5 +1,8 @@
 #pragma once
 
+/// prevent unused warnings
+#define UNUSED(x) (void) (x)
+
 #ifdef __GNUC__
    /**
     * These optimizing compiler hints were taken from

@@ -21,6 +21,7 @@ struct HashReduction {
     */
    template<typename T>
    static constexpr forceinline T do_nothing(const T& value, const T& n) {
+      UNUSED(n);
       return value;
    }
 

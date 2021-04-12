@@ -26,8 +26,8 @@ struct TabulationHash {
    template<typename T>
    static forceinline unroll_loops T naive_hash(const T& value, const T (&table)[sizeof(T)][0xFF], const T& seed = 0) {
       T out = seed;
-      for (auto i = 0; i < sizeof(T); i++) {
-         out ^= table[i][(uint8_t) (value >> 8 * i)];
+      for (size_t i = 0; i < sizeof(T); i++) {
+         out ^= table[i][static_cast<uint8_t>(value >> 8 * i)];
       }
       return out;
    }
@@ -49,11 +49,10 @@ struct TabulationHash {
 
       srand(seed);
 
-      const auto start = (uint8_t*) &table[0][0];
-      for (auto c = 0; c < COLUMNS; c++) {
-         for (auto r = 0; r < 0xFF; r++) {
+      for (size_t c = 0; c < COLUMNS; c++) {
+         for (size_t r = 0; r < 0xFF; r++) {
             table[c][r] = 0;
-            for (auto i = 0; i < COLUMNS; i++) {
+            for (size_t i = 0; i < COLUMNS; i++) {
                table[c][r] |= ((T) rand() % 256) << 8 * i;
             }
          }

@@ -135,7 +135,7 @@ struct MurmurHash3 {
       const uint8_t* tail = (const uint8_t*) (&value);
 
       uint64_t k1 = 0;
-      uint64_t k2 = 0;
+      //      uint64_t k2 = 0;
 
       // len = sizeof(value) = 8
       k1 ^= uint64_t(tail[7]) << 56;
@@ -166,7 +166,7 @@ struct MurmurHash3 {
       h1 += h2;
       h2 += h1;
 
-      return {.lower = h2, .higher = h1};
+      return {h2, h1};
    }
 
   private:
