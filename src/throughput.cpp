@@ -31,53 +31,42 @@ int main(const int argc, const char* argv[]) {
 
          for (auto load_factor : args.load_factors) {
             const auto over_alloc = 1.0 / load_factor;
-            const auto hashtable_size = static_cast<size_t>(dataset.size() * over_alloc);
+            const auto hashtable_size = static_cast<size_t>(static_cast<long double>(dataset.size()) * over_alloc);
             const auto magic_div = HashReduction::make_magic_divider(static_cast<HASH_64>(hashtable_size));
 
             const auto measure = [&](const std::string& method, const auto& hashfn) {
+               const auto log_and_write_results_csv = [&](const std::string& reducer,
+                                                          const Benchmark::ThroughputStats& stats) {
+                  std::cout << " took " << (stats.total_inference_reduction_ns / dataset.size()) << "ns per key ("
+                            << stats.total_inference_reduction_ns << " ns total)" << std::endl;
+                  outfile << method << "," << stats.total_inference_reduction_ns << ","
+                          << (static_cast<long double>(stats.total_inference_reduction_ns) /
+                              static_cast<long double>(dataset.size()))
+                          << "," << load_factor << "," << reducer << "," << it.filename << std::endl;
+               };
+
                std::cout << "measuring do_nothing(" << method << ") ..." << std::flush;
-               auto stats =
-                  Benchmark::measure_throughput(dataset, over_alloc, hashfn, HashReduction::do_nothing<HASH_64>);
-               std::cout << " took " << (stats.total_inference_reduction_time / dataset.size()) << "ns per key ("
-                         << stats.total_inference_reduction_time << " ns total)" << std::endl;
-               outfile << method << "," << stats.total_inference_reduction_time << ","
-                       << (stats.total_inference_reduction_time / static_cast<double>(dataset.size())) << ","
-                       << load_factor << ","
-                       << "do_nothing"
-                       << "," << it.filename << std::endl;
+               log_and_write_results_csv(
+                  "do_nothing",
+                  Benchmark::measure_throughput(dataset, over_alloc, hashfn, HashReduction::do_nothing<HASH_64>));
 
                std::cout << "measuring modulo(" << method << ") ..." << std::flush;
-               stats = Benchmark::measure_throughput(dataset, over_alloc, hashfn, HashReduction::modulo<HASH_64>);
-               std::cout << " took " << (stats.total_inference_reduction_time / dataset.size()) << "ns per key ("
-                         << stats.total_inference_reduction_time << " ns total)" << std::endl;
-               outfile << method << "," << stats.total_inference_reduction_time << ","
-                       << (stats.total_inference_reduction_time / static_cast<double>(dataset.size())) << ","
-                       << load_factor << ","
-                       << "modulo"
-                       << "," << it.filename << std::endl;
+               log_and_write_results_csv(
+                  "modulo",
+                  Benchmark::measure_throughput(dataset, over_alloc, hashfn, HashReduction::modulo<HASH_64>));
 
                std::cout << "measuring fast_modulo(" << method << ") ..." << std::flush;
-               stats = Benchmark::measure_throughput(dataset, over_alloc, hashfn,
-                                                     [&magic_div](const HASH_64& value, const HASH_64& n) {
-                                                        return HashReduction::magic_modulo(value, n, magic_div);
-                                                     });
-               std::cout << " took " << (stats.total_inference_reduction_time / dataset.size()) << "ns per key ("
-                         << stats.total_inference_reduction_time << " ns total)" << std::endl;
-               outfile << method << "," << stats.total_inference_reduction_time << ","
-                       << (stats.total_inference_reduction_time / static_cast<double>(dataset.size())) << ","
-                       << load_factor << ","
-                       << "fast_modulo"
-                       << "," << it.filename << std::endl;
+               log_and_write_results_csv(
+                  "fast_modulo",
+                  Benchmark::measure_throughput(dataset, over_alloc, hashfn,
+                                                [&magic_div](const HASH_64& value, const HASH_64& n) {
+                                                   return HashReduction::magic_modulo(value, n, magic_div);
+                                                }));
 
                std::cout << "measuring fastrange(" << method << ") ..." << std::flush;
-               stats = Benchmark::measure_throughput(dataset, over_alloc, hashfn, HashReduction::mult_shift<HASH_64>);
-               std::cout << " took " << (stats.total_inference_reduction_time / dataset.size()) << "ns per key ("
-                         << stats.total_inference_reduction_time << " ns total)" << std::endl;
-               outfile << method << "," << stats.total_inference_reduction_time << ","
-                       << (stats.total_inference_reduction_time / static_cast<double>(dataset.size())) << ","
-                       << load_factor << ","
-                       << "fastrange"
-                       << "," << it.filename << std::endl;
+               log_and_write_results_csv(
+                  "fastrange",
+                  Benchmark::measure_throughput(dataset, over_alloc, hashfn, HashReduction::fastrange<HASH_64>));
             };
 
             // More significant bits supposedly are of higher quality for multiplicative methods -> compute

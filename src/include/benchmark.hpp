@@ -17,12 +17,12 @@ namespace Benchmark {
       Counter total_collisions;
       PreciseMath std_dev;
 
-      double inference_reduction_memaccess_total_time;
+      Counter inference_reduction_memaccess_total_ns;
 
-      CollisionStats(double inference_reduction_memaccess_total_time)
-         : min(0xFFFFFFFFFFFFFFFFllu), max(0), empty_buckets(0), colliding_buckets(0), total_collisions(0), std_dev(0),
-           inference_reduction_memaccess_total_time(inference_reduction_memaccess_total_time) {}
-   };
+      explicit CollisionStats(Counter inference_reduction_memaccess_total_ns)
+         : min(0xFFFFFFFFFFFFFFFFLLU), max(0), empty_buckets(0), colliding_buckets(0), total_collisions(0), std_dev(0),
+           inference_reduction_memaccess_total_ns(inference_reduction_memaccess_total_ns) {}
+   } __attribute__((aligned(64)));
 
    /**
     * Returns min, max and sum of elements hashed into a dataset.size() * over_alloc sized hashtable
@@ -36,7 +36,7 @@ namespace Benchmark {
    CollisionStats<uint64_t, double> measure_collisions(const std::vector<uint64_t>& dataset, const double& over_alloc,
                                                        const HashFunction& hashfn, const Reducer& reduce) {
       // Emulate hashtable with buckets (we only care about amount of elements per bucket)
-      const auto n = (uint64_t) std::ceil(dataset.size() * over_alloc);
+      const auto n = static_cast<uint64_t>(std::ceil(static_cast<long double>(dataset.size()) * over_alloc));
       std::vector<uint32_t> collision_counter(n, 0);
 
       auto start_time = std::chrono::steady_clock::now();
@@ -51,32 +51,29 @@ namespace Benchmark {
          //         assert(collision_counter[index] != 0);
       }
       auto end_time = std::chrono::steady_clock::now();
-      double inference_reduction_memaccess_total_time =
-         std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
+      uint64_t inference_reduction_memaccess_total_ns =
+         static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
 
       // Min has to start at max value for its type
-      CollisionStats<uint64_t, double> stats(inference_reduction_memaccess_total_time);
+      CollisionStats<uint64_t, double> stats(inference_reduction_memaccess_total_ns);
       double std_dev_square_sum = 0.0;
       const double average = 1.0 / over_alloc;
 
       for (const auto bucket_cnt : collision_counter) {
-         stats.min = std::min((uint64_t) bucket_cnt, stats.min);
-         stats.max = std::max((uint64_t) bucket_cnt, stats.max);
+         stats.min = std::min(static_cast<uint64_t>(bucket_cnt), stats.min);
+         stats.max = std::max(static_cast<uint64_t>(bucket_cnt), stats.max);
          stats.empty_buckets += bucket_cnt == 0 ? 1 : 0;
          stats.colliding_buckets += bucket_cnt > 1 ? 1 : 0; // TODO: think about how to make this branchless (for fun)
          stats.total_collisions += bucket_cnt > 1 ? bucket_cnt : 0;
          std_dev_square_sum += (bucket_cnt - average) * (bucket_cnt - average);
       }
-      stats.std_dev = std::sqrt(std_dev_square_sum / (double) dataset.size());
+      stats.std_dev = std::sqrt(std_dev_square_sum / static_cast<double>(dataset.size()));
 
       return stats;
    }
 
    struct ThroughputStats {
-      double total_inference_reduction_time;
-
-      ThroughputStats(double total_inference_reduction_time)
-         : total_inference_reduction_time(total_inference_reduction_time) {}
+      uint64_t total_inference_reduction_ns;
    };
 
    /**
@@ -93,19 +90,19 @@ namespace Benchmark {
    ThroughputStats measure_throughput(const std::vector<uint64_t>& dataset, const double& over_alloc,
                                       const HashFunction& hashfn, const Reducer& reduce) {
       // Emulate hashtable with buckets (we only care about amount of elements per bucket)
-      const auto n = (uint64_t) std::ceil(dataset.size() * over_alloc);
+      const auto n = static_cast<uint64_t>(std::ceil(static_cast<long double>(dataset.size()) * over_alloc));
 
-      auto start_time = std::chrono::steady_clock::now();
+      const auto start_time = std::chrono::steady_clock::now();
       // Hash each value and record entries per bucket
       for (const auto key : dataset) {
          // Ensure the compiler does not simply remove this index
          // calculation during optimization.
          Barrier::DoNotOptimize(reduce(hashfn(key), n));
       }
-      auto end_time = std::chrono::steady_clock::now();
-      double total_inference_reduction_time =
-         std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
+      const auto end_time = std::chrono::steady_clock::now();
+      const auto delta_ns =
+         static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
 
-      return {total_inference_reduction_time};
+      return {delta_ns};
    }
 } // namespace Benchmark
