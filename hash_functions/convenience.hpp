@@ -110,8 +110,8 @@ struct Cache {
    template<size_t cache_line_size = 64>
    static forceinline void clearcache(const void* start, const size_t size) {
 #if (defined(__GNUC__) || defined(__clang__)) && (defined(__x86_64__) || defined(__i386__))
-      const auto* addr = (std::uint8_t*) start;
-      for (auto* ptr = addr; ptr < addr + size; ptr += cache_line_size) {
+      const auto* addr = reinterpret_cast<const std::uint8_t*>(start);
+      for (const auto* ptr = addr; ptr < addr + size; ptr += cache_line_size) {
          _mm_clflush(start);
       }
 #else
