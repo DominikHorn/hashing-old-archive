@@ -3,7 +3,7 @@
 #include "convenience.hpp"
 #include "wrappers/types.hpp"
 
-// TODO: we might need those
+// TODO: utilize this for batching!
 //#define LIBDIVIDE_SSE2
 //#define LIBDIVIDE_AVX2
 //#define LIBDIVIDE_AVX512
@@ -40,8 +40,10 @@ struct HashReduction {
       return value % n;
    }
 
-   template<typename T>
-   static constexpr forceinline T magic_modulo(const T& value, const T& n, const libdivide::divider<T>& fast_d) {
+   template<typename T, typename Divider = libdivide::divider<T>>
+   static constexpr forceinline T magic_modulo(const T& value, const T& n, const Divider& fast_d) {
+      // TODO: investigate SIMD batching opportunities (see libdivide include for different options)
+
       const auto div = value / fast_d; // Operator overloading ensures this is not an actual division
       const auto remainder = value - div * n;
       return remainder;
@@ -51,7 +53,13 @@ struct HashReduction {
    static forceinline libdivide::divider<T> make_magic_divider(const T& divisor) {
       // TODO: similar to https://github.com/peterboncz/bloomfilter-bsd/blob/master/src/dtl/div.hpp,
       //  we might want to filter out certain generated dividers to gain extra speed
-      // TODO: investigate branchless vs branchfull
+      return {divisor};
+   }
+
+   template<typename T>
+   static forceinline libdivide::branchfree_divider<T> make_branchfree_magic_divider(const T& divisor) {
+      // TODO: similar to https://github.com/peterboncz/bloomfilter-bsd/blob/master/src/dtl/div.hpp,
+      //  we might want to filter out certain generated dividers to gain extra speed
       return {divisor};
    }
 
