@@ -110,6 +110,8 @@ int main(const int argc, const char* argv[]) {
             measure("city128_xor", [](HASH_64 key) { return HashReduction::xor_both(CityHash::CityHash128(key)); });
             measure("city128_city",
                     [](HASH_64 key) { return HashReduction::hash_128_to_64(CityHash::CityHash128(key)); });
+            measure("meow64_low", [](HASH_64 key) { return MeowHash::hash64(key); });
+            measure("meow64_upp", [](HASH_64 key) { return MeowHash::hash64<1>(key); });
          }
       }
 

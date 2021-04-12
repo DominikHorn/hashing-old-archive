@@ -3,7 +3,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "../convenience/convenience.hpp"
+#include "convenience.hpp"
 #include "types.hpp"
 
 /**

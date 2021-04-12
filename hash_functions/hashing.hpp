@@ -6,11 +6,12 @@
  * classical hash functions
  */
 
-#include "city.hpp"
-#include "mult.hpp"
-#include "multadd.hpp"
-#include "murmur.hpp"
 #include "reduction.hpp"
-#include "tabulation.hpp"
-#include "types.hpp"
-#include "xxh.hpp"
+#include "wrappers/city.hpp"
+#include "wrappers/meow.hpp"
+#include "wrappers/mult.hpp"
+#include "wrappers/multadd.hpp"
+#include "wrappers/murmur.hpp"
+#include "wrappers/tabulation.hpp"
+#include "wrappers/types.hpp"
+#include "wrappers/xxh.hpp"

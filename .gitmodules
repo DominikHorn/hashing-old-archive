@@ -31,3 +31,6 @@
 [submodule "hash_functions/suxcpp"]
 	path = hash_functions/suxcpp
 	url = https://github.com/vigna/sux.git
+[submodule "hash_functions/meow_hash"]
+	path = hash_functions/meow_hash
+	url = https://github.com/cmuratori/meow_hash.git

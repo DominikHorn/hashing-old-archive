@@ -31,7 +31,7 @@
 /**
  * Memory barrier code taken from google-benchmark
  * See google-benchmark.license.txt for the code's apache license
- * statement.
+ * statement. License is not provided inline since it is rather long.
  *
  * NOTE: this code is slightly modified from its original source!
  */

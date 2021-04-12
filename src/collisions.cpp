@@ -56,9 +56,9 @@ int main(const int argc, const char* argv[]) {
 
                // regular modulo collision measurement is only necessary to ensure that fast_modulo is implemented correctly
                std::cout << "measuring modulo(" << method << ") ..." << std::flush;
-               log_and_write_results_csv(
-                  "modulo",
-                  Benchmark::measure_collisions(dataset, over_alloc, hashfn, HashReduction::modulo<HASH_64>));
+               log_and_write_results_csv("modulo",
+                                         Benchmark::measure_collisions(dataset, over_alloc, hashfn,
+                                                                       HashReduction::modulo<HASH_64>));
 
                std::cout << "measuring fast_modulo(" << method << ") ..." << std::flush;
                log_and_write_results_csv(
@@ -71,9 +71,9 @@ int main(const int argc, const char* argv[]) {
                                                 }));
 
                std::cout << "measuring fastrange(" << method << ") ..." << std::flush;
-               log_and_write_results_csv(
-                  "fastrange",
-                  Benchmark::measure_collisions(dataset, over_alloc, hashfn, HashReduction::fastrange<HASH_64>));
+               log_and_write_results_csv("fastrange",
+                                         Benchmark::measure_collisions(dataset, over_alloc, hashfn,
+                                                                       HashReduction::fastrange<HASH_64>));
             };
 
             // More significant bits supposedly are of higher quality for multiplicative methods -> compute
@@ -111,6 +111,8 @@ int main(const int argc, const char* argv[]) {
             measure("city128_xor", [](HASH_64 key) { return HashReduction::xor_both(CityHash::CityHash128(key)); });
             measure("city128_city",
                     [](HASH_64 key) { return HashReduction::hash_128_to_64(CityHash::CityHash128(key)); });
+            measure("meow64_low", [](HASH_64 key) { return MeowHash::hash64(key); });
+            measure("meow64_upp", [](HASH_64 key) { return MeowHash::hash64<1>(key); });
          }
       }
 

@@ -4,7 +4,7 @@
 #include <cmath>
 #include <vector>
 
-#include "../convenience/convenience.hpp"
+#include "convenience.hpp"
 
 namespace Benchmark {
    // These are probably to large but these few additional bytes don't hurt
