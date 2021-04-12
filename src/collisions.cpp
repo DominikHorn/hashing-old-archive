@@ -26,8 +26,10 @@ int main(const int argc, const char* argv[]) {
               << ",dataset" << std::endl;
 
       // Prepare a tabulation hash table
-      HASH_64 tabulation_table[sizeof(HASH_64)][0xFF] = {0};
-      TabulationHash::gen_table(tabulation_table);
+      HASH_64 small_tabulation_table[0xFF] = {0};
+      HASH_64 large_tabulation_table[sizeof(HASH_64)][0xFF] = {0};
+      TabulationHash::gen_column(small_tabulation_table);
+      TabulationHash::gen_table(large_tabulation_table);
 
       for (const auto& it : args.datasets) {
          std::cout << "dataset " << it.filename << std::endl;
@@ -104,7 +106,10 @@ int main(const int argc, const char* argv[]) {
             measure("xxh3_128_xor", [](HASH_64 key) { return HashReduction::xor_both(XXHash::XXH3_128_hash(key)); });
             measure("xxh3_128_city",
                     [](HASH_64 key) { return HashReduction::hash_128_to_64(XXHash::XXH3_128_hash(key)); });
-            measure("tabulation64", [&](HASH_64 key) { return TabulationHash::naive_hash(key, tabulation_table); });
+            measure("tabulation_small64",
+                    [&](HASH_64 key) { return TabulationHash::small_hash(key, small_tabulation_table); });
+            measure("tabulation_large64",
+                    [&](HASH_64 key) { return TabulationHash::large_hash(key, large_tabulation_table); });
             measure("city64", [](HASH_64 key) { return CityHash::CityHash64(key); });
             measure("city128_low", [](HASH_64 key) { return HashReduction::lower_half(CityHash::CityHash128(key)); });
             measure("city128_upp", [](HASH_64 key) { return HashReduction::upper_half(CityHash::CityHash128(key)); });

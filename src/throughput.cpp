@@ -21,8 +21,10 @@ int main(const int argc, const char* argv[]) {
               << ",dataset" << std::endl;
 
       // Prepare a tabulation hash table
-      HASH_64 tabulation_table[sizeof(HASH_64)][0xFF] = {0};
-      TabulationHash::gen_table(tabulation_table);
+      HASH_64 small_tabulation_table[0xFF] = {0};
+      HASH_64 large_tabulation_table[sizeof(HASH_64)][0xFF] = {0};
+      TabulationHash::gen_column(small_tabulation_table);
+      TabulationHash::gen_table(large_tabulation_table);
 
       for (const auto& it : args.datasets) {
          std::cout << "dataset " << it.filename << std::endl;
@@ -98,11 +100,25 @@ int main(const int argc, const char* argv[]) {
             measure("xxh3_128_xor", [](HASH_64 key) { return HashReduction::xor_both(XXHash::XXH3_128_hash(key)); });
             measure("xxh3_128_city",
                     [](HASH_64 key) { return HashReduction::hash_128_to_64(XXHash::XXH3_128_hash(key)); });
-            measure("tabulation64_cold", // TODO: tabulation_table truely is not in cache
-                    [&](HASH_64 key) { return TabulationHash::naive_hash(key, tabulation_table); });
+
+            // TODO: tabulation_table truely is not in cache
+            measure("tabulation_small_cold64",
+                    [&](HASH_64 key) { return TabulationHash::small_hash(key, small_tabulation_table); });
+            // TODO: tabulation_table truely is not in cache
+            measure("tabulation_large_cold64",
+                    [&](HASH_64 key) { return TabulationHash::large_hash(key, large_tabulation_table); });
+
             // tabulation_table should entirely be in cache due to the previous tabulation64 run; However, just to be sure:
-            Prefetcher::prefetch_block<Prefetcher::READ, Prefetcher::HIGH>(&tabulation_table, sizeof(tabulation_table));
-            measure("tabulation64_hot", [&](HASH_64 key) { return TabulationHash::naive_hash(key, tabulation_table); });
+            Prefetcher::prefetch_block<Prefetcher::READ, Prefetcher::HIGH>(&small_tabulation_table,
+                                                                           sizeof(small_tabulation_table));
+            measure("tabulation_small_hot64",
+                    [&](HASH_64 key) { return TabulationHash::small_hash(key, small_tabulation_table); });
+            // tabulation_table should entirely be in cache due to the previous tabulation64 run; However, just to be sure:
+            Prefetcher::prefetch_block<Prefetcher::READ, Prefetcher::HIGH>(&large_tabulation_table,
+                                                                           sizeof(large_tabulation_table));
+            measure("tabulation_large_hot64",
+                    [&](HASH_64 key) { return TabulationHash::large_hash(key, large_tabulation_table); });
+
             measure("city64", [](HASH_64 key) { return CityHash::CityHash64(key); });
             measure("city128_low", [](HASH_64 key) { return HashReduction::lower_half(CityHash::CityHash128(key)); });
             measure("city128_upp", [](HASH_64 key) { return HashReduction::upper_half(CityHash::CityHash128(key)); });
