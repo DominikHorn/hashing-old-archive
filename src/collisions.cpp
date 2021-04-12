@@ -106,8 +106,12 @@ int main(const int argc, const char* argv[]) {
             // Uniform random baseline (random prime constant)
             RandomHash rhash(hashtable_size);
             measure_hashfn_with_reducer(
-               "uniform_random", [&](HASH_64 key) { return rhash.next(); }, "do_nothing",
-               HashReduction::do_nothing<HASH_64>);
+               "uniform_random",
+               [&](HASH_64 key) {
+                  UNUSED(key);
+                  return rhash.next();
+               },
+               "do_nothing", HashReduction::do_nothing<HASH_64>);
 
             measure_hashfn("mult64", [](HASH_64 key) { return MultHash::mult64_hash(key); });
             measure_hashfn("mult64_shift", [p](HASH_64 key) { return MultHash::mult64_hash(key, p); });
