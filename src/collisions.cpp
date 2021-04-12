@@ -19,13 +19,17 @@ int main(const int argc, const char* argv[]) {
               << ",max"
               << ",std_dev"
               << ",empty_buckets"
+              << ",empty_buckets_percent"
               << ",colliding_buckets"
-              << ",total_collisions"
+              << ",colliding_buckets_percent"
+              << ",total_colliding_keys"
+              << ",total_colliding_keys_percent"
               << ",nanoseconds_total"
               << ",nanoseconds_per_key"
               << ",load_factor"
               << ",reducer"
-              << ",dataset" << std::endl;
+              << ",dataset"
+              << ",numelements" << std::endl;
 
       // Prepare a tabulation hash table
       HASH_64 small_tabulation_table[0xFF] = {0};
@@ -51,18 +55,33 @@ int main(const int argc, const char* argv[]) {
                const auto stats = Benchmark::measure_collisions(dataset, over_alloc, hashfn, reducerfn);
                std::cout << (static_cast<long double>(stats.inference_reduction_memaccess_total_ns) /
                              static_cast<long double>(dataset.size()))
-                         << "ns/key ("
+                         << " ns/key ("
                          << (static_cast<long double>(stats.inference_reduction_memaccess_total_ns) /
                              static_cast<long double>(1000000000.0))
                          << " s total)" << std::endl;
 
                // Write to csv
-               outfile << hash_name << "," << stats.min << "," << stats.max << "," << stats.std_dev << ","
-                       << stats.empty_buckets << "," << stats.colliding_buckets << "," << stats.total_collisions << ","
+               outfile << hash_name << "," // hash function name
+                       << stats.min << "," // min keys found in a single bucket after hashing (should be 0)
+                       << stats.max << "," // max keys found in a single bucket (must be > 0)
+                       << stats.std_dev << "," // std_dev regarding amount of keys per bucket
+                       << stats.empty_buckets << "," // absolute amount of empty buckets
+                       << static_cast<double>(stats.empty_buckets) / static_cast<double>(hashtable_size)
+                       << "," // relative amount of empty buckets
+                       << stats.colliding_buckets << ","
+                       << static_cast<double>(stats.colliding_buckets) / static_cast<double>(hashtable_size)
+                       << "," // relative amount of buckets with collisions, i.e., buckets with more than 1 element
+                       << stats.total_colliding_keys << "," // total amount of colliding keys
+                       << static_cast<double>(stats.total_colliding_keys) / static_cast<double>(dataset.size())
+                       << "," // relative amount of colliding keys
                        << stats.inference_reduction_memaccess_total_ns << ","
                        << (static_cast<long double>(stats.inference_reduction_memaccess_total_ns) /
                            static_cast<long double>(dataset.size()))
-                       << "," << load_factor << "," << reducer_name << "," << it.filename << std::endl;
+                       << "," << load_factor << "," // load factor of the hashtable
+                       << reducer_name << "," // name of the reducer
+                       << it.filename << "," // dataset name
+                       << dataset.size() // amount of keys in the dataset
+                       << std::endl;
             };
 
             const auto measure_hashfn = [&](const std::string& hash_name, auto hashfn) {

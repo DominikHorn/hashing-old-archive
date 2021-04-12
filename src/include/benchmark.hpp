@@ -14,14 +14,14 @@ namespace Benchmark {
       Counter max;
       Counter empty_buckets;
       Counter colliding_buckets;
-      Counter total_collisions;
+      Counter total_colliding_keys;
       PreciseMath std_dev;
 
       Counter inference_reduction_memaccess_total_ns;
 
       explicit CollisionStats(Counter inference_reduction_memaccess_total_ns)
-         : min(0xFFFFFFFFFFFFFFFFLLU), max(0), empty_buckets(0), colliding_buckets(0), total_collisions(0), std_dev(0),
-           inference_reduction_memaccess_total_ns(inference_reduction_memaccess_total_ns) {}
+         : min(0xFFFFFFFFFFFFFFFFLLU), max(0), empty_buckets(0), colliding_buckets(0), total_colliding_keys(0),
+           std_dev(0), inference_reduction_memaccess_total_ns(inference_reduction_memaccess_total_ns) {}
    } __attribute__((aligned(64)));
 
    /**
@@ -64,7 +64,7 @@ namespace Benchmark {
          stats.max = std::max(static_cast<uint64_t>(bucket_cnt), stats.max);
          stats.empty_buckets += bucket_cnt == 0 ? 1 : 0;
          stats.colliding_buckets += bucket_cnt > 1 ? 1 : 0;
-         stats.total_collisions += bucket_cnt > 1 ? bucket_cnt : 0;
+         stats.total_colliding_keys += bucket_cnt > 1 ? bucket_cnt : 0;
          std_dev_square_sum += (bucket_cnt - average) * (bucket_cnt - average);
       }
       stats.std_dev = std::sqrt(std_dev_square_sum / static_cast<double>(dataset.size()));
