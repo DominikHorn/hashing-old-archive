@@ -160,10 +160,16 @@ struct HashReduction {
 
 template<>
 constexpr forceinline HASH_32 HashReduction::fastrange(const HASH_32& value, const HASH_32& n) {
-   return ((uint64_t) value * (uint64_t) n) >> 32;
+   return static_cast<HASH_32>((static_cast<uint64_t>(value) * static_cast<uint64_t>(n)) >> 32);
 }
 
 template<>
 constexpr forceinline HASH_64 HashReduction::fastrange(const HASH_64& value, const HASH_64& n) {
-   return ((__uint128_t) value * (__uint128_t) n) >> 64;
+#ifdef __SIZEOF_INT128__
+   return static_cast<HASH_64>((static_cast<__uint128_t>(value) * static_cast<__uint128_t>(n)) >> 64);
+#else
+   #warning \
+      "Fastrange fallback (actual modulo) active, since 128bit integer multiplication seems to be unsupported on this system/compiler"
+   return value % n; // Fallback
+#endif
 }
