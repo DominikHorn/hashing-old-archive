@@ -8,6 +8,7 @@
 #include "include/benchmark.hpp"
 #include "include/dataset.hpp"
 
+// TODO: ensure that we don't use two separate reducers for 128bit hashes for throughput benchmark!
 int main(const int argc, const char* argv[]) {
    std::ofstream outfile;
 

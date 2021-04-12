@@ -88,13 +88,11 @@ int main(const int argc, const char* argv[]) {
             const auto measure_hashfn = [&](const std::string& hash_name, auto hashfn) {
                measure_hashfn_with_reducer(hash_name, hashfn, "fastrange", HashReduction::fastrange<HASH_64>);
 
-               // TODO: disable the following two for benchmark (Only required to verify branchless fast modulo)
                measure_hashfn_with_reducer(hash_name, hashfn, "modulo", HashReduction::modulo<HASH_64>);
                measure_hashfn_with_reducer(hash_name, hashfn, "fast_modulo",
                                            [&magic_div](const HASH_64& value, const HASH_64& n) {
                                               return HashReduction::magic_modulo(value, n, magic_div);
                                            });
-
                measure_hashfn_with_reducer(hash_name, hashfn, "branchless_fast_modulo",
                                            [&magic_branchfree_div](const HASH_64& value, const HASH_64& n) {
                                               return HashReduction::magic_modulo(value, n, magic_branchfree_div);
