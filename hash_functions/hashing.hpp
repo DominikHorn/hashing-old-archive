@@ -8,6 +8,7 @@
 
 #include "reduction.hpp"
 #include "wrappers/city.hpp"
+#include "wrappers/meow.hpp"
 #include "wrappers/mult.hpp"
 #include "wrappers/multadd.hpp"
 #include "wrappers/murmur.hpp"
