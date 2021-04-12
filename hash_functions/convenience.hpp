@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
+
 /// prevent unused warnings
 #define UNUSED(x) (void) (x)
 
@@ -89,7 +92,7 @@ struct Prefetcher {
     */
    template<Mode mode = WRITE, Locality locality = NONE, size_t cache_line_size = 64>
    static forceinline unroll_loops void prefetch_block(const void* address, const size_t size) {
-      for (auto ptr = (uint8_t*) address; ptr < (uint8_t*) address + size; ptr += cache_line_size) {
+      for (auto ptr = (std::uint8_t*) address; ptr < (std::uint8_t*) address + size; ptr += cache_line_size) {
          prefetch(ptr, mode, locality);
       }
    }
