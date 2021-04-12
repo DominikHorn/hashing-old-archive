@@ -86,7 +86,8 @@ int main(const int argc, const char* argv[]) {
             };
 
             const auto measure_hashfn = [&](const std::string& hash_name, auto hashfn) {
-               measure_hashfn_with_reducer(hash_name, hashfn, "fastrange", HashReduction::fastrange<HASH_64>);
+               measure_hashfn_with_reducer(hash_name, hashfn, "fastrange32", HashReduction::fastrange<HASH_32>);
+               measure_hashfn_with_reducer(hash_name, hashfn, "fastrange64", HashReduction::fastrange<HASH_64>);
 
                measure_hashfn_with_reducer(hash_name, hashfn, "modulo", HashReduction::modulo<HASH_64>);
                measure_hashfn_with_reducer(hash_name, hashfn, "fast_modulo",
