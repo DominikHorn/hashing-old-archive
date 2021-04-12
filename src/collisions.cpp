@@ -41,7 +41,9 @@ int main(const int argc, const char* argv[]) {
             const auto measure = [&](const std::string& method, auto hashfn) {
                const auto log_and_write_results_csv = [&](const std::string& reducer,
                                                           const Benchmark::CollisionStats<uint64_t, double>& stats) {
-                  std::cout << " took " << (stats.inference_reduction_memaccess_total_ns / dataset.size())
+                  std::cout << " took "
+                            << (static_cast<long double>(stats.inference_reduction_memaccess_total_ns) /
+                                static_cast<long double>(dataset.size()))
                             << "ns per key (" << stats.inference_reduction_memaccess_total_ns << " ns total)"
                             << std::endl;
                   outfile << method << "," << stats.min << "," << stats.max << "," << stats.std_dev << ","

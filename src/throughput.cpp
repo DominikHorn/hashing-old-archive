@@ -37,8 +37,10 @@ int main(const int argc, const char* argv[]) {
             const auto measure = [&](const std::string& method, const auto& hashfn) {
                const auto log_and_write_results_csv = [&](const std::string& reducer,
                                                           const Benchmark::ThroughputStats& stats) {
-                  std::cout << " took " << (stats.total_inference_reduction_ns / dataset.size()) << "ns per key ("
-                            << stats.total_inference_reduction_ns << " ns total)" << std::endl;
+                  std::cout << " took "
+                            << (static_cast<long double>(stats.total_inference_reduction_ns) /
+                                static_cast<long double>(dataset.size()))
+                            << "ns per key (" << stats.total_inference_reduction_ns << " ns total)" << std::endl;
                   outfile << method << "," << stats.total_inference_reduction_ns << ","
                           << (static_cast<long double>(stats.total_inference_reduction_ns) /
                               static_cast<long double>(dataset.size()))
