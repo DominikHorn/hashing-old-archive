@@ -22,7 +22,6 @@ int main(const int argc, const char* argv[]) {
 
       // Prepare a tabulation hash table
       HASH_64 tabulation_table[sizeof(HASH_64)][0xFF] = {0};
-      const size_t tabulation_table_size = sizeof(HASH_64) * sizeof(HASH_64) * 0xFF;
       TabulationHash::gen_table(tabulation_table);
 
       for (const auto& it : args.datasets) {
@@ -102,7 +101,7 @@ int main(const int argc, const char* argv[]) {
             measure("tabulation64_cold", // TODO: tabulation_table truely is not in cache
                     [&](HASH_64 key) { return TabulationHash::naive_hash(key, tabulation_table); });
             // tabulation_table should entirely be in cache due to the previous tabulation64 run; However, just to be sure:
-            Prefetcher::prefetch_block<Prefetcher::READ, Prefetcher::HIGH>(&tabulation_table, tabulation_table_size);
+            Prefetcher::prefetch_block<Prefetcher::READ, Prefetcher::HIGH>(&tabulation_table, sizeof(tabulation_table));
             measure("tabulation64_hot", [&](HASH_64 key) { return TabulationHash::naive_hash(key, tabulation_table); });
             measure("city64", [](HASH_64 key) { return CityHash::CityHash64(key); });
             measure("city128_low", [](HASH_64 key) { return HashReduction::lower_half(CityHash::CityHash128(key)); });
