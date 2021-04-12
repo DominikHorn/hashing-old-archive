@@ -58,7 +58,10 @@ int main(const int argc, const char* argv[]) {
                };
 
                measure_hashfn_with_reducer("do_nothing", HashReduction::do_nothing<HASH_64>);
-               measure_hashfn_with_reducer("fastrange", HashReduction::fastrange<HASH_64>);
+
+               measure_hashfn_with_reducer("fastrange32", HashReduction::fastrange<HASH_32>);
+               measure_hashfn_with_reducer("fastrange64", HashReduction::fastrange<HASH_64>);
+
                measure_hashfn_with_reducer("modulo", HashReduction::modulo<HASH_64>);
                measure_hashfn_with_reducer("fast_modulo", [&magic_div](const HASH_64& value, const HASH_64& n) {
                   return HashReduction::magic_modulo(value, n, magic_div);
@@ -69,19 +72,33 @@ int main(const int argc, const char* argv[]) {
                                            });
             };
 
+            measure_hashfn("mult64", [](HASH_64 key) { return MultHash::mult64_hash(key); });
+            measure_hashfn("fibo64", [](HASH_64 key) { return MultHash::fibonacci64_hash(key); });
+            measure_hashfn("fibo_prime64", [](HASH_64 key) { return MultHash::fibonacci_prime64_hash(key); });
+            measure_hashfn("multadd64", [](HASH_64 key) { return MultAddHash::multadd64_hash(key); });
+
             // More significant bits supposedly are of higher quality for multiplicative methods -> compute
             // how much we need to shift to throw away as few "high quality" bits as possible
             const auto p = (sizeof(hashtable_size) * 8) - __builtin_clz(hashtable_size - 1);
+            measure_hashfn("mult64_shift" + std::to_string(p),
+                           [p](HASH_64 key) { return MultHash::mult64_hash(key, p); });
+            measure_hashfn("fibo64_shift" + std::to_string(p),
+                           [p](HASH_64 key) { return MultHash::fibonacci64_hash(key, p); });
+            measure_hashfn("fibo_prime64_shift" + std::to_string(p),
+                           [p](HASH_64 key) { return MultHash::fibonacci_prime64_hash(key, p); });
+            measure_hashfn("multadd64_shift" + std::to_string(p),
+                           [p](HASH_64 key) { return MultAddHash::multadd64_hash(key, p); });
 
-            measure_hashfn("mult64", [](HASH_64 key) { return MultHash::mult64_hash(key); });
-            measure_hashfn("mult64_shift", [p](HASH_64 key) { return MultHash::mult64_hash(key, p); });
-            measure_hashfn("fibo64", [](HASH_64 key) { return MultHash::fibonacci64_hash(key); });
-            measure_hashfn("fibo64_shift", [p](HASH_64 key) { return MultHash::fibonacci64_hash(key, p); });
-            measure_hashfn("fibo_prime64", [](HASH_64 key) { return MultHash::fibonacci_prime64_hash(key); });
-            measure_hashfn("fibo_prime64_shift", [p](HASH_64 key) { return MultHash::fibonacci_prime64_hash(key, p); });
+            // Otherwise even fastrange32 does not have a fair chance (fastrange64 does not work with this kind of shifting)
+            if (p < 32) {
+               measure_hashfn("mult64_shift32", [p](HASH_64 key) { return MultHash::mult64_hash(key, 32); });
+               measure_hashfn("fibo64_shift32", [p](HASH_64 key) { return MultHash::fibonacci64_hash(key, 32); });
+               measure_hashfn("fibo_prime64_shift32",
+                              [p](HASH_64 key) { return MultHash::fibonacci_prime64_hash(key, 32); });
+               measure_hashfn("multadd64_shift32", [p](HASH_64 key) { return MultAddHash::multadd64_hash(key, 32); });
+            }
 
-            measure_hashfn("multadd64", [](HASH_64 key) { return MultAddHash::multadd64_hash(key); });
-            measure_hashfn("multadd64_shift", [p](HASH_64 key) { return MultAddHash::multadd64_hash(key, p); });
+            // TODO: try rolling hashes instead of shifting (will supposedly produce much better results with fastrange)
 
             measure_hashfn("murmur3_128_low",
                            [](HASH_64 key) { return HashReduction::lower_half(MurmurHash3::murmur3_128(key)); });
@@ -104,20 +121,12 @@ int main(const int argc, const char* argv[]) {
             measure_hashfn("xxh3_128_city",
                            [](HASH_64 key) { return HashReduction::hash_128_to_64(XXHash::XXH3_128_hash(key)); });
 
-            Cache::clearcache((void*) small_tabulation_table, sizeof(small_tabulation_table));
-            measure_hashfn("tabulation_small_cold64",
+            // cold vs hot does not really make a difference, just benchmark not messing with the hardware prefetcher magic
+            //            Cache::clearcache((void*) large_tabulation_table, sizeof(large_tabulation_table));
+            //            Cache::prefetch_block<Cache::READ, Cache::HIGH>(&small_tabulation_table, sizeof(small_tabulation_table));
+            measure_hashfn("tabulation_small64",
                            [&](HASH_64 key) { return TabulationHash::small_hash(key, small_tabulation_table); });
-            Cache::clearcache((void*) large_tabulation_table, sizeof(large_tabulation_table));
-            measure_hashfn("tabulation_large_cold64",
-                           [&](HASH_64 key) { return TabulationHash::large_hash(key, large_tabulation_table); });
-
-            // tabulation_table should entirely be in cache due to the previous tabulation64 run; However, just to be sure:
-            Cache::prefetch_block<Cache::READ, Cache::HIGH>(&small_tabulation_table, sizeof(small_tabulation_table));
-            measure_hashfn("tabulation_small_hot64",
-                           [&](HASH_64 key) { return TabulationHash::small_hash(key, small_tabulation_table); });
-            // tabulation_table should entirely be in cache due to the previous tabulation64 run; However, just to be sure:
-            Cache::prefetch_block<Cache::READ, Cache::HIGH>(&large_tabulation_table, sizeof(large_tabulation_table));
-            measure_hashfn("tabulation_large_hot64",
+            measure_hashfn("tabulation_large64",
                            [&](HASH_64 key) { return TabulationHash::large_hash(key, large_tabulation_table); });
 
             measure_hashfn("city64", [](HASH_64 key) { return CityHash::CityHash64(key); });
