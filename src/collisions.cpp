@@ -39,6 +39,8 @@ int main(const int argc, const char* argv[]) {
             const auto magic_div = HashReduction::make_magic_divider(static_cast<HASH_64>(hashtable_size));
 
             const auto measure = [&](const std::string& method, auto hashfn) {
+               // TODO: regular modulo collision measurement is only necessary to ensure that
+               //  magic_modulo is implemented correctly. Remove this for actual experiment (wasteful).
                std::cout << "measuring modulo(" << method << ") ..." << std::flush;
                auto stats = Benchmark::measure_collisions(dataset, over_alloc, hashfn, HashReduction::modulo<HASH_64>);
                std::cout << " took " << (stats.inference_reduction_memaccess_total_time / dataset.size())
@@ -51,8 +53,6 @@ int main(const int argc, const char* argv[]) {
                        << "modulo"
                        << "," << it.filename << std::endl;
 
-               // TODO: fast modulo collision measurement is only necessary to ensure that magic_modulo is implemented
-               //  correctly. Remove this for actual experiment (wasteful).
                std::cout << "measuring fast_modulo(" << method << ") ..." << std::flush;
                stats = Benchmark::measure_collisions(dataset,
                                                      over_alloc,
