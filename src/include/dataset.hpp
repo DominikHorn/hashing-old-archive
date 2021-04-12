@@ -4,6 +4,7 @@
 #include <iostream>
 #include <iterator>
 #include <map>
+#include <random>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -33,7 +34,7 @@ struct Dataset {
          throw std::runtime_error("Dataset file at path '" + filepath + "' does not exist");
       }
       std::vector<unsigned char> buffer(size);
-      if (!input.read((char*) buffer.data(), size)) {
+      if (!input.read(reinterpret_cast<char*>(buffer.data()), size)) {
          throw std::runtime_error("Failed to read dataset at path '" + filepath + "'");
       }
 
@@ -66,25 +67,54 @@ struct Dataset {
       // TODO: what did the log2(dataset[dataset.size() - 1]) = log2(max(dataset)) [respective - 2] computation in
       //  the original code achieve? Tree size binary tree/Search steps binary search?
       std::cout << "Sorted and deduplicated dataset. " << dataset.size() << " entries remaining" << std::endl;
+      return dataset;
+   }
 
+   std::vector<uint64_t> load_shuffled(const std::string& path, const uint64_t seed = 0xC7455FEC83DD661FLLU) const {
+      auto dataset = load(path);
+      shuffle(dataset, seed);
       return dataset;
    }
 
   private:
    /**
+    * Shuffles the given dataset
+    * @param dataset
+    * @param seed
+    */
+   static forceinline void shuffle(std::vector<uint64_t>& dataset, const uint64_t seed) {
+      std::default_random_engine gen(seed);
+      std::uniform_int_distribution<uint64_t> dist(0);
+
+      const auto swap = [&](auto a, auto b) {
+         const auto tmp = dataset[a];
+         dataset[a] = b;
+         dataset[b] = tmp;
+      };
+
+      for (size_t i = dataset.size() - 1; i > 0; i--) {
+         auto j = dist(gen) % i;
+         swap(i, j);
+      }
+   }
+
+   /**
     * Helper to extract an 8 byte number encoded in little endian from a byte vector
     */
-   uint64_t forceinline read_little_endian_8(const std::vector<unsigned char>& buffer, uint64_t offset) const {
-      return (uint64_t) buffer[offset + 0] | ((uint64_t) buffer[offset + 1] << 8) |
-         ((uint64_t) buffer[offset + 2] << (2 * 8)) | ((uint64_t) buffer[offset + 3] << (3 * 8)) |
-         ((uint64_t) buffer[offset + 4] << (4 * 8)) | ((uint64_t) buffer[offset + 5] << (5 * 8)) |
-         ((uint64_t) buffer[offset + 6] << (6 * 8)) | ((uint64_t) buffer[offset + 7] << (7 * 8));
+   static forceinline uint64_t read_little_endian_8(const std::vector<unsigned char>& buffer, uint64_t offset) {
+      return static_cast<uint64_t>(buffer[offset + 0]) | (static_cast<uint64_t>(buffer[offset + 1]) << 8) |
+         (static_cast<uint64_t>(buffer[offset + 2]) << (2 * 8)) |
+         (static_cast<uint64_t>(buffer[offset + 3]) << (3 * 8)) |
+         (static_cast<uint64_t>(buffer[offset + 4]) << (4 * 8)) |
+         (static_cast<uint64_t>(buffer[offset + 5]) << (5 * 8)) |
+         (static_cast<uint64_t>(buffer[offset + 6]) << (6 * 8)) |
+         (static_cast<uint64_t>(buffer[offset + 7]) << (7 * 8));
    }
 
    /**
     * Helper to extract a 4 byte number encoded in little endian from a byte vector
     */
-   uint64_t forceinline read_little_endian_4(const std::vector<unsigned char>& buffer, uint64_t offset) const {
+   static forceinline uint64_t read_little_endian_4(const std::vector<unsigned char>& buffer, uint64_t offset) {
       return buffer[offset + 0] | (buffer[offset + 1] << 8) | (buffer[offset + 2] << (2 * 8)) |
          (buffer[offset + 3] << (3 * 8));
    }
