@@ -1,35 +1,39 @@
+from collections import OrderedDict
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pandas
 
-csv = pandas.read_csv('throughput.csv')
 colors = list(mpl.colors.TABLEAU_COLORS)
 
-for fig, dataset_name in enumerate(sorted(set(csv['dataset']))):
+csv = pandas.read_csv('throughput.csv')
+dataset_names = sorted(set(csv['dataset']))
+
+for fig, dataset_name in enumerate(dataset_names):
     dataset = csv[csv['dataset'] == dataset_name]
+    dataset = dataset[dataset['load_factor'] == 1.0]
+
     reducers = sorted(list(set(dataset['reducer'])))
 
     plt.figure(figsize=(30, 10))
 
-    # for subplt, load_factor in enumerate(sorted(set(dataset['load_factor']))):
-    load_data = dataset[dataset['load_factor'] == 1.0]
-
     # loosely taken from https://benalexkeen.com/bar-charts-in-matplotlib/
-    # plt.subplot(2, 2, subplt + 1)
     plt.title(f"throughput on {dataset_name}")
     plt.xticks(np.arange(len(reducers)) + 0.5, reducers)
     plt.ylabel('ns per key')
     plt.xlabel('hash reduction method')
 
-    hashmethods = sorted(set(load_data['hash']))
-    for j, hashname in enumerate(hashmethods):
-        series = list(load_data[load_data['hash'] == hashname].sort_values('reducer')["nanoseconds_per_key"])
-        width = 0.95 / len(hashmethods)
+    # order preserving deduplication
+    hash_methods = list(OrderedDict.fromkeys(list(dataset.sort_values('nanoseconds_per_key')['hash'])))
+
+    for j, hash_name in enumerate(hash_methods):
+        series = list(dataset[dataset['hash'] == hash_name].sort_values('reducer')['nanoseconds_per_key'])
+        width = 0.95 / len(hash_methods)
 
         for i, reducer in enumerate(reducers):
             if i == 0:
-                plt.bar(i + j * width, series[i], width, label=hashname, color=colors[j % len(colors)])
+                plt.bar(i + j * width, series[i], width, label=hash_name, color=colors[j % len(colors)])
             else:
                 plt.bar(i + j * width, series[i], width, color=colors[j % len(colors)])
 
