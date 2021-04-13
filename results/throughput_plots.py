@@ -22,11 +22,6 @@ for fig, dataset_name in enumerate(dataset_names):
     reducers = sorted(list(set(dataset['reducer'])))
 
     plt.figure(figsize=(30, 10))
-    plt.grid(linestyle='--', linewidth=0.5)
-    plt.title(f"throughput on {dataset_name}")
-    plt.xticks(np.arange(len(reducers)) + 0.4, reducers)
-    plt.ylabel('ns per key')
-    plt.xlabel('hash reduction method')
 
     # order preserving deduplication
     for j, hash_name in enumerate([m for m in hash_methods if m in set(dataset['hash'])]):
@@ -38,5 +33,11 @@ for fig, dataset_name in enumerate(dataset_names):
             plt.bar(i + j * width, series[i], width, label=hash_name if i == 0 else None,
                     color=colors.get(hash_name) or "white")
 
+    plt.grid(linestyle='--', linewidth=0.5)
+    plt.title(f"throughput on {dataset_name}")
+    plt.xticks(np.arange(len(reducers)) + 0.4, reducers)
+    plt.yticks(list(plt.yticks()[0]) + [1, 2, 3, 4])
+    plt.ylabel('ns per key')
+    plt.xlabel('hash reduction method')
     plt.legend(bbox_to_anchor=(0.5, -0.1), ncol=7)
     plt.savefig(f"throughput_{dataset_name}.pdf", bbox_inches='tight', pad_inches=0.5)
