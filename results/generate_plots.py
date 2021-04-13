@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pandas
 
 csv = pandas.read_csv('throughput.csv')
-colors = list(mpl.colors.CSS4_COLORS)
+colors = list(mpl.colors.TABLEAU_COLORS)
 
 for fig, dataset_name in enumerate(sorted(set(csv['dataset']))):
     dataset = csv[csv['dataset'] == dataset_name]
