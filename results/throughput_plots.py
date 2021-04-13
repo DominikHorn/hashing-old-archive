@@ -36,7 +36,7 @@ for fig, dataset_name in enumerate(dataset_names):
         for i, reducer in enumerate(reducers):
             # We only want to set label once as otherwise legend will contain duplicates
             plt.bar(i + j * width, series[i], width, label=hash_name if i == 0 else None,
-                    color=colors.get(hash_name) or "red")
+                    color=colors.get(hash_name) or "white")
 
     plt.legend(bbox_to_anchor=(0.5, -0.1), ncol=7)
     plt.savefig(f"throughput_{dataset_name}.pdf", bbox_inches='tight', pad_inches=0.5)
