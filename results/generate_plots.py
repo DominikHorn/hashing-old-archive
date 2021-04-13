@@ -12,26 +12,26 @@ for fig, dataset_name in enumerate(sorted(set(csv['dataset']))):
 
     plt.figure(figsize=(30, 10))
 
-    for subplt, load_factor in enumerate(sorted(set(dataset['load_factor']))):
-        load_data = dataset[dataset['load_factor'] == load_factor]
+    # for subplt, load_factor in enumerate(sorted(set(dataset['load_factor']))):
+    load_data = dataset[dataset['load_factor'] == 1.0]
 
-        # loosely taken from https://benalexkeen.com/bar-charts-in-matplotlib/
-        plt.subplot(2, 2, subplt + 1)
-        plt.title(f"{dataset_name} with load factor {load_factor}")
-        plt.xticks(np.arange(len(reducers)) + 0.5, reducers)
-        # plt.ylabel('ns per key')
-        # plt.xlabel('hash reduction method')
+    # loosely taken from https://benalexkeen.com/bar-charts-in-matplotlib/
+    # plt.subplot(2, 2, subplt + 1)
+    plt.title(f"throughput on {dataset_name}")
+    plt.xticks(np.arange(len(reducers)) + 0.5, reducers)
+    plt.ylabel('ns per key')
+    plt.xlabel('hash reduction method')
 
-        hashmethods = sorted(set(load_data['hash']))
-        for j, hashname in enumerate(hashmethods):
-            series = list(load_data[load_data['hash'] == hashname].sort_values('reducer')["nanoseconds_per_key"])
-            width = 0.95 / len(hashmethods)
+    hashmethods = sorted(set(load_data['hash']))
+    for j, hashname in enumerate(hashmethods):
+        series = list(load_data[load_data['hash'] == hashname].sort_values('reducer')["nanoseconds_per_key"])
+        width = 0.95 / len(hashmethods)
 
-            for i, reducer in enumerate(reducers):
-                if i == 0:
-                    plt.bar(i + j * width, series, width, label=hashname, color=colors[j % len(colors)])
-                else:
-                    plt.bar(i + j * width, series, width, color=colors[j % len(colors)])
+        for i, reducer in enumerate(reducers):
+            if i == 0:
+                plt.bar(i + j * width, series[i], width, label=hashname, color=colors[j % len(colors)])
+            else:
+                plt.bar(i + j * width, series[i], width, color=colors[j % len(colors)])
 
     plt.legend(bbox_to_anchor=(0.5, -0.1), ncol=7)
     plt.savefig(f"throughput_{dataset_name}.pdf", bbox_inches='tight', pad_inches=0.5)
