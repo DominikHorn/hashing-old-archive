@@ -11,7 +11,6 @@ for fig, dataset_name in enumerate(sorted(set(csv['dataset']))):
     reducers = sorted(list(set(dataset['reducer'])))
 
     plt.figure(figsize=(30, 10))
-    plt.subplots_adjust(hspace=0.5)
 
     for subplt, load_factor in enumerate(sorted(set(dataset['load_factor']))):
         load_data = dataset[dataset['load_factor'] == load_factor]
@@ -34,7 +33,7 @@ for fig, dataset_name in enumerate(sorted(set(csv['dataset']))):
                 else:
                     plt.bar(i + j * width, series, width, color=colors[j % len(colors)])
 
-    plt.legend(loc="best", ncol=7)
-    plt.savefig(f"throughput_{dataset_name}.pdf")
+    plt.legend(bbox_to_anchor=(0.5, -0.1), ncol=7)
+    plt.savefig(f"throughput_{dataset_name}.pdf", bbox_inches='tight', pad_inches=0.5)
 
     exit()
