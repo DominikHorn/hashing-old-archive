@@ -70,4 +70,5 @@ for fig, dataset_name in enumerate(dataset_names):
 
         plt.legend(bbox_to_anchor=(0.5, -0.1), loc="upper center", ncol=7)
 
+    plt.savefig(f"total_colliding_keys_percent_{dataset_name}.png", bbox_inches='tight', pad_inches=0.5)
     plt.savefig(f"total_colliding_keys_percent_{dataset_name}.pdf", bbox_inches='tight', pad_inches=0.5)
