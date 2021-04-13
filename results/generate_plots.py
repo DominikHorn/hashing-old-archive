@@ -1,30 +1,37 @@
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-from pylab import cm
 import pandas as pandas
 
 csv = pandas.read_csv('throughput.csv')
+colors = list(mpl.colors.CSS4_COLORS)
 
-# TODO: tmp
-data = csv[csv['load_factor'] == 1.0] \
-              [csv['dataset'] == "books_200M_uint32.ds"] \
-              [csv['reducer'] != "do_nothing"]
-rows = data.shape[0]
-columns = data.shape[1]
+for dataset_name in sorted(set(csv['dataset'])):
+    dataset = csv[csv['dataset'] == dataset_name]
+    for load_factor in sorted(set(dataset['load_factor'])):
+        dataset = dataset[dataset['load_factor'] == load_factor]
+        reducers = sorted(list(set(dataset['reducer'])))
 
-reducers = list(set(data['reducer']))
+        # loosely taken from https://benalexkeen.com/bar-charts-in-matplotlib/
+        # plt.clf()
+        hashmethods = sorted(set(dataset['hash']))
+        for j, hashname in enumerate(hashmethods):
+            series = list(dataset[dataset['hash'] == hashname].sort_values('reducer')["nanoseconds_per_key"])
+            width = 0.95 / len(hashmethods)
 
-# loosely taken from https://benalexkeen.com/bar-charts-in-matplotlib/
-for i, reducer in enumerate(reducers):
-    methods = data[data['reducer'] == reducer]
-    width = 0.9 / methods.shape[0]
-    for j, (method, ns) in enumerate(zip(list(methods['hash']), list(methods['nanoseconds_per_key']))):
-        plt.bar(i + j * width, ns, width, label=method)
+            for i, reducer in enumerate(reducers):
+                if i == 0:
+                    plt.bar(i + j * width, series, width, label=hashname, color=colors[j % len(colors)])
+                else:
+                    plt.bar(i + j * width, series, width, color=colors[j % len(colors)])
 
-plt.ylabel('nanoseconds per key')
-plt.title('Nanoseconds per key using different reducers')
+        plt.ylabel('ns per key')
+        plt.xlabel('hash reduction method')
+        plt.title(f"{dataset_name} with load factor {load_factor}")
 
-plt.xticks(np.arange(len(reducers)) + 0.5, reducers)
-plt.legend(loc="best")
-plt.show()
+        plt.xticks(np.arange(len(reducers)) + 0.5, reducers)
+        plt.legend(loc="best", ncol=7)
+        plt.gcf().set_size_inches(20, 5)
+        plt.savefig(f"throughput_{dataset_name}_{load_factor}.pdf")
+
+        exit()
