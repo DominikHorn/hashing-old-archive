@@ -35,5 +35,3 @@ for fig, dataset_name in enumerate(sorted(set(csv['dataset']))):
 
     plt.legend(bbox_to_anchor=(0.5, -0.1), ncol=7)
     plt.savefig(f"throughput_{dataset_name}.pdf", bbox_inches='tight', pad_inches=0.5)
-
-    exit()
