@@ -89,11 +89,12 @@ int main(const int argc, const char* argv[]) {
                measure_hashfn_with_reducer(hash_name, hashfn, "fastrange32", HashReduction::fastrange<HASH_32>);
                measure_hashfn_with_reducer(hash_name, hashfn, "fastrange64", HashReduction::fastrange<HASH_64>);
 
-               measure_hashfn_with_reducer(hash_name, hashfn, "modulo", HashReduction::modulo<HASH_64>);
-               measure_hashfn_with_reducer(hash_name, hashfn, "fast_modulo",
-                                           [&magic_div](const HASH_64& value, const HASH_64& n) {
-                                              return HashReduction::magic_modulo(value, n, magic_div);
-                                           });
+               // modulo, fast_modulo and branchless_fast_modulo only differ in the speed at which they complete computations
+               //               measure_hashfn_with_reducer(hash_name, hashfn, "modulo", HashReduction::modulo<HASH_64>);
+               //               measure_hashfn_with_reducer(hash_name, hashfn, "fast_modulo",
+               //                                           [&magic_div](const HASH_64& value, const HASH_64& n) {
+               //                                              return HashReduction::magic_modulo(value, n, magic_div);
+               //                                           });
                measure_hashfn_with_reducer(hash_name, hashfn, "branchless_fast_modulo",
                                            [&magic_branchfree_div](const HASH_64& value, const HASH_64& n) {
                                               return HashReduction::magic_modulo(value, n, magic_branchfree_div);
