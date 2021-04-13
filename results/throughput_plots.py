@@ -24,7 +24,7 @@ for fig, dataset_name in enumerate(dataset_names):
     plt.figure(figsize=(30, 10))
     plt.grid(linestyle='--', linewidth=0.5)
     plt.title(f"throughput on {dataset_name}")
-    plt.xticks(np.arange(len(reducers)) + 0.5, reducers)
+    plt.xticks(np.arange(len(reducers)) + 0.4, reducers)
     plt.ylabel('ns per key')
     plt.xlabel('hash reduction method')
 
