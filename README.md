@@ -3,7 +3,8 @@ functions ("classic", perfect, minimal perfect, order-preserving).
 
 For further information, see our [collaborative google doc](https://docs.google.com/document/d/1akVt7XBPm3aWRnguZh88jpCAp97yZUwT8V5Po_p2Hxo/edit?usp=sharing)
 
-# Repository layout
+# Development
+## Repository layout
 The repository is setup as a monorepo c++ project using CMake. 
 
 * *data/* is meant to contain synthetic and real datasets. You may find a script for generating synthetic example datasets in there aswell. 
@@ -16,10 +17,6 @@ The repository is setup as a monorepo c++ project using CMake.
 * *src/* contains the actual benchmark targets/implementations. Code shared between benchmarks/potentially useful for multiple benchmarks is located in  
   *src/include* (header only to enable full compiler optimizations, like inlining).
 
-## Results
-Results are stored in the [results](https://github.com/andreaskipf/hashing/tree/main/results) subfolder, together with .pdf plots and python code to generate them.
-
-# Development
 ## Setup
 ### Cloning this repository
 
