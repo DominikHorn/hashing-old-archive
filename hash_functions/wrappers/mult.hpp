@@ -34,7 +34,7 @@ struct MultHash {
     */
    static constexpr forceinline HASH_32 mult32_hash(const HASH_32& value,
                                                     const unsigned char p = 32,
-                                                    const HASH_32& a = (HASH_32) 0x238EF8E3lu) {
+                                                    const HASH_32& a = static_cast<HASH_32>(0x238EF8E3LU)) {
       assert(p >= 0 && p <= 32);
       return (value * a) >> (32 - p);
    }
@@ -50,7 +50,7 @@ struct MultHash {
     */
    static constexpr forceinline HASH_64 mult64_hash(const HASH_64& value,
                                                     const unsigned char p = 64,
-                                                    const HASH_64& a = (HASH_64) 0xC7455FEC83DD661Fllu) {
+                                                    const HASH_64& a = static_cast<HASH_64>(0xC7455FEC83DD661FLLU)) {
       assert(p >= 0 && p <= 64);
       return (value * a) >> (64 - p);
    }
@@ -62,7 +62,7 @@ struct MultHash {
     * @param p hash value is \in [0, 2^p]. NOTE: 0 <= p <= 32
     */
    static constexpr forceinline HASH_32 fibonacci32_hash(const HASH_32& value, const unsigned char p = 32) {
-      return mult32_hash(value, p, 0x9E3779B9lu);
+      return mult32_hash(value, p, 0x9E3779B9LU);
    }
 
    /**
@@ -72,7 +72,7 @@ struct MultHash {
     * @param p hash value is \in [0, 2^p]. NOTE: 0 <= p <= 64
     */
    static constexpr forceinline HASH_64 fibonacci64_hash(const HASH_64& value, const unsigned char p = 64) {
-      return mult64_hash(value, p, (HASH_64) 0x9E3779B97F4A7C15llu);
+      return mult64_hash(value, p, static_cast<HASH_64>(0x9E3779B97F4A7C15LLU));
    }
 
    /**
@@ -82,7 +82,7 @@ struct MultHash {
     * @param p hash value is \in [0, 2^p]. NOTE: 0 <= p <= 32
     */
    static constexpr forceinline HASH_32 fibonacci_prime32_hash(const HASH_32& value, const unsigned char p = 32) {
-      return mult32_hash(value, p, 0x9e3779b1lu);
+      return mult32_hash(value, p, 0x9e3779b1LU);
    }
 
    /**
@@ -92,6 +92,6 @@ struct MultHash {
     * @param p hash value is \in [0, 2^p]. NOTE: 0 <= p <= 64
     */
    static constexpr forceinline HASH_64 fibonacci_prime64_hash(const HASH_64& value, const unsigned char p = 64) {
-      return mult64_hash(value, p, (HASH_64) 0x9E3779B97F4A7C15llu);
+      return mult64_hash(value, p, static_cast<HASH_64>(0x9E3779B97F4A7C55LLU));
    }
 };
