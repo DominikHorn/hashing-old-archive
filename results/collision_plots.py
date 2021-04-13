@@ -1,7 +1,7 @@
+import colorsys
 from collections import OrderedDict
 
 import math
-import matplotlib.colors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pandas
@@ -9,11 +9,32 @@ import pandas as pandas
 csv = pandas.read_csv('collision.csv')
 dataset_names = sorted(set(csv['dataset']))
 
-# ensure colors are at least consistent across plots
-tableau_colors = list(matplotlib.colors.TABLEAU_COLORS)
+
+def gen_colors(max=40.0, s_sawtooth_min=0.7, s_sawtooth_max=0.9, s_sawtooth_step=0.1, v_sawtooth_min=0.5,
+               v_sawtooth_max=1.0, v_sawtooth_step=0.15):
+    s_next = s_sawtooth_min
+    v_next = v_sawtooth_min
+    for i in range(max):
+        h = (2 * i / max) if 2 * i <= max else (2 * i - max) / max
+        s = s_next
+        v = v_next
+        yield colorsys.hsv_to_rgb(h, s, v)
+
+        s_next += s_sawtooth_step
+        if s_next > s_sawtooth_max:
+            s_next = s_sawtooth_min
+
+        v_next += v_sawtooth_step
+        if v_next > v_sawtooth_max:
+            v_next = v_sawtooth_min
+
+
 hash_methods = list(
     OrderedDict.fromkeys(list(csv[csv['reducer'] != 'do_nothing'].sort_values('total_colliding_keys_percent')['hash'])))
-colors = {method: tableau_colors[i % len(tableau_colors)] for i, method in enumerate(hash_methods)}
+
+_colors = list(gen_colors(len(hash_methods)))
+# random.shuffle(_colors)
+colors = {method: _colors[i] for i, method in enumerate(hash_methods)}
 
 for fig, dataset_name in enumerate(dataset_names):
     dataset = csv[csv['dataset'] == dataset_name]
@@ -35,13 +56,12 @@ for fig, dataset_name in enumerate(dataset_names):
 
             for i, reducer in enumerate(reducers):
                 # We only want to set label once as otherwise legend will contain duplicates
-                plt.bar(i + j * width, series[i], width, label=hash_name if i == 0 else None,
+                plt.bar(i + j * width + j * 0.005, series[i], width, label=hash_name if i == 0 else None,
                         color=colors.get(hash_name) or "white")
 
         plt.grid(linestyle='--', linewidth=0.5)
         plt.title(f"collisions on {dataset_name}, load_factor {load_factor}")
-        plt.xticks(np.arange(len(reducers)) + 0.4, reducers)
-
+        plt.xticks(np.arange(len(reducers)) + 0.5, reducers)
         pred_collision_chance = 1 - pow(math.e, -load_factor)
         plt.yticks([x for x in [0.0, 0.2, 0.4, 0.6, 0.8, 1.0] if abs(x - pred_collision_chance) > 0.1] + [
             pred_collision_chance])
