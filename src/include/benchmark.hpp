@@ -33,11 +33,12 @@ namespace Benchmark {
     * @tparam Reducer
     */
    template<typename HashFunction, typename Reducer>
-   CollisionStats<uint64_t, double> measure_collisions(const std::vector<uint64_t>& dataset, const double& over_alloc,
+   CollisionStats<uint64_t, double> measure_collisions(const std::vector<uint64_t>& dataset,
+                                                       std::vector<uint32_t>& collision_counter,
                                                        const HashFunction& hashfn, const Reducer& reduce) {
       // Emulate hashtable with buckets (we only care about amount of elements per bucket)
-      const auto n = static_cast<uint64_t>(static_cast<double>(dataset.size()) * static_cast<double>(over_alloc));
-      std::vector<uint32_t> collision_counter(n, 0);
+      const auto n = collision_counter.size();
+      std::fill(collision_counter.begin(), collision_counter.end(), 0);
 
       auto start_time = std::chrono::steady_clock::now();
       // Hash each value and record entries per bucket
@@ -57,8 +58,8 @@ namespace Benchmark {
       // Min has to start at max value for its type
       CollisionStats<uint64_t, double> stats(inference_reduction_memaccess_total_ns);
       double std_dev_square_sum = 0.0;
-      const double average = 1.0 / over_alloc;
-
+      const auto average =
+         static_cast<long double>(dataset.size()) / static_cast<long double>(collision_counter.size());
       for (const auto bucket_cnt : collision_counter) {
          stats.min = std::min(static_cast<uint64_t>(bucket_cnt), stats.min);
          stats.max = std::max(static_cast<uint64_t>(bucket_cnt), stats.max);
