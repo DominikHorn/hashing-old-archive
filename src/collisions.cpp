@@ -177,6 +177,9 @@ int main(const int argc, const char* argv[]) {
 
             measure_hashfn("meow64_low", [](HASH_64 key) { return MeowHash::hash64(key); });
             measure_hashfn("meow64_upp", [](HASH_64 key) { return MeowHash::hash64<1>(key); });
+
+            measure_hashfn("aqua_low", [](HASH_64 key) { return AquaHash::hash64(key); });
+            measure_hashfn("aqua_upp", [](HASH_64 key) { return AquaHash::hash64<1>(key); });
          }
       }
    } catch (const std::exception& ex) {

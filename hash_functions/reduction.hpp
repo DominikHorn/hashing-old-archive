@@ -156,6 +156,32 @@ struct HashReduction {
       b *= kMul;
       return b;
    }
+
+   /**
+    * Extract 32 bits using __mm_extract_epi32
+    *
+    * @tparam A
+    * @tparam select bit offset according to formula select * 32. Defaults to 0
+    * @param a
+    * @return
+    */
+   template<unsigned short select = 0, typename A>
+   static constexpr forceinline HASH_32 extract_32(const A& a) {
+      return _mm_extract_epi32(a, select);
+   }
+
+   /**
+    * Extract 64 bits using __mm_extract_epi64
+    *
+    * @tparam A
+    * @tparam select either 0 or 1 (low/high selection). Defaults to 0
+    * @param a
+    * @return
+    */
+   template<unsigned short select = 0, typename A>
+   static constexpr forceinline HASH_64 extract_64(const A& a) {
+      return _mm_extract_epi64(a, select);
+   }
 };
 
 template<>

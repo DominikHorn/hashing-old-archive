@@ -49,7 +49,6 @@
 
    #if __x86_64__ || _M_AMD64
       #define meow_umm long long unsigned
-      #define MeowU64From(A, I) (_mm_extract_epi64((A), (I)))
    #elif __i386__ || _M_IX86
       #define meow_umm int unsigned
       #define MeowU64From(A, I) (*(meow_u64*) &(A))
@@ -57,7 +56,6 @@
       #error Cannot determine architecture to use!
    #endif
 
-   #define MeowU32From(A, I) (_mm_extract_epi32((A), (I)))
    #define MeowHashesAreEqual(A, B) (_mm_movemask_epi8(_mm_cmpeq_epi8((A), (B))) == 0xFFFF)
 
    #if !defined INSTRUCTION_REORDER_BARRIER
@@ -149,9 +147,10 @@ struct MeowHash {
     * @param offset bit offset, defaults to 0. According to meowhash authors this is fine
     * @return
     */
-   template<const unsigned char offset = 0, typename T>
-   static forceinline T hash32(const T& value, const meow_u8 seed[128] = const_cast<unsigned char*>(MeowDefaultSeed)) {
-      return MeowU32From(_hash((void*) seed, sizeof(T), (void*) &value), offset);
+   template<const unsigned short select = 0, typename T>
+   static forceinline HASH_32 hash32(const T& value,
+                                     const meow_u8 seed[128] = const_cast<unsigned char*>(MeowDefaultSeed)) {
+      return HashReduction::extract_32<select>(_hash((void*) seed, sizeof(T), (void*) &value));
    }
 
    /**
@@ -162,15 +161,15 @@ struct MeowHash {
     * @param offset bit offset, defaults to 0. According to meowhash authors this is fine
     * @return
     */
-   template<const unsigned char offset = 0, typename T>
-   static forceinline T hash64(const T& value, const meow_u8 seed[128] = const_cast<unsigned char*>(MeowDefaultSeed)) {
-      return MeowU64From(_hash((void*) seed, sizeof(T), (void*) &value), offset);
+   template<const unsigned short select = 0, typename T>
+   static forceinline HASH_64 hash64(const T& value,
+                                     const meow_u8 seed[128] = const_cast<unsigned char*>(MeowDefaultSeed)) {
+      return HashReduction::extract_64<select>(_hash((void*) seed, sizeof(T), (void*) &value));
    }
 
    /**
     * NOTE: to avoid the additional overhead, this function directly returns
-    * the meow_u128 hash value (e.g., __m128i). If only 64 or 32 bits are to be used,
-    * please directly use the faster hash64 and hash32 variants.
+    * the meow_u128 hash value (e.g., __m128i).
     *
     * @tparam T
     * @param value
@@ -181,17 +180,6 @@ struct MeowHash {
    static forceinline meow_u128 hash128(const T& value,
                                         const meow_u8 seed[128] = const_cast<unsigned char*>(MeowDefaultSeed)) {
       return _hash((void*) seed, sizeof(T), (void*) &value);
-   }
-
-   /**
-    * Convert a meow_u128 value to our HASH_128 struct
-    *
-    * @param hash
-    * @return
-    */
-   static forceinline HASH_128 to_HASH_128(const meow_u128& hash) {
-      HASH_64 lower = MeowU64From(hash, 0), higher = MeowU64From(hash, 64);
-      return {lower, higher};
    }
 
   private:

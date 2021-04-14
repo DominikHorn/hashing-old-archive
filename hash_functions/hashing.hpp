@@ -7,6 +7,7 @@
  */
 
 #include "reduction.hpp"
+#include "wrappers/aqua.hpp"
 #include "wrappers/city.hpp"
 #include "wrappers/meow.hpp"
 #include "wrappers/mult.hpp"

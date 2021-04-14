@@ -6,7 +6,6 @@
 
 #include "include/args.hpp"
 #include "include/benchmark.hpp"
-#include "include/dataset.hpp"
 
 // TODO: ensure that we don't use two separate reducers for 128bit hashes for throughput benchmark!
 int main(const int argc, const char* argv[]) {
@@ -97,8 +96,7 @@ int main(const int argc, const char* argv[]) {
                               [p](HASH_64 key) { return MultHash::fibonacci_prime64_hash(key, 32); });
                measure_hashfn("multadd64_shift32", [p](HASH_64 key) { return MultAddHash::multadd64_hash(key, 32); });
             }
-
-            // TODO: try rolling hashes instead of shifting (will supposedly produce much better results with fastrange)
+            // TODO: try rolling hashes instead of shifting (will probably produce much better results with fastrange)
 
             measure_hashfn("murmur3_128_low",
                            [](HASH_64 key) { return HashReduction::lower_half(MurmurHash3::murmur3_128(key)); });
@@ -141,6 +139,9 @@ int main(const int argc, const char* argv[]) {
 
             measure_hashfn("meow64_low", [](HASH_64 key) { return MeowHash::hash64(key); });
             measure_hashfn("meow64_upp", [](HASH_64 key) { return MeowHash::hash64<1>(key); });
+
+            measure_hashfn("aqua_low", [](HASH_64 key) { return AquaHash::hash64(key); });
+            measure_hashfn("aqua_upp", [](HASH_64 key) { return AquaHash::hash64<1>(key); });
          }
       }
    } catch (const std::exception& ex) {
