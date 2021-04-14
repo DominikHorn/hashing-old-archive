@@ -45,8 +45,10 @@ struct Args {
             s = s.substr(next_start);
          }
       } else {
-         throw std::runtime_error("Please specify load factors to benchmark using \"-loadfactors=<COMMA SEPARATED "
-                                  "DOUBLES (PERCENT)>\"");
+         std::cout << "Using default load factor \"1.0\". To specify different loadfactors, use \"-loadfactors=<COMMA "
+                      "SEPARATED DOUBLES (PERCENT)>\""
+                   << std::endl;
+         load_factors.push_back(1.0);
       }
 
       // Parse datasets parameter
