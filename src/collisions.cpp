@@ -117,7 +117,7 @@ int main(const int argc, const char* argv[]) {
             measure_hashfn("multadd64", [](HASH_64 key) { return MultAddHash::multadd64_hash(key); });
 
             // More significant bits supposedly are of higher quality for multiplicative methods -> compute
-            // how much we need to shift to throw away as few "high quality" bits as possible
+            // how much we need to shift/rotate to throw away the least/make 'high quality bits' as prominent as possible
             const auto p = (sizeof(hashtable_size) * 8) - __builtin_clz(hashtable_size - 1);
             measure_hashfn("mult64_shift" + std::to_string(p),
                            [p](HASH_64 key) { return MultHash::mult64_hash(key, p); });
@@ -127,17 +127,15 @@ int main(const int argc, const char* argv[]) {
                            [p](HASH_64 key) { return MultHash::fibonacci_prime64_hash(key, p); });
             measure_hashfn("multadd64_shift" + std::to_string(p),
                            [p](HASH_64 key) { return MultAddHash::multadd64_hash(key, p); });
-
-            // Otherwise even fastrange32 does not have a fair chance (fastrange64 does not work with this kind of shifting)
-            if (p < 32) {
-               measure_hashfn("mult64_shift32", [p](HASH_64 key) { return MultHash::mult64_hash(key, 32); });
-               measure_hashfn("fibo64_shift32", [p](HASH_64 key) { return MultHash::fibonacci64_hash(key, 32); });
-               measure_hashfn("fibo_prime64_shift32",
-                              [p](HASH_64 key) { return MultHash::fibonacci_prime64_hash(key, 32); });
-               measure_hashfn("multadd64_shift32", [p](HASH_64 key) { return MultAddHash::multadd64_hash(key, 32); });
-            }
-
-            // TODO: try rolling hashes instead of shifting (will supposedly produce much better results with fastrange)
+            const unsigned int rot = 64 - p;
+            measure_hashfn("mult64_rotate" + std::to_string(rot),
+                           [&](HASH_64 key) { return rotr(MultHash::mult64_hash(key), rot); });
+            measure_hashfn("fibo64_rotate" + std::to_string(rot),
+                           [&](HASH_64 key) { return rotr(MultHash::fibonacci64_hash(key), rot); });
+            measure_hashfn("fibo_prime64_rotate" + std::to_string(rot),
+                           [&](HASH_64 key) { return rotr(MultHash::fibonacci_prime64_hash(key), rot); });
+            measure_hashfn("multadd64_rotate" + std::to_string(rot),
+                           [&](HASH_64 key) { return rotr(MultAddHash::multadd64_hash(key), rot); });
 
             measure_hashfn("murmur3_128_low",
                            [](HASH_64 key) { return HashReduction::lower_half(MurmurHash3::murmur3_128(key)); });
