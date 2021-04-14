@@ -18,7 +18,8 @@ int main(const int argc, const char* argv[]) {
               << ",nanoseconds_total"
               << ",nanoseconds_per_key"
               << ",reducer"
-              << ",dataset" << std::endl;
+              << ",dataset"
+              << ",numelements" << std::endl;
 
       // Prepare a tabulation hash table
       HASH_64 small_tabulation_table[0xFF] = {0};
@@ -50,7 +51,7 @@ int main(const int argc, const char* argv[]) {
                outfile << method << "," << stats.total_inference_reduction_ns << ","
                        << (static_cast<long double>(stats.total_inference_reduction_ns) /
                            static_cast<long double>(dataset.size()))
-                       << "," << reducer << "," << it.filename << std::endl;
+                       << "," << reducer << "," << it.filename << "," << dataset.size() << std::endl;
             };
 
             measure_hashfn_with_reducer("do_nothing", HashReduction::do_nothing<HASH_64>);
