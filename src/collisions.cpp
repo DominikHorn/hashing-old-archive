@@ -41,6 +41,7 @@ int main(const int argc, const char* argv[]) {
          std::cout << "dataset " << it.filename << std::endl;
          const auto dataset = it.load_shuffled(args.datapath);
 
+         // TODO: introduce multithreading i.e., one thread per load factor!
          for (auto load_factor : args.load_factors) {
             const auto over_alloc = 1.0 / load_factor;
             const auto hashtable_size =
