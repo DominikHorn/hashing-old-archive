@@ -74,7 +74,8 @@ namespace Benchmark {
    }
 
    struct ThroughputStats {
-      uint64_t total_inference_reduction_ns;
+      uint64_t average_total_inference_reduction_ns;
+      unsigned int repeatCnt;
    };
 
    /**
@@ -87,23 +88,31 @@ namespace Benchmark {
     * @tparam HashFunction
     * @tparam Reducer
     */
-   template<typename HashFunction, typename Reducer>
+   template<unsigned int repeatCnt = 5, typename HashFunction, typename Reducer>
    ThroughputStats measure_throughput(const std::vector<uint64_t>& dataset, const double& over_alloc,
                                       const HashFunction& hashfn, const Reducer& reduce) {
       // Emulate hashtable with buckets (we only care about amount of elements per bucket)
       const auto n = static_cast<uint64_t>(std::ceil(static_cast<long double>(dataset.size()) * over_alloc));
 
-      const auto start_time = std::chrono::steady_clock::now();
-      // Hash each value and record entries per bucket
-      for (const auto key : dataset) {
-         // Ensure the compiler does not simply remove this index
-         // calculation during optimization.
-         Barrier::DoNotOptimize(reduce(hashfn(key), n));
-      }
-      const auto end_time = std::chrono::steady_clock::now();
-      const auto delta_ns =
-         static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
+      uint64_t avg = 0;
 
-      return {delta_ns};
+      for (unsigned int i = 0; i < repeatCnt; i++) {
+         const auto start_time = std::chrono::steady_clock::now();
+         // Hash each value and record entries per bucket
+         for (const auto key : dataset) {
+            // Ensure the compiler does not simply remove this index
+            // calculation during optimization.
+            Barrier::DoNotOptimize(reduce(hashfn(key), n));
+         }
+         const auto end_time = std::chrono::steady_clock::now();
+         const auto delta_ns =
+            static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
+
+         // we will lose at most one nanosecond precision each time which should
+         // not make a difference in practice
+         avg += delta_ns / repeatCnt;
+      }
+
+      return {avg, repeatCnt};
    }
 } // namespace Benchmark

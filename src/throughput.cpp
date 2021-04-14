@@ -17,6 +17,7 @@ int main(const int argc, const char* argv[]) {
       outfile << "hash"
               << ",nanoseconds_total"
               << ",nanoseconds_per_key"
+              << ",benchmark_repeat_cnt"
               << ",reducer"
               << ",dataset"
               << ",numelements" << std::endl;
@@ -42,16 +43,18 @@ int main(const int argc, const char* argv[]) {
                // Measure & log
                std::cout << std::setw(55) << std::right << reducer + "(" + method + ") ... " << std::flush;
                const auto stats = Benchmark::measure_throughput(dataset, over_alloc, hashfn, reducerfn);
-               std::cout << (static_cast<long double>(stats.total_inference_reduction_ns) /
+               std::cout << (static_cast<long double>(stats.average_total_inference_reduction_ns) /
                              static_cast<long double>(dataset.size()))
-                         << "ns/key (" << (static_cast<long double>(stats.total_inference_reduction_ns) / 1000000000.0)
+                         << " ns/key on average for " << stats.repeatCnt << " repetitions ("
+                         << (static_cast<long double>(stats.average_total_inference_reduction_ns) / 1000000000.0)
                          << " s total)" << std::endl;
 
                // Write to csv
-               outfile << method << "," << stats.total_inference_reduction_ns << ","
-                       << (static_cast<long double>(stats.total_inference_reduction_ns) /
+               outfile << method << "," << stats.average_total_inference_reduction_ns << ","
+                       << (static_cast<long double>(stats.average_total_inference_reduction_ns) /
                            static_cast<long double>(dataset.size()))
-                       << "," << reducer << "," << it.filename << "," << dataset.size() << std::endl;
+                       << "," << stats.repeatCnt << "," << reducer << "," << it.filename << "," << dataset.size()
+                       << std::endl;
             };
 
             measure_hashfn_with_reducer("do_nothing", HashReduction::do_nothing<HASH_64>);
