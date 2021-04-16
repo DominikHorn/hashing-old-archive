@@ -34,3 +34,6 @@
 [submodule "hash_functions/meow_hash"]
 	path = hash_functions/meow_hash
 	url = https://github.com/cmuratori/meow_hash.git
+[submodule "learned_models/pgm"]
+	path = learned_models/pgm
+	url = https://github.com/gvinciguerra/PGM-index.git
