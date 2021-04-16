@@ -41,29 +41,32 @@ struct Dataset {
       if (!input.is_open()) {
          throw std::runtime_error("Dataset file at data_folder_path '" + filepath + "' does not exist");
       }
-      std::vector<unsigned char> buffer(size);
-      if (!input.read(reinterpret_cast<char*>(buffer.data()), size)) {
-         throw std::runtime_error("Failed to read dataset at data_folder_path '" + filepath + "'");
-      }
 
-      // Parse file
-      uint64_t num_elements = read_little_endian_8(buffer, 0);
-      std::vector<uint64_t> dataset(num_elements, 0);
-      if (this->bytesPerValue == 8)
-         for (uint64_t i = 0; i < num_elements; i++) {
-            // 8 byte header, 8 bytes per entry
-            uint64_t offset = i * 8 + 8;
-            dataset[i] = read_little_endian_8(buffer, offset);
+      std::vector<uint64_t> dataset(size / sizeof(uint64_t) - 1, 0);
+      {
+         std::vector<unsigned char> buffer(size);
+         if (!input.read(reinterpret_cast<char*>(buffer.data()), size)) {
+            throw std::runtime_error("Failed to read dataset at data_folder_path '" + filepath + "'");
          }
-      else if (this->bytesPerValue == 4)
-         for (uint64_t i = 0; i < num_elements; i++) {
-            // 8 byte header, 4 bytes per entry
-            uint64_t offset = i * 4 + 8;
-            dataset[i] = read_little_endian_4(buffer, offset);
+
+         // Parse file
+         uint64_t num_elements = read_little_endian_8(buffer, 0);
+         if (this->bytesPerValue == 8)
+            for (uint64_t i = 0; i < num_elements; i++) {
+               // 8 byte header, 8 bytes per entry
+               uint64_t offset = i * 8 + 8;
+               dataset[i] = read_little_endian_8(buffer, offset);
+            }
+         else if (this->bytesPerValue == 4)
+            for (uint64_t i = 0; i < num_elements; i++) {
+               // 8 byte header, 4 bytes per entry
+               uint64_t offset = i * 4 + 8;
+               dataset[i] = read_little_endian_4(buffer, offset);
+            }
+         else {
+            throw std::runtime_error("Unimplemented amount of bytes per value in dataset: " +
+                                     std::to_string(this->bytesPerValue));
          }
-      else {
-         throw std::runtime_error("Unimplemented amount of bytes per value in dataset: " +
-                                  std::to_string(this->bytesPerValue));
       }
 
 #ifdef VERBOSE
@@ -80,6 +83,11 @@ struct Dataset {
       std::cout << "Fisher-Yates shuffling ... " << std::flush;
 #endif
       shuffle(dataset);
+
+#ifdef VERBOSE
+      std::cout << "Shrinking ... " << std::flush;
+#endif
+      dataset.shrink_to_fit();
 
 #ifdef VERBOSE
       std::cout << "done. " << dataset.size() << " elements loaded" << std::endl;
@@ -111,6 +119,9 @@ struct Dataset {
     * @param seed
     */
    static forceinline void shuffle(std::vector<uint64_t>& dataset, const uint64_t seed = 0xC7455FEC83DD661FLLU) {
+      if (dataset.size() == 0)
+         return;
+
       std::default_random_engine gen(seed);
       std::uniform_int_distribution<uint64_t> dist(0);
 

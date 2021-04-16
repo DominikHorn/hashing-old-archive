@@ -36,9 +36,8 @@ const std::vector<std::string> csv_columns = {
 static void measure(const std::string& dataset_name, const std::vector<uint64_t>& dataset, const double load_factor,
                     CSV& outfile, std::mutex& iomutex, const HASH_64 (&small_tabulation_table)[0xFF],
                     const HASH_64 (&large_tabulation_table)[sizeof(HASH_64)][0xFF]) {
-   const auto over_alloc = 1.0 / load_factor;
    const auto hashtable_size =
-      static_cast<uint64_t>(static_cast<double>(dataset.size()) * static_cast<double>(over_alloc));
+      static_cast<uint64_t>(static_cast<double>(dataset.size()) / static_cast<double>(load_factor));
    std::vector<uint32_t> collision_counter(hashtable_size);
 
    // Build load factor specific auxiliary data
@@ -54,11 +53,9 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
 #ifdef VERBOSE
       {
          std::unique_lock<std::mutex> lock(iomutex);
-         //         std::cout << std::setw(55) << std::right << reducer_name + "(" + hash_name + ") took "
-         //                   << relative_to(stats.inference_reduction_memaccess_total_ns, dataset.size()) << " ns/key ("
-         //                   << nanoseconds_to_seconds(stats.inference_reduction_memaccess_total_ns) << " s total)" << std::endl;
-         std::cout << dataset_name << ", " << load_factor << ", "
-                   << relative_to(stats.total_colliding_keys, hashtable_size) << std::endl;
+         std::cout << std::setw(55) << std::right << reducer_name + "(" + hash_name + ") took "
+                   << relative_to(stats.inference_reduction_memaccess_total_ns, dataset.size()) << " ns/key ("
+                   << nanoseconds_to_seconds(stats.inference_reduction_memaccess_total_ns) << " s total)" << std::endl;
       };
 #endif
 
