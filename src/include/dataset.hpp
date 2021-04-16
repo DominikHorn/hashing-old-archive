@@ -24,7 +24,15 @@ struct Dataset {
     * @return a sorted and deduplicated list of all members of the dataset
     */
    std::vector<uint64_t> load(const std::string& path) const {
-      const auto filepath = path + this->filename;
+#ifdef VERBOSE
+      std::cout << "Loading dataset " << path << " ... " << std::flush;
+#endif
+
+      auto filename = this->filename;
+      if (!path.ends_with("/")) {
+         filename = "/" + filename;
+      }
+      const auto filepath = path + filename;
 
       // Read file into memory from disk. Directly map file for more performance
       std::ifstream input(filepath, std::ios::binary | std::ios::ate);
@@ -58,32 +66,51 @@ struct Dataset {
                                   std::to_string(this->bytesPerValue));
       }
 
-      std::cout << "Read " << num_elements << " entries from dataset file" << filepath << std::endl;
+#ifdef VERBOSE
+      std::cout << " Sorting ... " << std::flush;
+#endif
+      sort(dataset);
 
-      // Sort and deduplicate dataset
-      std::sort(dataset.begin(), dataset.end());
-      dataset.erase(std::unique(dataset.begin(), dataset.end()), dataset.end());
+#ifdef VERBOSE
+      std::cout << " Removing duplicates ... " << std::flush;
+#endif
+      deduplicate(dataset);
 
-      // TODO: what did the log2(dataset[dataset.size() - 1]) = log2(max(dataset)) [respective - 2] computation in
-      //  the original code achieve? Tree size binary tree/Search steps binary search?
-      std::cout << "Sorted and deduplicated dataset. " << dataset.size() << " entries remaining" << std::endl;
-      return dataset;
-   }
+#ifdef VERBOSE
+      std::cout << "Fisher-Yates shuffling ... " << std::flush;
+#endif
+      shuffle(dataset);
 
-   std::vector<uint64_t> load_shuffled(const std::string& path, const uint64_t seed = 0xC7455FEC83DD661FLLU) const {
-      auto dataset = load(path);
-      shuffle(dataset, seed);
-      std::cout << "Fisher-Yates shuffled dataset " << dataset.size() << std::endl;
+#ifdef VERBOSE
+      std::cout << "done. " << dataset.size() << " elements loaded" << std::endl;
+#endif
+
       return dataset;
    }
 
   private:
    /**
+    * Sorts a dataset using std::sort
+    * @param dataset
+    */
+   static forceinline void sort(std::vector<uint64_t>& dataset) {
+      std::sort(dataset.begin(), dataset.end());
+   }
+
+   /**
+    * Deduplicates the dataset. NOTE: data must be sorted for this to work
+    * @param dataset
+    */
+   static forceinline void deduplicate(std::vector<uint64_t>& dataset) {
+      dataset.erase(std::unique(dataset.begin(), dataset.end()), dataset.end());
+   }
+
+   /**
     * Shuffles the given dataset
     * @param dataset
     * @param seed
     */
-   static forceinline void shuffle(std::vector<uint64_t>& dataset, const uint64_t seed) {
+   static forceinline void shuffle(std::vector<uint64_t>& dataset, const uint64_t seed = 0xC7455FEC83DD661FLLU) {
       std::default_random_engine gen(seed);
       std::uniform_int_distribution<uint64_t> dist(0);
 

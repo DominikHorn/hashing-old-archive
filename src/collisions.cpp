@@ -1,3 +1,5 @@
+#define VERBOSE
+
 #include <iomanip>
 #include <iostream>
 #include <string>
@@ -6,88 +8,93 @@
 
 #include "include/args.hpp"
 #include "include/benchmark.hpp"
+#include "include/csv.hpp"
 #include "include/random_hash.hpp"
 
 int main(const int argc, const char* argv[]) {
-   std::ofstream outfile;
-
    try {
       auto args = Args::parse(argc, argv);
-      outfile.open(args.outfile);
-      outfile << "hash"
-              << ",min"
-              << ",max"
-              << ",std_dev"
-              << ",empty_buckets"
-              << ",empty_buckets_percent"
-              << ",colliding_buckets"
-              << ",colliding_buckets_percent"
-              << ",total_colliding_keys"
-              << ",total_colliding_keys_percent"
-              << ",nanoseconds_total"
-              << ",nanoseconds_per_key"
-              << ",load_factor"
-              << ",reducer"
-              << ",dataset"
-              << ",numelements" << std::endl;
+      CSV outfile(args.outfile,
+                  {
+                     "dataset",
+                     "numelements",
+                     "load_factor",
+                     "hash",
+                     "reducer",
+                     "min",
+                     "max",
+                     "std_dev",
+                     "empty_slots",
+                     "empty_slots_percent",
+                     "colliding_slots",
+                     "colliding_slots_percent",
+                     "total_colliding_keys",
+                     "total_colliding_keys_percent",
+                     "nanoseconds_total",
+                     "nanoseconds_per_key",
+                  });
 
-      // Prepare a tabulation hash table
+      // Precompute tabulation hash tables
       HASH_64 small_tabulation_table[0xFF] = {0};
       HASH_64 large_tabulation_table[sizeof(HASH_64)][0xFF] = {0};
       TabulationHash::gen_column(small_tabulation_table);
       TabulationHash::gen_table(large_tabulation_table);
 
       for (const auto& it : args.datasets) {
-         std::cout << "dataset " << it.filename << std::endl;
-         const auto dataset = it.load_shuffled(args.datapath);
+         const auto dataset = it.load(args.datapath);
 
+         // TODO: Build dataset specific auxiliary data (e.g., pgm, rmi)
          // TODO: introduce multithreading i.e., one thread per load factor!
+
          for (auto load_factor : args.load_factors) {
             const auto over_alloc = 1.0 / load_factor;
             const auto hashtable_size =
                static_cast<uint64_t>(static_cast<double>(dataset.size()) * static_cast<double>(over_alloc));
             std::vector<uint32_t> collision_counter(hashtable_size);
 
+            // Build load factor specific auxiliary data
             const auto magic_branchfree_div =
                HashReduction::make_branchfree_magic_divider(static_cast<HASH_64>(hashtable_size));
 
+            // measures a given hash function with a given reducer
             const auto measure_hashfn_with_reducer = [&](const std::string& hash_name, const auto& hashfn,
                                                          const std::string& reducer_name, const auto& reducerfn) {
-               // Measure & log
+            // Measure & log
+#ifdef VERBOSE
                std::cout << std::setw(55) << std::right << reducer_name + "(" + hash_name + ") ... " << std::flush;
+#endif
+               std::fill(collision_counter.begin(), collision_counter.end(), 0);
                const auto stats = Benchmark::measure_collisions(dataset, collision_counter, hashfn, reducerfn);
-               std::cout << (static_cast<long double>(stats.inference_reduction_memaccess_total_ns) /
-                             static_cast<long double>(dataset.size()))
-                         << " ns/key ("
-                         << (static_cast<long double>(stats.inference_reduction_memaccess_total_ns) /
-                             static_cast<long double>(1000000000.0))
-                         << " s total)" << std::endl;
+#ifdef VERBOSE
+               std::cout << relative_to(stats.inference_reduction_memaccess_total_ns, dataset.size()) << " ns/key ("
+                         << nanoseconds_to_seconds(stats.inference_reduction_memaccess_total_ns) << " s total)"
+                         << std::endl;
+#endif
 
-               // Write to csv
-               outfile << hash_name << "," // hash function name
-                       << stats.min << "," // min keys found in a single bucket after hashing (should be 0)
-                       << stats.max << "," // max keys found in a single bucket (must be > 0)
-                       << stats.std_dev << "," // std_dev regarding amount of keys per bucket
-                       << stats.empty_buckets << "," // absolute amount of empty buckets
-                       << static_cast<double>(stats.empty_buckets) / static_cast<double>(hashtable_size)
-                       << "," // relative amount of empty buckets
-                       << stats.colliding_buckets << ","
-                       << static_cast<double>(stats.colliding_buckets) / static_cast<double>(hashtable_size)
-                       << "," // relative amount of buckets with collisions, i.e., buckets with more than 1 element
-                       << stats.total_colliding_keys << "," // total amount of colliding keys
-                       << static_cast<double>(stats.total_colliding_keys) / static_cast<double>(dataset.size())
-                       << "," // relative amount of colliding keys
-                       << stats.inference_reduction_memaccess_total_ns << ","
-                       << (static_cast<long double>(stats.inference_reduction_memaccess_total_ns) /
-                           static_cast<long double>(dataset.size()))
-                       << "," << load_factor << "," // load factor of the hashtable
-                       << reducer_name << "," // name of the reducer
-                       << it.filename << "," // dataset name
-                       << dataset.size() // amount of keys in the dataset
-                       << std::endl;
+               const auto str = [](auto s) { return std::to_string(s); };
+               outfile.write({
+                  {"dataset", it.filename},
+                  {"numelements", str(dataset.size())},
+                  {"load_factor", str(load_factor)},
+                  {"hash", hash_name},
+                  {"reducer", reducer_name},
+                  {"min", str(stats.min)},
+                  {"max", str(stats.max)},
+                  {"std_dev", str(stats.std_dev)},
+                  {"empty_buckets", str(stats.empty_buckets)},
+                  {"empty_buckets_percent", str(relative_to(stats.empty_buckets, hashtable_size))},
+                  {"colliding_buckets", str(stats.colliding_buckets)},
+                  {"colliding_buckets_percent", str(relative_to(stats.colliding_buckets, hashtable_size))},
+                  {"total_colliding_keys", str(stats.total_colliding_keys)},
+                  {"total_colliding_keys_percent", str(relative_to(stats.total_colliding_keys, hashtable_size))},
+                  {"nanoseconds_total", str(stats.inference_reduction_memaccess_total_ns)},
+                  {"nanoseconds_per_key",
+                   str(relative_to(stats.inference_reduction_memaccess_total_ns, dataset.size()))},
+               });
             };
 
-            const auto measure_hashfn = [&](const std::string& hash_name, auto hashfn) {
+            // measures a hash function using every reducer
+            const auto measure_hashfn = [&](const std::string& hash_name, const auto& hashfn) {
                measure_hashfn_with_reducer(hash_name, hashfn, "fastrange32", HashReduction::fastrange<HASH_32>);
                measure_hashfn_with_reducer(hash_name, hashfn, "fastrange64", HashReduction::fastrange<HASH_64>);
 
@@ -98,7 +105,13 @@ int main(const int argc, const char* argv[]) {
                                            });
             };
 
-            // Uniform random baseline(random prime constant)
+            /**
+             * ====================================
+             *           Actual measuring
+             * ====================================
+             */
+
+            // Uniform random baseline(random prime constant seed)
             RandomHash rhash(hashtable_size);
             measure_hashfn_with_reducer(
                "uniform_random",
@@ -179,10 +192,8 @@ int main(const int argc, const char* argv[]) {
       }
    } catch (const std::exception& ex) {
       std::cerr << ex.what() << std::endl;
-      outfile.close();
       return -1;
    }
 
-   outfile.close();
    return 0;
 }

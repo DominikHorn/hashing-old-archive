@@ -1,3 +1,5 @@
+#define VERBOSE
+
 #include <iomanip>
 #include <iostream>
 #include <string>
@@ -6,6 +8,7 @@
 
 #include "include/args.hpp"
 #include "include/benchmark.hpp"
+#include "include/csv.hpp"
 
 // TODO: ensure that we don't use two separate reducers for 128bit hashes for throughput benchmark!
 int main(const int argc, const char* argv[]) {
@@ -13,24 +16,20 @@ int main(const int argc, const char* argv[]) {
 
    try {
       auto args = Args::parse(argc, argv);
-      outfile.open(args.outfile);
-      outfile << "hash"
-              << ",nanoseconds_total"
-              << ",nanoseconds_per_key"
-              << ",benchmark_repeat_cnt"
-              << ",reducer"
-              << ",dataset"
-              << ",numelements" << std::endl;
+      CSV outfile(args.outfile,
+                  {"hash", "nanoseconds_total", "nanoseconds_per_key", "benchmark_repeat_cnt", "reducer", "dataset",
+                   "numelements"});
 
-      // Prepare a tabulation hash table
+      // Precompute tabulation hash tables
       HASH_64 small_tabulation_table[0xFF] = {0};
       HASH_64 large_tabulation_table[sizeof(HASH_64)][0xFF] = {0};
       TabulationHash::gen_column(small_tabulation_table);
       TabulationHash::gen_table(large_tabulation_table);
 
       for (const auto& it : args.datasets) {
-         std::cout << "dataset " << it.filename << std::endl;
-         const auto dataset = it.load_shuffled(args.datapath);
+         auto dataset = it.load(args.datapath);
+
+         // TODO: Build dataset specific auxiliary data (e.g., pgm, rmi)
 
          const auto over_alloc = 1.0;
          const auto hashtable_size = static_cast<size_t>(dataset.size());
@@ -38,39 +37,55 @@ int main(const int argc, const char* argv[]) {
          const auto magic_branchfree_div =
             HashReduction::make_branchfree_magic_divider(static_cast<HASH_64>(hashtable_size));
 
-         const auto measure_hashfn = [&](const std::string& method, const auto& hashfn) {
-            const auto measure_hashfn_with_reducer = [&](const std::string& reducer, const auto& reducerfn) {
-               // Measure & log
-               std::cout << std::setw(55) << std::right << reducer + "(" + method + ") ... " << std::flush;
-               const auto stats = Benchmark::measure_throughput(dataset, over_alloc, hashfn, reducerfn);
-               std::cout << (static_cast<long double>(stats.average_total_inference_reduction_ns) /
-                             static_cast<long double>(dataset.size()))
-                         << " ns/key on average for " << stats.repeatCnt << " repetitions ("
-                         << (static_cast<long double>(stats.average_total_inference_reduction_ns) / 1000000000.0)
-                         << " s total)" << std::endl;
+         const auto measure_hashfn_with_reducer = [&](const std::string& hash_name,
+                                                      const auto& hashfn,
+                                                      const std::string& reducer_name,
+                                                      const auto& reducerfn) {
+         // Measure & log
+#ifdef VERBOSE
+            std::cout << std::setw(55) << std::right << reducer_name + "(" + hash_name + ") ... " << std::flush;
+#endif
+            const auto stats = Benchmark::measure_throughput(dataset, over_alloc, hashfn, reducerfn);
+#ifdef VERBOSE
+            std::cout << relative_to(stats.average_total_inference_reduction_ns, dataset.size())
+                      << " ns/key on average for " << stats.repeatCnt << " repetitions ("
+                      << nanoseconds_to_seconds(stats.average_total_inference_reduction_ns) << " s total)" << std::endl;
+#endif
 
-               // Write to csv
-               outfile << method << "," << stats.average_total_inference_reduction_ns << ","
-                       << (static_cast<long double>(stats.average_total_inference_reduction_ns) /
-                           static_cast<long double>(dataset.size()))
-                       << "," << stats.repeatCnt << "," << reducer << "," << it.filename << "," << dataset.size()
-                       << std::endl;
-            };
+            // Write to csv
+            const auto str = [](auto s) { return std::to_string(s); };
+            outfile.write(
+               {{"hash", hash_name},
+                {"nanoseconds_total", str(stats.average_total_inference_reduction_ns)},
+                {"nanoseconds_per_key", str(relative_to(stats.average_total_inference_reduction_ns, dataset.size()))},
+                {"benchmark_repeat_cnt", str(stats.repeatCnt)},
+                {"reducer", reducer_name},
+                {"dataset", it.filename},
+                {"numelements", str(dataset.size())}});
+         };
 
-            measure_hashfn_with_reducer("do_nothing", HashReduction::do_nothing<HASH_64>);
-
-            measure_hashfn_with_reducer("fastrange32", HashReduction::fastrange<HASH_32>);
-            measure_hashfn_with_reducer("fastrange64", HashReduction::fastrange<HASH_64>);
-
-            measure_hashfn_with_reducer("modulo", HashReduction::modulo<HASH_64>);
-            measure_hashfn_with_reducer("fast_modulo", [&magic_div](const HASH_64& value, const HASH_64& n) {
-               return HashReduction::magic_modulo(value, n, magic_div);
-            });
-            measure_hashfn_with_reducer("branchless_fast_modulo",
+         const auto measure_hashfn = [&](const std::string& hash_name, const auto& hashfn) {
+            measure_hashfn_with_reducer(hash_name, hashfn, "do_nothing", HashReduction::do_nothing<HASH_64>);
+            measure_hashfn_with_reducer(hash_name, hashfn, "fastrange32", HashReduction::fastrange<HASH_32>);
+            measure_hashfn_with_reducer(hash_name, hashfn, "fastrange64", HashReduction::fastrange<HASH_64>);
+            measure_hashfn_with_reducer(hash_name, hashfn, "modulo", HashReduction::modulo<HASH_64>);
+            measure_hashfn_with_reducer(hash_name,
+                                        hashfn,
+                                        "fast_modulo",
+                                        [&magic_div](const HASH_64& value, const HASH_64& n) {
+                                           return HashReduction::magic_modulo(value, n, magic_div);
+                                        });
+            measure_hashfn_with_reducer(hash_name, hashfn, "branchless_fast_modulo",
                                         [&magic_branchfree_div](const HASH_64& value, const HASH_64& n) {
                                            return HashReduction::magic_modulo(value, n, magic_branchfree_div);
                                         });
          };
+
+         /**
+          * ====================================
+          *           Actual measuring
+          * ====================================
+          */
 
          measure_hashfn("mult64", [](HASH_64 key) { return MultHash::mult64_hash(key); });
          measure_hashfn("fibo64", [](HASH_64 key) { return MultHash::fibonacci64_hash(key); });

@@ -38,7 +38,6 @@ namespace Benchmark {
                                                        const HashFunction& hashfn, const Reducer& reduce) {
       // Emulate hashtable with buckets (we only care about amount of elements per bucket)
       const auto n = collision_counter.size();
-      std::fill(collision_counter.begin(), collision_counter.end(), 0);
 
       auto start_time = std::chrono::steady_clock::now();
       // Hash each value and record entries per bucket
