@@ -1,5 +1,6 @@
 # Project files
-*.ds
+data/
+!data/synthetic.py
 
 # IDE 
 
