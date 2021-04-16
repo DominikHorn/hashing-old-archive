@@ -61,14 +61,15 @@ int main(const int argc, const char* argv[]) {
 
             // Write to csv
             const auto str = [](auto s) { return std::to_string(s); };
-            outfile.write(
-               {{"hash", hash_name},
-                {"nanoseconds_total", str(stats.average_total_inference_reduction_ns)},
-                {"nanoseconds_per_key", str(relative_to(stats.average_total_inference_reduction_ns, dataset.size()))},
-                {"benchmark_repeat_cnt", str(stats.repeatCnt)},
-                {"reducer", reducer_name},
-                {"dataset", it.filename},
-                {"numelements", str(dataset.size())}});
+            outfile.write({
+               {"dataset", it.filename},
+               {"numelements", str(dataset.size())},
+               {"hash", hash_name},
+               {"reducer", reducer_name},
+               {"nanoseconds_total", str(stats.average_total_inference_reduction_ns)},
+               {"nanoseconds_per_key", str(relative_to(stats.average_total_inference_reduction_ns, dataset.size()))},
+               {"benchmark_repeat_cnt", str(stats.repeatCnt)},
+            });
          };
 
          const auto measure_hashfn = [&](const std::string& hash_name, const auto& hashfn) {
