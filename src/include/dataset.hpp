@@ -23,27 +23,27 @@ struct Dataset {
     * Loads the datasets values into memory
     * @return a sorted and deduplicated list of all members of the dataset
     */
-   std::vector<uint64_t> load(const std::string& path) const {
-#ifdef VERBOSE
-      std::cout << "Loading dataset " << path << " ... " << std::flush;
-#endif
-
-      auto filename = this->filename;
-      if (!path.ends_with("/")) {
-         filename = "/" + filename;
+   std::vector<uint64_t> load(const std::string& data_folder_path) const {
+      auto file = this->filename;
+      if (!data_folder_path.ends_with("/")) {
+         file = "/" + file;
       }
-      const auto filepath = path + filename;
+      const auto filepath = data_folder_path + file;
+
+#ifdef VERBOSE
+      std::cout << "Loading dataset " << filepath << " ... " << std::flush;
+#endif
 
       // Read file into memory from disk. Directly map file for more performance
       std::ifstream input(filepath, std::ios::binary | std::ios::ate);
       std::streamsize size = input.tellg();
       input.seekg(0, std::ios::beg);
       if (!input.is_open()) {
-         throw std::runtime_error("Dataset file at path '" + filepath + "' does not exist");
+         throw std::runtime_error("Dataset file at data_folder_path '" + filepath + "' does not exist");
       }
       std::vector<unsigned char> buffer(size);
       if (!input.read(reinterpret_cast<char*>(buffer.data()), size)) {
-         throw std::runtime_error("Failed to read dataset at path '" + filepath + "'");
+         throw std::runtime_error("Failed to read dataset at data_folder_path '" + filepath + "'");
       }
 
       // Parse file
@@ -67,12 +67,12 @@ struct Dataset {
       }
 
 #ifdef VERBOSE
-      std::cout << " Sorting ... " << std::flush;
+      std::cout << "Sorting ... " << std::flush;
 #endif
       sort(dataset);
 
 #ifdef VERBOSE
-      std::cout << " Removing duplicates ... " << std::flush;
+      std::cout << "Removing duplicates ... " << std::flush;
 #endif
       deduplicate(dataset);
 

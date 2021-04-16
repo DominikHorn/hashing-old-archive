@@ -10,6 +10,7 @@ struct CSV {
    CSV(const std::string outfile_path, const std::vector<std::string> columns) : columns(columns) {
       outfile.open(outfile_path);
 
+      std::unique_lock<std::mutex> lock(mutex);
       // Write header immediately
       for (size_t i = 0; i < columns.size(); i++) {
          outfile << columns[i];
@@ -24,7 +25,8 @@ struct CSV {
     * Writes a row of csv
     * @param data maps field name/key to value. If no value is present for a key, this function will write an empty column
     */
-   void write(std::map<std::string, std::string> data) {
+   void write(const std::map<std::string, std::string>& data) {
+      std::unique_lock<std::mutex> lock(mutex);
       for (size_t i = 0; i < columns.size(); i++) {
          const auto& field = columns[i];
 
@@ -38,11 +40,11 @@ struct CSV {
             outfile << ",";
          }
       }
-
       outfile << std::endl;
    }
 
   private:
    const std::vector<std::string> columns;
    std::ofstream outfile;
+   std::mutex mutex;
 };

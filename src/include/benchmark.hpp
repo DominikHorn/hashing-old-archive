@@ -12,16 +12,16 @@ namespace Benchmark {
    struct CollisionStats {
       Counter min;
       Counter max;
-      Counter empty_buckets;
-      Counter colliding_buckets;
+      Counter empty_slots;
+      Counter colliding_slots;
       Counter total_colliding_keys;
       PreciseMath std_dev;
 
       Counter inference_reduction_memaccess_total_ns;
 
       explicit CollisionStats(Counter inference_reduction_memaccess_total_ns)
-         : min(0xFFFFFFFFFFFFFFFFLLU), max(0), empty_buckets(0), colliding_buckets(0), total_colliding_keys(0),
-           std_dev(0), inference_reduction_memaccess_total_ns(inference_reduction_memaccess_total_ns) {}
+         : min(0xFFFFFFFFFFFFFFFFLLU), max(0), empty_slots(0), colliding_slots(0), total_colliding_keys(0), std_dev(0),
+           inference_reduction_memaccess_total_ns(inference_reduction_memaccess_total_ns) {}
    } __attribute__((aligned(64)));
 
    /**
@@ -36,7 +36,7 @@ namespace Benchmark {
    CollisionStats<uint64_t, double> measure_collisions(const std::vector<uint64_t>& dataset,
                                                        std::vector<uint32_t>& collision_counter,
                                                        const HashFunction& hashfn, const Reducer& reduce) {
-      // Emulate hashtable with buckets (we only care about amount of elements per bucket)
+      // Emulate hashtable with slots (we only care about amount of elements per bucket)
       const auto n = collision_counter.size();
 
       auto start_time = std::chrono::steady_clock::now();
@@ -62,8 +62,8 @@ namespace Benchmark {
       for (const auto bucket_cnt : collision_counter) {
          stats.min = std::min(static_cast<uint64_t>(bucket_cnt), stats.min);
          stats.max = std::max(static_cast<uint64_t>(bucket_cnt), stats.max);
-         stats.empty_buckets += bucket_cnt == 0 ? 1 : 0;
-         stats.colliding_buckets += bucket_cnt > 1 ? 1 : 0;
+         stats.empty_slots += bucket_cnt == 0 ? 1 : 0;
+         stats.colliding_slots += bucket_cnt > 1 ? 1 : 0;
          stats.total_colliding_keys += bucket_cnt > 1 ? bucket_cnt : 0;
          std_dev_square_sum += (bucket_cnt - average) * (bucket_cnt - average);
       }
@@ -90,9 +90,7 @@ namespace Benchmark {
    template<unsigned int repeatCnt = 5, typename HashFunction, typename Reducer>
    ThroughputStats measure_throughput(const std::vector<uint64_t>& dataset, const double& over_alloc,
                                       const HashFunction& hashfn, const Reducer& reduce) {
-      // Emulate hashtable with buckets (we only care about amount of elements per bucket)
       const auto n = static_cast<uint64_t>(std::ceil(static_cast<long double>(dataset.size()) * over_alloc));
-
       uint64_t avg = 0;
 
       for (unsigned int i = 0; i < repeatCnt; i++) {

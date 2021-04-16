@@ -14,7 +14,7 @@
 struct Args {
   public:
    const std::string datapath;
-   const std::string outfile;
+   const std::string outfile_path;
    const std::vector<double> load_factors;
    const std::vector<Dataset> datasets;
 
@@ -23,7 +23,7 @@ struct Args {
     */
    static Args parse(const int argc, const char* argv[]) {
       std::string datapath;
-      std::string outfile;
+      std::string outfile_path;
       std::vector<double> load_factors{};
       std::vector<Dataset> datasets{};
 
@@ -87,14 +87,15 @@ struct Args {
          throw std::runtime_error("Please specify the path to the data folder using \"-datapath=<PATH_TO_DATA>\"");
       }
 
-      // Parse outfile parameter
-      if (const auto raw_outfile = option(argc, argv, "-outfile=")) {
-         outfile = *raw_outfile;
+      // Parse outfile_path parameter
+      if (const auto raw_outfile_path = option(argc, argv, "-outfile=")) {
+         outfile_path = *raw_outfile_path;
       } else {
-         throw std::runtime_error("Please specify the path the output csv file \"-outfile=<PATH_TO_DATA>\"");
+         throw std::runtime_error("Please specify the path to the output csv file using "
+                                  "\"-outfile_path=<PATH_TO_DATA>\"");
       }
 
-      return Args(datapath, outfile, load_factors, datasets);
+      return {datapath, outfile_path, load_factors, datasets};
    }
 
   private:

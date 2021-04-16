@@ -27,8 +27,8 @@
    #else
       #define forceinline
       #define unroll_loops
-      #define likely(expr)
-      #define unlikely(expr)
+      #define likely(expr) expr
+      #define unlikely(expr) expr
    #endif
 
    #define neverinline __attribute__((noinline))
@@ -97,7 +97,7 @@ struct Cache {
     */
    template<Mode mode = WRITE, Locality locality = NONE,
             size_t cache_line_size = 64> // TODO: extract these into defines!
-   static forceinline unroll_loops void prefetch_block(const void* address, const size_t size) {
+   static forceinline void prefetch_block(const void* address, const size_t size) {
       for (auto* ptr = (std::uint8_t*) address; ptr < (std::uint8_t*) address + size; ptr += cache_line_size) {
          prefetch(ptr, mode, locality);
       }
