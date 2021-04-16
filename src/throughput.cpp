@@ -17,8 +17,15 @@ int main(const int argc, const char* argv[]) {
    try {
       auto args = Args::parse(argc, argv);
       CSV outfile(args.outfile,
-                  {"hash", "nanoseconds_total", "nanoseconds_per_key", "benchmark_repeat_cnt", "reducer", "dataset",
-                   "numelements"});
+                  {
+                     "dataset",
+                     "numelements",
+                     "hash",
+                     "reducer",
+                     "nanoseconds_total",
+                     "nanoseconds_per_key",
+                     "benchmark_repeat_cnt",
+                  });
 
       // Precompute tabulation hash tables
       HASH_64 small_tabulation_table[0xFF] = {0};
