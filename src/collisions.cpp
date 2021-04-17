@@ -190,7 +190,11 @@ int main(const int argc, const char* argv[]) {
       TabulationHash::gen_table(large_tabulation_table);
 
       for (const auto& it : args.datasets) {
+         // TODO: once we have more RAM we maybe should load the dataset per thread (prevent cache conflicts)
+         //  and purely operate on thread local data. Also look into setting CPU affinity. I.e.
+         //  move this load into threads after aquire()
          const std::vector<uint64_t> dataset = it.load(args.datapath);
+
          // TODO: Build dataset specific auxiliary data (e.g., pgm, rmi)
 
          for (auto load_factor : args.load_factors) {
@@ -202,8 +206,8 @@ int main(const int argc, const char* argv[]) {
             }));
          }
 
-         // TODO: once we have more RAM we should load the dataset per thread (prevent conflicts)
-         // and purely operate on thead local data. Also look into setting CPU affinity
+         // TODO: once we're fully parallelized, move this await one scope up. The semaphore will prevent
+         //  executing more threads than
          for (auto& t : threads) {
             t.join();
          }
