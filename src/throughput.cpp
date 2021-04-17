@@ -16,7 +16,7 @@ int main(const int argc, const char* argv[]) {
 
    try {
       auto args = Args::parse(argc, argv);
-      CSV outfile(args.outfile,
+      CSV outfile(args.outfile_path,
                   {
                      "dataset",
                      "numelements",
