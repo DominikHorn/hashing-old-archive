@@ -228,6 +228,8 @@
 #include <smmintrin.h>
 #include <wmmintrin.h>
 
+#include "reduction.hpp"
+
 struct AquaHash {
    /**
   * Obtain 32 bit aquahash value

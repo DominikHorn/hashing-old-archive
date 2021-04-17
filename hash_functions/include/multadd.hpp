@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cassert>
+#include <convenience.hpp>
 
-#include "convenience.hpp"
 #include "types.hpp"
 
 /**

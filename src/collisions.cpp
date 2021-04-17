@@ -6,13 +6,12 @@
 #include <string>
 #include <thread>
 
-#include "hashing.hpp"
+#include <hashing.hpp>
 
 #include "include/args.hpp"
 #include "include/benchmark.hpp"
 #include "include/csv.hpp"
 #include "include/random_hash.hpp"
-#include "include/semaphore.hpp"
 
 const std::vector<std::string> csv_columns = {
    "dataset",

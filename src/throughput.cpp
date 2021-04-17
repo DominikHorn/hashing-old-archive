@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 
-#include "hashing.hpp"
+#include <hashing.hpp>
 
 #include "include/args.hpp"
 #include "include/benchmark.hpp"

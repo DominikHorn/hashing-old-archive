@@ -1,14 +1,20 @@
 #pragma once
 
-#include "convenience.hpp"
-#include "wrappers/types.hpp"
+#include <convenience.hpp>
+#if (defined(__GNUC__) || defined(__clang__)) && (defined(__x86_64__) || defined(__i386__))
+   #include <x86intrin.h>
+#else
+   #error "Your compiler is not supported"
+#endif
+
+#include "types.hpp"
 
 // TODO: utilize this for batching!
 //#define LIBDIVIDE_SSE2
 //#define LIBDIVIDE_AVX2
 //#define LIBDIVIDE_AVX512
 //#define LIBDIVIDE_NEON
-#include "../libdivide/libdivide.h"
+#include <thirdparty/libdivide.h>
 
 /**
  * Implements different reducers to map values from

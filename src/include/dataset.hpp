@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-#include "convenience.hpp"
+#include <convenience.hpp>
 
 struct Dataset {
   public:

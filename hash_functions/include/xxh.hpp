@@ -1,10 +1,11 @@
 #pragma once
 
+#include <convenience.hpp>
+
 // enable full inlining for xxhash code
 #define XXH_INLINE_ALL
-#include "xxHash/xxhash.h"
+#include "external/xxHash/xxhash.h"
 
-#include "convenience.hpp"
 #include "types.hpp"
 
 /**

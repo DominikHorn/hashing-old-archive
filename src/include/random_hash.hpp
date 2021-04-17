@@ -2,7 +2,7 @@
 
 #include <random>
 
-#include "convenience.hpp"
+#include "../../convenience/convenience.hpp"
 
 /**
  * This is purely meant as a baseline for the amount of collisions to expect, i.e.,

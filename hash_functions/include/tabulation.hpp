@@ -1,9 +1,9 @@
 #pragma once
 
+#include <convenience.hpp>
 #include <fstream>
 #include <iostream>
 
-#include "convenience.hpp"
 #include "types.hpp"
 
 /**

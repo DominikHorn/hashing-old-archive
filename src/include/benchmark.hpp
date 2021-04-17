@@ -4,8 +4,6 @@
 #include <cmath>
 #include <vector>
 
-#include "convenience.hpp"
-
 namespace Benchmark {
    // These are probably to large but these few additional bytes don't hurt
    template<typename Counter, typename PreciseMath>

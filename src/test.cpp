@@ -1,4 +1,6 @@
-#include "hashing.hpp"
+#include <convenience.hpp>
+#include <hashing.hpp>
+
 #include "include/args.hpp"
 
 int main(const int argc, const char* argv[]) {

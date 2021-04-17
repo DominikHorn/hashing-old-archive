@@ -1,18 +1,12 @@
 #pragma once
 
-/**
- * This file simply reexports other file's definitions, i.e.,
- * is meant as the single import source for all relevant
- * classical hash functions
- */
-
-#include "reduction.hpp"
-#include "wrappers/aqua.hpp"
-#include "wrappers/city.hpp"
-#include "wrappers/meow.hpp"
-#include "wrappers/mult.hpp"
-#include "wrappers/multadd.hpp"
-#include "wrappers/murmur.hpp"
-#include "wrappers/tabulation.hpp"
-#include "wrappers/types.hpp"
-#include "wrappers/xxh.hpp"
+#include "include/aqua.hpp"
+#include "include/city.hpp"
+#include "include/meow.hpp"
+#include "include/mult.hpp"
+#include "include/multadd.hpp"
+#include "include/murmur.hpp"
+#include "include/reduction.hpp"
+#include "include/tabulation.hpp"
+#include "include/types.hpp"
+#include "include/xxh.hpp"

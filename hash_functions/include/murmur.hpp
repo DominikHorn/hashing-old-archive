@@ -1,6 +1,7 @@
 #pragma once
 
-#include "convenience.hpp"
+#include <convenience.hpp>
+
 #include "types.hpp"
 
 /**
