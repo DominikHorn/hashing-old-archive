@@ -11,7 +11,7 @@
  */
 template<typename T = uint64_t>
 struct RandomHash {
-   RandomHash(const T& hashtable_size, const T& seed = 0xC7455FEC83DD661FLLU) : gen(seed), dist(0, hashtable_size) {}
+   RandomHash(const T& hashtable_size, const T& seed = 0xC7455FEC83DD661FLLU) : gen(seed), dist(0, hashtable_size-1) {}
 
    forceinline T next() {
       return dist(gen);
