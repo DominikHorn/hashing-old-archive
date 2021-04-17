@@ -5,7 +5,7 @@ add_executable(test test.cpp)
 target_link_libraries(test convenience hashing)
 
 add_executable(collisions collisions.cpp)
-target_link_libraries(collisions convenience hashing)
+target_link_libraries(collisions convenience hashing learned_models)
 
 add_executable(throughput throughput.cpp)
 target_link_libraries(throughput convenience hashing)

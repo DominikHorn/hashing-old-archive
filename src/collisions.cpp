@@ -7,6 +7,7 @@
 #include <thread>
 
 #include <hashing.hpp>
+#include <learned_models.hpp>
 
 #include "include/args.hpp"
 #include "include/benchmark.hpp"
