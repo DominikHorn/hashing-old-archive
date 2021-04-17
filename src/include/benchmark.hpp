@@ -91,10 +91,10 @@ namespace Benchmark {
       const auto n = static_cast<uint64_t>(std::ceil(static_cast<long double>(dataset.size()) * over_alloc));
       uint64_t avg = 0;
 
-      for (unsigned int i = 0; i < repeatCnt; i++) {
+      for (unsigned int repetiton = 0; repetiton < repeatCnt; repetiton++) {
          const auto start_time = std::chrono::steady_clock::now();
          // Hash each value and record entries per bucket
-         for (const auto key : dataset) {
+         for (const auto& key : dataset) {
             // Ensure the compiler does not simply remove this index
             // calculation during optimization.
             Barrier::DoNotOptimize(reduce(hashfn(key), n));
