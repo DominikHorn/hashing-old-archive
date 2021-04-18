@@ -51,8 +51,7 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
    std::vector<uint32_t> collision_counter(hashtable_size);
    const auto measure_hashfn_with_reducer = [&](const std::string& hash_name, const auto& hashfn,
                                                 const std::string& reducer_name, const auto& reducerfn) {
-      // Prepare & measure
-      std::fill(collision_counter.begin(), collision_counter.end(), 0);
+      // Measure
       const auto stats = Benchmark::measure_collisions(dataset, collision_counter, hashfn, reducerfn);
 
 #ifdef VERBOSE

@@ -17,7 +17,6 @@ namespace BenchmarkArgs {
    const std::string max_threads_key = "max_threads";
    const std::string load_factors_key = "load_factors";
    const std::string sample_sizes_key = "sample_sizes";
-   const std::string pgm_epsilons_key = "pgm_epsilons";
    const std::string datasets_key = "datasets";
 
    struct LearnedCollisionArgs {
@@ -25,7 +24,6 @@ namespace BenchmarkArgs {
       unsigned int max_threads;
       std::vector<double> load_factors;
       std::vector<double> sample_sizes;
-      std::vector<unsigned int> pgm_epsilons;
       std::vector<Dataset> datasets;
 
       LearnedCollisionArgs(int argc, char* argv[]) {
@@ -49,9 +47,6 @@ namespace BenchmarkArgs {
                (sample_sizes_key,
                 "comma separated list of sample sizes to measure, i.e., percentage floating point values",
                 cxxopts::value<std::vector<double>>()->default_value("0.01")) //
-               (pgm_epsilons_key,
-                "comma separated list of pgm epsilon parameter values to measure, i.e., uint values",
-                cxxopts::value<std::vector<unsigned int>>()->default_value("128")) //
                (datasets_key,
                 "datasets to benchmark on, formatted as '<PATH_TO_DATASET>:<BYTES_PER_NUMBER>'. Collects positional "
                 "arguments",
@@ -82,7 +77,6 @@ namespace BenchmarkArgs {
             max_threads = result[max_threads_key].as<unsigned int>();
             load_factors = result[load_factors_key].as<std::vector<double>>();
             sample_sizes = result[sample_sizes_key].as<std::vector<double>>();
-            pgm_epsilons = result[sample_sizes_key].as<std::vector<unsigned int>>();
             datasets = result[datasets_key].as<std::vector<Dataset>>();
          } catch (const std::exception& ex) {
             std::cerr << "error: " << ex.what() << std::endl;
