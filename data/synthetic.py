@@ -25,7 +25,7 @@ def write_dataset(name, numbers, amount, bytes_per_number=8):
     """
     Writes a list of numbers in our simple binary dataset format
 
-    :param name: name of the dataset, will be used to derive filename as <name>_<bits_per_number>.ds
+    :param name: name of the dataset, will be used to derive filename as <name>_<bits_per_number>
     :param numbers: generator for the dataset
     :param amount: how many numbers to write from generator
     :param bytes_per_number: how many bytes per number we should use for encoding. Defaults to 8
@@ -33,7 +33,7 @@ def write_dataset(name, numbers, amount, bytes_per_number=8):
     """
     # write payload to file
     path = os.path.realpath(os.path.dirname(__file__))
-    filename = f"{name}_{bytes_per_number * 8}.ds"
+    filename = f"{name}_{bytes_per_number * 8}"
     buffering = 2 ** 10
 
     with open(f"{path}/{filename}", 'wb', buffering=buffering) as file:
@@ -103,7 +103,7 @@ def duplicated(start=1, duplicate_chance=0.4):
 
 # write datasets
 n = 2 * (10 ** 8)
-write_dataset(name="debug", numbers=duplicated(start=1), amount=64, bytes_per_number=8)
+write_dataset(name="debug", numbers=duplicated(start=1), amount=1000000, bytes_per_number=8)
 write_dataset(name="dense", numbers=dense(start=1), amount=n, bytes_per_number=8)
 write_dataset(name="dense", numbers=dense(start=1), amount=n, bytes_per_number=4)
 write_dataset(name="gapped5", numbers=gapped(start=1, delete_probability=0.05), amount=n, bytes_per_number=8)
