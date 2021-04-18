@@ -31,22 +31,11 @@ git submodule update --init --recursive
 ```
 
 ### Running Benchmarks
-Currently, this repo contains two separate hashing benchmarks implemented in `collisions.cpp` and `throughput.cpp` respectively. To run them, compile the corresponding targets with cmake (`collision` or `throughput`) and execute the resulting binaries, e.g.:
-
-```bash
-$ cmake-build-release/src/collisions \
-  -loadfactors=1.0,0.75,0.5,0.25 \
-  -datasets=books_200M_uint32.ds:4,books_200M_uint64.ds:8,fb_200M_uint64.ds:8,osm_cellids_200M_uint64.ds:8,wiki_ts_200M_uint64.ds:8 \
-  -datapath=data/ \
-  -outfile=results/collision.csv
-```
-
-* *loadfactors* is a comma separate list of floating point load factors to test. Loadfactors influence the hashtable size, i.e., the amount of slots, for the collision benchmark (`hashtable_size = keyset_size / load_factor`)
-* *datasets* is a comma separated list of datasets to perform the benchmark on. Each dataset is denoted in the form `<filename>:<bytes_per_number>`. Currently only 4 or 8 byte unsigned integer value datasets, encoded as `[number_of_entries][first_num]...[last_num]`, where each `[]` denotes a single, little endian encoded unsigned integer value with size `bytes_per_number`. Example datasets may be found [here](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/JGVF9A), or, alternatively, synthetically generated using the [data/synthetic.py](https://github.com/andreaskipf/hashing/blob/main/data/synthetic.py) script.
-* *datapath* denotes the common prefix path to all datasets. Note that a trailing backslash must currently always be included
-* *outfile* denotes the path to the output csv file
-
-Alternatively you can use the [benchmark.sh](https://github.com/andreaskipf/hashing/blob/main/benchmark.sh) script.
+All benchmarks are implemented as single ".cpp" executable targets, located in
+src/. To run them, compile the corresponding target with cmake and execute the
+resulting binaries. To see the inline help text describing how to work 
+with the benchmarks, simply execute the binary without arguments or with "-h" or
+with "--help".
 
 # Results
 ## Throughput
