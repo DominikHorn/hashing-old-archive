@@ -10,12 +10,8 @@ target_include_directories(${PROJECT_NAME} INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         )
 
-# Link other code from this repo
-#target_link_libraries(${PROJECT_NAME} INTERFACE convenience)
-#target_link_libraries(${PROJECT_NAME} INTERFACE thirdparty)
-
 # Make IDE friendly
-target_sources(${PROJECT_NAME} INTERFACE learned_models.hpp)
+target_sources(${PROJECT_NAME} INTERFACE learned_models.hpp include/)
 
 # Require c++20 for compilation
 target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
