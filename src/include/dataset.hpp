@@ -1,5 +1,6 @@
 #pragma once
 
+#include <exception>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -159,12 +160,15 @@ struct Dataset {
  */
 std::istream& operator>>(std::istream& is, Dataset& ds) {
    char ch = 0;
-   while (true) {
+   while (!is.eof()) {
       is >> std::noskipws >> ch;
       if (ch == ':')
          break;
       ds.filepath += ch;
    };
+   if (is.eof()) {
+      throw std::runtime_error("Failed to parse dataset " + ds.filepath + ": Bytes per number not specified");
+   }
    is >> ds.bytesPerValue;
    return is;
 }
