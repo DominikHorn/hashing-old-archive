@@ -16,6 +16,7 @@ add_compile_options(-std=c++20)
 
 add_subdirectory(thirdparty)
 add_subdirectory(convenience)
+add_subdirectory(reduction)
 add_subdirectory(hash_functions)
 add_subdirectory(learned_models)
 add_subdirectory(src)

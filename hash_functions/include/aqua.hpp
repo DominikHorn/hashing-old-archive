@@ -228,7 +228,8 @@
 #include <smmintrin.h>
 #include <wmmintrin.h>
 
-#include "reduction.hpp"
+#include <convenience.hpp>
+#include <reduction.hpp>
 
 struct AquaHash {
    /**
@@ -241,7 +242,7 @@ struct AquaHash {
   */
    template<const unsigned short select = 0, typename T>
    static forceinline T hash32(const T& value, const __m128i seed = _mm_setzero_si128()) {
-      return HashReduction::extract_32<select>(Hash(reinterpret_cast<const uint8_t*>(&value), sizeof(T), seed));
+      return Reduction::extract_32<select>(Hash(reinterpret_cast<const uint8_t*>(&value), sizeof(T), seed));
    }
 
    /**
@@ -254,7 +255,7 @@ struct AquaHash {
     */
    template<const unsigned short select = 0, typename T>
    static forceinline T hash64(const T& value, const __m128i seed = _mm_setzero_si128()) {
-      return HashReduction::extract_64<select>(Hash(reinterpret_cast<const uint8_t*>(&value), sizeof(T), seed));
+      return Reduction::extract_64<select>(Hash(reinterpret_cast<const uint8_t*>(&value), sizeof(T), seed));
    }
 
    /**

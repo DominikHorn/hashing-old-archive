@@ -9,6 +9,7 @@
 
 #include <convenience.hpp>
 #include <hashing.hpp>
+#include <reduction.hpp>
 
 #include "include/args.hpp"
 #include "include/benchmark.hpp"
@@ -44,7 +45,7 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
       static_cast<uint64_t>(static_cast<double>(dataset.size()) / static_cast<double>(load_factor));
 
    // Build load factor specific auxiliary data
-   const auto magic_branchfree_div = HashReduction::make_branchfree_magic_divider(static_cast<HASH_64>(hashtable_size));
+   const auto magic_branchfree_div = Reduction::make_branchfree_magic_divider(static_cast<HASH_64>(hashtable_size));
 
    // lambda to measure a given hash function with a given reducer. Will be entirely inlined by default
    std::vector<uint32_t> collision_counter(hashtable_size);
@@ -86,13 +87,13 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
 
    // measures a hash function using every reducer
    const auto measure_hashfn = [&](const std::string& hash_name, const auto& hashfn) {
-      measure_hashfn_with_reducer(hash_name, hashfn, "fastrange32", HashReduction::fastrange<HASH_32>);
-      measure_hashfn_with_reducer(hash_name, hashfn, "fastrange64", HashReduction::fastrange<HASH_64>);
+      measure_hashfn_with_reducer(hash_name, hashfn, "fastrange32", Reduction::fastrange<HASH_32>);
+      measure_hashfn_with_reducer(hash_name, hashfn, "fastrange64", Reduction::fastrange<HASH_64>);
 
       // modulo, fast_modulo and branchless_fast_modulo only differ in the speed at which they complete computations
       measure_hashfn_with_reducer(hash_name, hashfn, "branchless_fast_modulo",
                                   [&magic_branchfree_div](const HASH_64& value, const HASH_64& n) {
-                                     return HashReduction::magic_modulo(value, n, magic_branchfree_div);
+                                     return Reduction::magic_modulo(value, n, magic_branchfree_div);
                                   });
    };
 
@@ -111,7 +112,7 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
             UNUSED(key);
             return rhash.next();
          },
-         "do_nothing", HashReduction::do_nothing<HASH_64>);
+         "do_nothing", Reduction::do_nothing<HASH_64>);
    }
 
    /**
@@ -146,25 +147,22 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
                   [&](const HASH_64& key) { return rotr(MultAddHash::multadd64_hash(key), rot); });
 
    measure_hashfn("murmur3_128_low",
-                  [](const HASH_64& key) { return HashReduction::lower_half(MurmurHash3::murmur3_128(key)); });
+                  [](const HASH_64& key) { return Reduction::lower_half(MurmurHash3::murmur3_128(key)); });
    measure_hashfn("murmur3_128_upp",
-                  [](const HASH_64& key) { return HashReduction::upper_half(MurmurHash3::murmur3_128(key)); });
+                  [](const HASH_64& key) { return Reduction::upper_half(MurmurHash3::murmur3_128(key)); });
    measure_hashfn("murmur3_128_xor",
-                  [](const HASH_64& key) { return HashReduction::xor_both(MurmurHash3::murmur3_128(key)); });
+                  [](const HASH_64& key) { return Reduction::xor_both(MurmurHash3::murmur3_128(key)); });
    measure_hashfn("murmur3_128_city",
-                  [](const HASH_64& key) { return HashReduction::hash_128_to_64(MurmurHash3::murmur3_128(key)); });
+                  [](const HASH_64& key) { return Reduction::hash_128_to_64(MurmurHash3::murmur3_128(key)); });
    measure_hashfn("murmur3_fin64", [](const HASH_64& key) { return MurmurHash3::finalize_64(key); });
 
    measure_hashfn("xxh64", [](const HASH_64& key) { return XXHash::XXH64_hash(key); });
    measure_hashfn("xxh3", [](const HASH_64& key) { return XXHash::XXH3_hash(key); });
-   measure_hashfn("xxh3_128_low",
-                  [](const HASH_64& key) { return HashReduction::lower_half(XXHash::XXH3_128_hash(key)); });
-   measure_hashfn("xxh3_128_upp",
-                  [](const HASH_64& key) { return HashReduction::upper_half(XXHash::XXH3_128_hash(key)); });
-   measure_hashfn("xxh3_128_xor",
-                  [](const HASH_64& key) { return HashReduction::xor_both(XXHash::XXH3_128_hash(key)); });
+   measure_hashfn("xxh3_128_low", [](const HASH_64& key) { return Reduction::lower_half(XXHash::XXH3_128_hash(key)); });
+   measure_hashfn("xxh3_128_upp", [](const HASH_64& key) { return Reduction::upper_half(XXHash::XXH3_128_hash(key)); });
+   measure_hashfn("xxh3_128_xor", [](const HASH_64& key) { return Reduction::xor_both(XXHash::XXH3_128_hash(key)); });
    measure_hashfn("xxh3_128_city",
-                  [](const HASH_64& key) { return HashReduction::hash_128_to_64(XXHash::XXH3_128_hash(key)); });
+                  [](const HASH_64& key) { return Reduction::hash_128_to_64(XXHash::XXH3_128_hash(key)); });
 
    measure_hashfn("tabulation_small64",
                   [&](const HASH_64& key) { return TabulationHash::small_hash(key, small_tabulation_table); });
@@ -172,14 +170,11 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
                   [&](const HASH_64& key) { return TabulationHash::large_hash(key, large_tabulation_table); });
 
    measure_hashfn("city64", [](const HASH_64& key) { return CityHash::CityHash64(key); });
-   measure_hashfn("city128_low",
-                  [](const HASH_64& key) { return HashReduction::lower_half(CityHash::CityHash128(key)); });
-   measure_hashfn("city128_upp",
-                  [](const HASH_64& key) { return HashReduction::upper_half(CityHash::CityHash128(key)); });
-   measure_hashfn("city128_xor",
-                  [](const HASH_64& key) { return HashReduction::xor_both(CityHash::CityHash128(key)); });
+   measure_hashfn("city128_low", [](const HASH_64& key) { return Reduction::lower_half(CityHash::CityHash128(key)); });
+   measure_hashfn("city128_upp", [](const HASH_64& key) { return Reduction::upper_half(CityHash::CityHash128(key)); });
+   measure_hashfn("city128_xor", [](const HASH_64& key) { return Reduction::xor_both(CityHash::CityHash128(key)); });
    measure_hashfn("city128_city",
-                  [](const HASH_64& key) { return HashReduction::hash_128_to_64(CityHash::CityHash128(key)); });
+                  [](const HASH_64& key) { return Reduction::hash_128_to_64(CityHash::CityHash128(key)); });
 
    measure_hashfn("meow64_low", [](const HASH_64& key) { return MeowHash::hash64(key); });
    measure_hashfn("meow64_upp", [](const HASH_64& key) { return MeowHash::hash64<1>(key); });

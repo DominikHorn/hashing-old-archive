@@ -28,6 +28,9 @@
 
 #pragma once
 
+#include <convenience.hpp>
+#include <reduction.hpp>
+
 #define MEOW_HASH_VERSION 5
 #define MEOW_HASH_VERSION_NAME "0.5/calico"
 
@@ -150,7 +153,7 @@ struct MeowHash {
    template<const unsigned short select = 0, typename T>
    static forceinline HASH_32 hash32(const T& value,
                                      const meow_u8 seed[128] = const_cast<unsigned char*>(MeowDefaultSeed)) {
-      return HashReduction::extract_32<select>(_hash((void*) seed, sizeof(T), (void*) &value));
+      return Reduction::extract_32<select>(_hash((void*) seed, sizeof(T), (void*) &value));
    }
 
    /**
@@ -164,7 +167,7 @@ struct MeowHash {
    template<const unsigned short select = 0, typename T>
    static forceinline HASH_64 hash64(const T& value,
                                      const meow_u8 seed[128] = const_cast<unsigned char*>(MeowDefaultSeed)) {
-      return HashReduction::extract_64<select>(_hash((void*) seed, sizeof(T), (void*) &value));
+      return Reduction::extract_64<select>(_hash((void*) seed, sizeof(T), (void*) &value));
    }
 
    /**

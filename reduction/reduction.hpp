@@ -1,6 +1,5 @@
 #pragma once
 
-#include <convenience.hpp>
 #if (defined(__GNUC__) || defined(__clang__)) && (defined(__x86_64__) || defined(__i386__))
    #include <x86intrin.h>
 #else
@@ -14,12 +13,14 @@
 //#define LIBDIVIDE_NEON
 #include <thirdparty/libdivide.h>
 
+#include <convenience.hpp>
+
 /**
  * Implements different reducers to map values from
  * [0,2^d] into [0, N]
  *
  */
-struct HashReduction {
+struct Reduction {
    /**
     * NOOP reduction, i.e., doesn't do anything
     */
@@ -85,6 +86,18 @@ struct HashReduction {
     */
    template<typename T>
    static constexpr forceinline T fastrange(const T& value, const T& n);
+
+   /**
+    * min/max cuts the value
+    * @tparam T
+    * @param value
+    * @param N
+    * @return
+    */
+   template<typename T>
+   static constexpr forceinline T min_max_cutoff(const T& value, const T& N) {
+      return std::max(static_cast<T>(0), std::min(value, N - 1));
+   }
 
    /**
     * Reduces value to interval [0, 2^p]
@@ -189,12 +202,12 @@ struct HashReduction {
 };
 
 template<>
-constexpr forceinline HASH_32 HashReduction::fastrange(const HASH_32& value, const HASH_32& n) {
+constexpr forceinline HASH_32 Reduction::fastrange(const HASH_32& value, const HASH_32& n) {
    return static_cast<HASH_32>((static_cast<uint64_t>(value) * static_cast<uint64_t>(n)) >> 32);
 }
 
 template<>
-constexpr forceinline HASH_64 HashReduction::fastrange(const HASH_64& value, const HASH_64& n) {
+constexpr forceinline HASH_64 Reduction::fastrange(const HASH_64& value, const HASH_64& n) {
 #ifdef __SIZEOF_INT128__
    return static_cast<HASH_64>((static_cast<__uint128_t>(value) * static_cast<__uint128_t>(n)) >> 64);
 #else

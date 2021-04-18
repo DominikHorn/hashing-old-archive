@@ -7,7 +7,9 @@
 #include <string>
 #include <thread>
 
+#include <convenience.hpp>
 #include <learned_models.hpp>
+#include <reduction.hpp>
 
 #include "include/args.hpp"
 #include "include/benchmark.hpp"
@@ -130,15 +132,11 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
                    << std::endl;
       };
 
-      // TODO: move this to hash reduction.hpp
-      const auto min_max_cutoff = [](const auto& pos, const auto& N) {
-         return std::max(static_cast<size_t>(0), std::min(pos, N - 1));
-      };
-
       // TODO: test different reduction methods, i.e., check if out of bounds with
       //  unlikely() annotation and if so, apply standard reducer?
       measure_hashfn_with_reducer(
-         "pgm", [&](const HASH_64& key) { return pgm.search(key).pos; }, "min_max_cutoff", min_max_cutoff);
+         "pgm", [&](const HASH_64& key) { return pgm.search(key).pos; }, "min_max_cutoff",
+         Reduction::min_max_cutoff<HASH_64>);
    }
 }
 

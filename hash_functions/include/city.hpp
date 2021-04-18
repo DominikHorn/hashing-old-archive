@@ -37,7 +37,9 @@
 #include <nmmintrin.h>
 #include <string.h> // for memcpy and memset
 
-#include "reduction.hpp"
+#include <convenience.hpp>
+#include <reduction.hpp>
+
 #include "city.config.hpp"
 
 #ifdef _MSC_VER
@@ -428,7 +430,7 @@ struct CityHash {
    }
 
    static forceinline HASH_64 HashLen16(HASH_64 u, HASH_64 v) {
-      return HashReduction::hash_128_to_64(HASH_128(u, v));
+      return Reduction::hash_128_to_64(HASH_128(u, v));
    }
 
    static forceinline HASH_64 HashLen16(HASH_64 u, HASH_64 v, HASH_64 mul) {
