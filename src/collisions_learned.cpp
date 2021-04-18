@@ -143,8 +143,8 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
     *  ============================
     */
 
-   // TODO: benchmark different epsilon values
    // TODO: test different reduction methods (optimize with unlikely() annotation etc)
+
    measure_model(
       "pgm_eps128", sort_prepare, [](const auto& sample) { return pgm::PGMIndex<HASH_64, 128>(sample); }, //
       [](const auto& pgm, const size_t& sample_n, const HASH_64& N, const HASH_64& key) {
@@ -156,8 +156,24 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
       "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
 
    measure_model(
+      "pgm_eps16", sort_prepare, [](const auto& sample) { return pgm::PGMIndex<HASH_64, 16>(sample); }, //
+      [](const auto& pgm, const size_t& sample_n, const HASH_64& N, const HASH_64& key) {
+         // Since we're training pgm on a sample, pos has to be scaled to fill the full [0, N]
+         const auto sample_pos = static_cast<long double>(pgm.search(key).pos);
+         const auto fac = static_cast<long double>(N) / static_cast<long double>(sample_n);
+         return static_cast<HASH_64>(sample_pos * fac);
+      }, //
+      "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
+
+   measure_model(
       "pgm_hash_eps128", sort_prepare,
       [](const auto& sample) { return pgm::PGMHash<HASH_64, 128>(sample.begin(), sample.end()); }, //
+      [](const auto& pgm, const size_t& sample_n, const HASH_64& N, const HASH_64& key) { return pgm.hash(key, N); }, //
+      "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
+
+   measure_model(
+      "pgm_hash_eps16", sort_prepare,
+      [](const auto& sample) { return pgm::PGMHash<HASH_64, 16>(sample.begin(), sample.end()); }, //
       [](const auto& pgm, const size_t& sample_n, const HASH_64& N, const HASH_64& key) { return pgm.hash(key, N); }, //
       "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
 }
