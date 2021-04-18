@@ -4,6 +4,7 @@
 #include <map>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include <cxxopts.hpp>
@@ -13,6 +14,7 @@
 namespace BenchmarkArgs {
    const std::string help_key = "help";
    const std::string outfile_key = "outfile";
+   const std::string max_threads_key = "max_threads";
    const std::string load_factors_key = "load_factors";
    const std::string sample_sizes_key = "sample_sizes";
    const std::string pgm_epsilons_key = "pgm_epsilons";
@@ -20,6 +22,7 @@ namespace BenchmarkArgs {
 
    struct LearnedCollisionArgs {
       std::string outfile;
+      unsigned int max_threads;
       std::vector<double> load_factors;
       std::vector<double> sample_sizes;
       std::vector<unsigned int> pgm_epsilons;
@@ -36,6 +39,10 @@ namespace BenchmarkArgs {
                (outfile_key,
                 "path to output file for storing results as csv. NOTE: file will always be overwritten",
                 cxxopts::value<std::string>()) //
+               (max_threads_key,
+                "maximum amount of threads to concurrently execute. NOTE: more threads may be created but only " +
+                   max_threads_key + " will actually execute at the same time.",
+                cxxopts::value<unsigned int>()->default_value(std::to_string(std::thread::hardware_concurrency()))) //
                (load_factors_key,
                 "comma separated list of load factors to measure, i.e., percentage floating point values",
                 cxxopts::value<std::vector<double>>()->default_value("1.0")) //
@@ -72,6 +79,7 @@ namespace BenchmarkArgs {
 
             // Extract
             outfile = result[outfile_key].as<std::string>();
+            max_threads = result[max_threads_key].as<unsigned int>();
             load_factors = result[load_factors_key].as<std::vector<double>>();
             sample_sizes = result[sample_sizes_key].as<std::vector<double>>();
             pgm_epsilons = result[sample_sizes_key].as<std::vector<unsigned int>>();
@@ -86,6 +94,7 @@ namespace BenchmarkArgs {
 
    struct HashCollisionArgs {
       std::string outfile;
+      unsigned int max_threads;
       std::vector<double> load_factors;
       std::vector<Dataset> datasets;
 
@@ -100,6 +109,10 @@ namespace BenchmarkArgs {
                (outfile_key,
                 "path to output file for storing results as csv. NOTE: file will always be overwritten",
                 cxxopts::value<std::string>()) //
+               (max_threads_key,
+                "maximum amount of threads to concurrently execute. NOTE: more threads may be created but only " +
+                   max_threads_key + " will actually execute at the same time.",
+                cxxopts::value<unsigned int>()->default_value(std::to_string(std::thread::hardware_concurrency()))) //
                (load_factors_key,
                 "comma separated list of load factors, i.e., percentage floating point values",
                 cxxopts::value<std::vector<double>>()->default_value("1.0")) //
@@ -130,6 +143,7 @@ namespace BenchmarkArgs {
 
             // Extract
             outfile = result[outfile_key].as<std::string>();
+            max_threads = result[max_threads_key].as<unsigned int>();
             load_factors = result[load_factors_key].as<std::vector<double>>();
             datasets = result[datasets_key].as<std::vector<Dataset>>();
          } catch (const std::exception& ex) {

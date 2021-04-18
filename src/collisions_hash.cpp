@@ -189,19 +189,18 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
 }
 
 int main(int argc, char* argv[]) {
-   // Worker pool for speeding up the benchmarking. We never run more threads than
-   // available CPUs to ensure that results are accurate!
-   // TODO: implement num_cpus argument that overwrites this value
-   const auto num_cpus = std::thread::hardware_concurrency();
-   std::cout << "Detected " << num_cpus << " available cpus" << std::endl;
-
-   std::mutex iomutex;
-   std::counting_semaphore cpu_blocker(num_cpus);
-   std::vector<std::thread> threads{};
-
    try {
       auto args = Args(argc, argv);
       CSV outfile(args.outfile, csv_columns);
+
+      // Worker pool for speeding up the benchmarking. We never run more threads than
+      // available CPUs to ensure that results are accurate!
+#ifdef VERBOSE
+      std::cout << "Will concurrently schedule at most " << args.max_threads << " threads" << std::endl;
+#endif
+      std::mutex iomutex;
+      std::counting_semaphore cpu_blocker(args.max_threads);
+      std::vector<std::thread> threads{};
 
       // Precompute tabulation hash tables once (don't have to change per dataset)
       HASH_64 small_tabulation_table[0xFF];
