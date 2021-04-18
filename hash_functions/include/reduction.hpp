@@ -7,8 +7,6 @@
    #error "Your compiler is not supported"
 #endif
 
-#include "types.hpp"
-
 // TODO: utilize this for batching!
 //#define LIBDIVIDE_SSE2
 //#define LIBDIVIDE_AVX2

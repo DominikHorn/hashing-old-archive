@@ -3,8 +3,6 @@
 #include <cassert>
 #include <convenience.hpp>
 
-#include "types.hpp"
-
 /**
  * ----------------------------
  *      MultAdd Hashing

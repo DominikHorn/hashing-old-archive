@@ -38,8 +38,6 @@
 #include <string.h> // for memcpy and memset
 
 #include "reduction.hpp"
-#include "types.hpp"
-
 #include "city.config.hpp"
 
 #ifdef _MSC_VER

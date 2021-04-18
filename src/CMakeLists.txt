@@ -4,8 +4,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_executable(test test.cpp)
 target_link_libraries(test convenience hashing)
 
-add_executable(collisions collisions.cpp)
-target_link_libraries(collisions convenience hashing learned_models)
+add_executable(collisions_hash collisions_hash.cpp)
+target_link_libraries(collisions_hash convenience hashing)
+
+add_executable(collisions_learned collisions_learned.cpp)
+target_link_libraries(collisions_learned convenience learned_models)
 
 add_executable(throughput throughput.cpp)
 target_link_libraries(throughput convenience hashing)

@@ -7,8 +7,8 @@
 #include <thread>
 #include <chrono>
 
+#include <convenience.hpp>
 #include <hashing.hpp>
-#include <learned_models.hpp>
 
 #include "include/args.hpp"
 #include "include/benchmark.hpp"
@@ -176,64 +176,6 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
 
    measure_hashfn("aqua_low", [](const HASH_64& key) { return AquaHash::hash64(key); });
    measure_hashfn("aqua_upp", [](const HASH_64& key) { return AquaHash::hash64<1>(key); });
-
-   /**
-    * ====================================
-    *       Learned hash functions
-    * ====================================
-    */
-   {
-      // TODO: move this logic to separate file (benchmark.hpp?)
-
-      // Take a random sample
-      auto start_time = std::chrono::steady_clock::now();
-      // TODO: make sample size a cli argument. Switch to cxxopts for cli parsing (overload << ?)
-      const auto sample_size = static_cast<size_t>(0.01 * dataset.size());
-      std::vector<uint64_t> sample(sample_size, 0);
-
-      const uint64_t seed = 0x9E3779B97F4A7C15LLU; // Random constant to ensure reproducibility
-      std::default_random_engine gen(seed);
-      std::uniform_int_distribution<uint64_t> dist(0, dataset.size()-1);
-      for (size_t i = 0; i < sample_size; i++) {
-         const auto random_index = dist(gen);
-         sample[i] = dataset[random_index];
-      }
-      uint64_t sample_ns =
-         static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start_time).count());
-
-      // Sort the sample
-      start_time = std::chrono::steady_clock::now();
-      std::sort(sample.begin(), sample.end());
-      uint64_t sort_ns =
-         static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start_time).count());
-
-      start_time = std::chrono::steady_clock::now();
-      // TODO: benchmark different epsilon values
-      const int epsilon = 128;
-      pgm::PGMIndex<uint64_t, epsilon> pgm(sample);
-      uint64_t build_ns =
-         static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start_time).count());
-
-      // TODO: write this extra information to csv file
-      {
-         std::unique_lock<std::mutex> lock(iomutex);
-         std::cout << "pgm (sample: " << sample_ns << " ns, sort: " << sort_ns << " ns, build: " << build_ns << " ns)" << std::endl;
-      };
-
-      // TODO: move this to hash reduction.hpp
-      const auto min_max_cutoff = [](const auto& pos, const auto& N) {
-        return std::max(static_cast<size_t>(0), std::min(pos, N-1));
-      };
-
-      // TODO: test different reduction methods, i.e., check if out of bounds with
-      //  unlikely() annotation and if so, apply standard reducer?
-      measure_hashfn_with_reducer(
-         "pgm",
-         [&](const HASH_64& key) {
-            return pgm.search(key).pos;
-         },
-         "min_max_cutoff", min_max_cutoff);
-   }
 }
 
 int main(const int argc, const char* argv[]) {

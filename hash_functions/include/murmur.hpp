@@ -2,8 +2,6 @@
 
 #include <convenience.hpp>
 
-#include "types.hpp"
-
 /**
  * ----------------------------
  *      Murmur Hashing
@@ -50,11 +48,11 @@ struct MurmurHash3 {
     * @param value the value to finalize
     * @return 64 bit hash
     */
-   static constexpr forceinline HASH_64 finalize_64(HASH_64& value) {
+   static constexpr forceinline HASH_64 finalize_64(HASH_64 value) {
       value ^= value >> 33;
-      value *= 0xff51afd7ed558ccdllu;
+      value *= 0xff51afd7ed558ccdLLU;
       value ^= value >> 33;
-      value *= 0xc4ceb9fe1a85ec53llu;
+      value *= 0xc4ceb9fe1a85ec53LLU;
       value ^= value >> 33;
 
       return value;

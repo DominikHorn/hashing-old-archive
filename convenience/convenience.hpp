@@ -7,3 +7,4 @@
 #include "include/rotate.hpp"
 #include "include/semaphore.hpp"
 #include "include/tidy.hpp"
+#include "include/types.hpp"

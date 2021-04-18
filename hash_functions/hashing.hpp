@@ -8,5 +8,4 @@
 #include "include/murmur.hpp"
 #include "include/reduction.hpp"
 #include "include/tabulation.hpp"
-#include "include/types.hpp"
 #include "include/xxh.hpp"

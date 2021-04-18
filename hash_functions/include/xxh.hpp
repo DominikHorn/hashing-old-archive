@@ -3,8 +3,6 @@
 #include <convenience.hpp>
 #include <thirdparty/xxhash.h>
 
-#include "types.hpp"
-
 /**
  *
  * ----------------------------

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <convenience.hpp>
-
 /**
  * ----------------------------
  *      General & Typedefs
