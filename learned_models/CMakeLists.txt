@@ -19,3 +19,10 @@ target_sources(${PROJECT_NAME} INTERFACE learned_models.hpp)
 
 # Require c++20 for compilation
 target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
+
+# Use fopenmp if available
+find_package(OpenMP)
+if (OPENMP_FOUND)
+    target_compile_options(${PROJECT_NAME} INTERFACE ${OpenMP_CXX_FLAGS})
+    target_link_libraries(${PROJECT_NAME} INTERFACE OpenMP::OpenMP_CXX)
+endif ()
