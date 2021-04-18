@@ -198,6 +198,7 @@ int main(int argc, char* argv[]) {
 #ifdef VERBOSE
       std::cout << "Will concurrently schedule at most " << args.max_threads << " threads" << std::endl;
 #endif
+      // TODO: Look into setting CPU affinity
       std::mutex iomutex;
       std::counting_semaphore cpu_blocker(args.max_threads);
       std::vector<std::thread> threads{};
@@ -210,8 +211,7 @@ int main(int argc, char* argv[]) {
 
       for (const auto& it : args.datasets) {
          // TODO: once we have more RAM we maybe should load the dataset per thread (prevent cache conflicts)
-         //  and purely operate on thread local data. Also look into setting CPU affinity. I.e.
-         //  move this load into threads after aquire()
+         //  and purely operate on thread local data. i.e. move this load into threads after aquire()
          const std::vector<uint64_t> dataset = it.load();
 
          for (auto load_factor : args.load_factors) {
