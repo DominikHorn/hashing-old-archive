@@ -147,15 +147,14 @@ int main(int argc, char* argv[]) {
       auto args = Args(argc, argv);
       CSV outfile(args.outfile, csv_columns);
 
-      // Worker pool for speeding up the benchmarking. We never run more threads than
-      // available CPUs to ensure that results are accurate!
-#ifdef VERBOSE
-      std::cout << "Will concurrently schedule at most " << args.max_threads << " threads" << std::endl;
-#endif
+      // Worker pool for speeding up the benchmarking
       // TODO: Look into setting CPU affinity
       std::mutex iomutex;
       std::counting_semaphore cpu_blocker(args.max_threads);
       std::vector<std::thread> threads{};
+#ifdef VERBOSE
+      std::cout << "Will concurrently schedule at most " << args.max_threads << " threads" << std::endl;
+#endif
 
       for (const auto& it : args.datasets) {
          // TODO: once we have more RAM we maybe should load the dataset per thread (prevent cache conflicts)
