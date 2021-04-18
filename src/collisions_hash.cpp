@@ -1,11 +1,11 @@
 #define VERBOSE
 
+#include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <mutex>
 #include <string>
 #include <thread>
-#include <chrono>
 
 #include <convenience.hpp>
 #include <hashing.hpp>
@@ -14,6 +14,8 @@
 #include "include/benchmark.hpp"
 #include "include/csv.hpp"
 #include "include/random_hash.hpp"
+
+using Args = BenchmarkArgs::HashCollisionArgs;
 
 const std::vector<std::string> csv_columns = {
    "dataset",
@@ -125,8 +127,10 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
    // More significant bits supposedly are of higher quality for multiplicative methods -> compute
    // how much we need to shift/rotate to throw away the least/make 'high quality bits' as prominent as possible
    const auto p = (sizeof(hashtable_size) * 8) - __builtin_clz(hashtable_size - 1);
-   measure_hashfn("mult64_shift" + std::to_string(p), [p](const HASH_64& key) { return MultHash::mult64_hash(key, p); });
-   measure_hashfn("fibo64_shift" + std::to_string(p), [p](const HASH_64& key) { return MultHash::fibonacci64_hash(key, p); });
+   measure_hashfn("mult64_shift" + std::to_string(p),
+                  [p](const HASH_64& key) { return MultHash::mult64_hash(key, p); });
+   measure_hashfn("fibo64_shift" + std::to_string(p),
+                  [p](const HASH_64& key) { return MultHash::fibonacci64_hash(key, p); });
    measure_hashfn("fibo_prime64_shift" + std::to_string(p),
                   [p](const HASH_64& key) { return MultHash::fibonacci_prime64_hash(key, p); });
    measure_hashfn("multadd64_shift" + std::to_string(p),
@@ -153,9 +157,12 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
 
    measure_hashfn("xxh64", [](const HASH_64& key) { return XXHash::XXH64_hash(key); });
    measure_hashfn("xxh3", [](const HASH_64& key) { return XXHash::XXH3_hash(key); });
-   measure_hashfn("xxh3_128_low", [](const HASH_64& key) { return HashReduction::lower_half(XXHash::XXH3_128_hash(key)); });
-   measure_hashfn("xxh3_128_upp", [](const HASH_64& key) { return HashReduction::upper_half(XXHash::XXH3_128_hash(key)); });
-   measure_hashfn("xxh3_128_xor", [](const HASH_64& key) { return HashReduction::xor_both(XXHash::XXH3_128_hash(key)); });
+   measure_hashfn("xxh3_128_low",
+                  [](const HASH_64& key) { return HashReduction::lower_half(XXHash::XXH3_128_hash(key)); });
+   measure_hashfn("xxh3_128_upp",
+                  [](const HASH_64& key) { return HashReduction::upper_half(XXHash::XXH3_128_hash(key)); });
+   measure_hashfn("xxh3_128_xor",
+                  [](const HASH_64& key) { return HashReduction::xor_both(XXHash::XXH3_128_hash(key)); });
    measure_hashfn("xxh3_128_city",
                   [](const HASH_64& key) { return HashReduction::hash_128_to_64(XXHash::XXH3_128_hash(key)); });
 
@@ -165,9 +172,12 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
                   [&](const HASH_64& key) { return TabulationHash::large_hash(key, large_tabulation_table); });
 
    measure_hashfn("city64", [](const HASH_64& key) { return CityHash::CityHash64(key); });
-   measure_hashfn("city128_low", [](const HASH_64& key) { return HashReduction::lower_half(CityHash::CityHash128(key)); });
-   measure_hashfn("city128_upp", [](const HASH_64& key) { return HashReduction::upper_half(CityHash::CityHash128(key)); });
-   measure_hashfn("city128_xor", [](const HASH_64& key) { return HashReduction::xor_both(CityHash::CityHash128(key)); });
+   measure_hashfn("city128_low",
+                  [](const HASH_64& key) { return HashReduction::lower_half(CityHash::CityHash128(key)); });
+   measure_hashfn("city128_upp",
+                  [](const HASH_64& key) { return HashReduction::upper_half(CityHash::CityHash128(key)); });
+   measure_hashfn("city128_xor",
+                  [](const HASH_64& key) { return HashReduction::xor_both(CityHash::CityHash128(key)); });
    measure_hashfn("city128_city",
                   [](const HASH_64& key) { return HashReduction::hash_128_to_64(CityHash::CityHash128(key)); });
 
@@ -178,7 +188,7 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
    measure_hashfn("aqua_upp", [](const HASH_64& key) { return AquaHash::hash64<1>(key); });
 }
 
-int main(const int argc, const char* argv[]) {
+int main(int argc, char* argv[]) {
    // Worker pool for speeding up the benchmarking. We never run more threads than
    // available CPUs to ensure that results are accurate!
    // TODO: implement num_cpus argument that overwrites this value
@@ -190,8 +200,8 @@ int main(const int argc, const char* argv[]) {
    std::vector<std::thread> threads{};
 
    try {
-      auto args = Args::parse(argc, argv);
-      CSV outfile(args.outfile_path, csv_columns);
+      auto args = Args(argc, argv);
+      CSV outfile(args.outfile, csv_columns);
 
       // Precompute tabulation hash tables once (don't have to change per dataset)
       HASH_64 small_tabulation_table[0xFF];
@@ -203,19 +213,20 @@ int main(const int argc, const char* argv[]) {
          // TODO: once we have more RAM we maybe should load the dataset per thread (prevent cache conflicts)
          //  and purely operate on thread local data. Also look into setting CPU affinity. I.e.
          //  move this load into threads after aquire()
-         const std::vector<uint64_t> dataset = it.load(args.datapath);
+         const std::vector<uint64_t> dataset = it.load();
 
          for (auto load_factor : args.load_factors) {
             threads.emplace_back(std::thread([&, load_factor] {
                cpu_blocker.aquire();
-               measure(it.filename, dataset, load_factor, outfile, iomutex, small_tabulation_table,
+               measure(it.filepath, dataset, load_factor, outfile, iomutex, small_tabulation_table,
                        large_tabulation_table);
                cpu_blocker.release();
             }));
          }
 
-         // TODO: once we're fully parallelized, move this await one scope up. The semaphore will prevent
-         //  executing more threads than
+         // TODO: to increase parallelization degree, move this await/join() one scope up.
+         //  The semaphore already prevents executing more threads than available cpus.
+         //  The only reason to keep the join() here is to limit ram usage
          for (auto& t : threads) {
             t.join();
          }

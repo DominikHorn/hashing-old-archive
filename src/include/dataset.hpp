@@ -14,7 +14,7 @@
 struct Dataset {
   public:
    /// file name of the dataset
-   std::string filename;
+   std::string filepath;
 
    /// Bytes per value, i.e., 4 for 32-bit integers, 8 for 64 bit integers
    size_t bytesPerValue;
@@ -23,13 +23,7 @@ struct Dataset {
     * Loads the datasets values into memory
     * @return a sorted and deduplicated list of all members of the dataset
     */
-   std::vector<uint64_t> load(const std::string& data_folder_path) const {
-      auto file = this->filename;
-      if (!data_folder_path.ends_with("/")) {
-         file = "/" + file;
-      }
-      const auto filepath = data_folder_path + file;
-
+   std::vector<uint64_t> load() const {
 #ifdef VERBOSE
       std::cout << "Loading dataset " << filepath << " ... " << std::flush;
 #endif
@@ -152,3 +146,21 @@ struct Dataset {
          (buffer[offset + 3] << (3 * 8));
    }
 };
+
+/**
+ * Overloading of the >> operator for parsing with cxxopts
+ * @param is
+ * @param dt
+ * @return
+ */
+std::istream& operator>>(std::istream& is, Dataset& ds) {
+   char ch = 0;
+   while (true) {
+      is >> std::noskipws >> ch;
+      if (ch == ':')
+         break;
+      ds.filepath += ch;
+   };
+   is >> ds.bytesPerValue;
+   return is;
+}

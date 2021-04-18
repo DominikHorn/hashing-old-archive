@@ -10,13 +10,14 @@
 #include "include/benchmark.hpp"
 #include "include/csv.hpp"
 
-// TODO: ensure that we don't use two separate reducers for 128bit hashes for throughput benchmark!
-int main(const int argc, const char* argv[]) {
-   std::ofstream outfile;
+using Args = BenchmarkArgs::ThroughputArgs;
 
+// TODO: ensure that we don't use two separate reducers for 128bit hashes for throughput benchmark, i.e.,
+//  some 64 bit hashes are already implemented as 128bit hash + reducer!
+int main(int argc, char* argv[]) {
    try {
-      auto args = Args::parse(argc, argv);
-      CSV outfile(args.outfile_path,
+      Args args(argc, argv);
+      CSV outfile(args.outfile,
                   {
                      "dataset",
                      "numelements",
@@ -34,7 +35,7 @@ int main(const int argc, const char* argv[]) {
       TabulationHash::gen_table(large_tabulation_table);
 
       for (const auto& it : args.datasets) {
-         auto dataset = it.load(args.datapath);
+         auto dataset = it.load();
 
          // TODO: Build dataset specific auxiliary data (e.g., pgm, rmi)
 
@@ -62,7 +63,7 @@ int main(const int argc, const char* argv[]) {
             // Write to csv
             const auto str = [](auto s) { return std::to_string(s); };
             outfile.write({
-               {"dataset", it.filename},
+               {"dataset", it.filepath},
                {"numelements", str(dataset.size())},
                {"hash", hash_name},
                {"reducer", reducer_name},
@@ -166,10 +167,8 @@ int main(const int argc, const char* argv[]) {
       }
    } catch (const std::exception& ex) {
       std::cerr << ex.what() << std::endl;
-      outfile.close();
       return -1;
    }
 
-   outfile.close();
    return 0;
 }

@@ -37,3 +37,6 @@
 [submodule "learned_models/pgm"]
 	path = learned_models/pgm
 	url = https://github.com/gvinciguerra/PGM-index.git
+[submodule "thirdparty/cxxopts"]
+	path = thirdparty/cxxopts
+	url = https://github.com/jarro2783/cxxopts.git

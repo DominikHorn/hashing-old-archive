@@ -6,107 +6,188 @@
 #include <string>
 #include <vector>
 
+#include <cxxopts.hpp>
+
 #include "dataset.hpp"
 
-/**
- * Parsed command line args of the application
- */
-struct Args {
-  public:
-   const std::string datapath;
-   const std::string outfile_path;
-   const std::vector<double> load_factors;
-   const std::vector<Dataset> datasets;
+namespace BenchmarkArgs {
+   const std::string help_key = "help";
+   const std::string outfile_key = "outfile";
+   const std::string load_factors_key = "load_factors";
+   const std::string sample_sizes_key = "sample_sizes";
+   const std::string pgm_epsilons_key = "pgm_epsilons";
+   const std::string datasets_key = "datasets";
 
-   /**
-    * Parses the given set of command line args
-    */
-   static Args parse(const int argc, const char* argv[]) {
-      std::string datapath;
-      std::string outfile_path;
-      std::vector<double> load_factors{};
-      std::vector<Dataset> datasets{};
+   struct LearnedCollisionArgs {
+      std::string outfile;
+      std::vector<double> load_factors;
+      std::vector<double> sample_sizes;
+      std::vector<unsigned int> pgm_epsilons;
+      std::vector<Dataset> datasets;
 
-      // Parse load_factors parameter
-      if (const auto raw_load_factors = option(argc, argv, "-loadfactors=")) {
-         size_t end = 0;
-         std::string s = *raw_load_factors;
-         const std::string delimiter = ",";
-         while (s.length() > 0) {
-            end = s.find(delimiter);
-            size_t next_start = end + delimiter.length();
-            if (end == std::string::npos) {
-               end = s.length();
-               next_start = end;
-            };
+      LearnedCollisionArgs(int argc, char* argv[]) {
+         const std::vector<std::string> required{outfile_key, datasets_key};
 
-            load_factors.push_back(std::stod(s.substr(0, end)));
+         try {
+            // Define
+            cxxopts::Options options("Learned Collision",
+                                     "Benchmark designed to measure collision statistics for learned hash functions.");
+            options.add_options()("h," + help_key, "display help") //
+               (outfile_key,
+                "path to output file for storing results as csv. NOTE: file will always be overwritten",
+                cxxopts::value<std::string>()) //
+               (load_factors_key,
+                "comma separated list of load factors to measure, i.e., percentage floating point values",
+                cxxopts::value<std::vector<double>>()->default_value("1.0")) //
+               (sample_sizes_key,
+                "comma separated list of sample sizes to measure, i.e., percentage floating point values",
+                cxxopts::value<std::vector<double>>()->default_value("0.01")) //
+               (pgm_epsilons_key,
+                "comma separated list of pgm epsilon parameter values to measure, i.e., uint values",
+                cxxopts::value<std::vector<unsigned int>>()->default_value("128")) //
+               (datasets_key,
+                "datasets to benchmark on, formatted as '<PATH_TO_DATASET>:<BYTES_PER_NUMBER>'. Collects positional "
+                "arguments",
+                cxxopts::value<std::vector<Dataset>>());
+            options.parse_positional({datasets_key});
 
-            s = s.substr(next_start);
-         }
-      } else {
-         std::cout << "Using default load factor \"1.0\". To specify different loadfactors, use \"-loadfactors=<COMMA "
-                      "SEPARATED DOUBLES (PERCENT)>\""
-                   << std::endl;
-         load_factors.push_back(1.0);
-      }
-
-      // Parse datasets parameter
-      if (const auto raw_datasets = option(argc, argv, "-datasets=")) {
-         size_t end = 0;
-         std::string s = *raw_datasets;
-         const std::string delimiter = ",";
-         while (s.length() > 0) {
-            end = s.find(delimiter);
-            size_t next_start = end + delimiter.length();
-            if (end == std::string::npos) {
-               end = s.length();
-               next_start = end;
-            };
-
-            size_t colon_pos = s.find(":");
-            if (colon_pos == std::string::npos) {
-               throw std::runtime_error("Wrong datasets format. Datasets are comma separated entries of the form "
-                                        "<FILENAME:BYTES_PER_ENTRY>");
+            if (argc <= 1) {
+               std::cout << options.help() << std::endl;
+               exit(0);
             }
-            const auto filename = s.substr(0, colon_pos);
-            const size_t bytesPerValue = std::stoi(s.substr(colon_pos + 1, s.length()));
-            datasets.push_back({.filename = filename, .bytesPerValue = bytesPerValue});
 
-            s = s.substr(next_start);
-         }
-      } else {
-         throw std::runtime_error("Please specify datasets to benchmark using \"-datasets=<COMMA SEPARATED "
-                                  "FILENAME:BYTES_PER_ENTRY>\"");
-      }
+            // Parse
+            auto result = options.parse(argc, argv);
 
-      // Parse datapath parameter
-      if (const auto raw_datapath = option(argc, argv, "-datapath=")) {
-         datapath = *raw_datapath;
-      } else {
-         throw std::runtime_error("Please specify the path to the data folder using \"-datapath=<PATH_TO_DATA>\"");
-      }
+            // Validate
+            if (result.count(help_key)) {
+               std::cout << options.help() << std::endl;
+               exit(0);
+            }
+            for (const auto& key : required) {
+               if (!result.count(key)) {
+                  throw std::runtime_error("Please specify the required '" + key + "' option");
+               }
+            }
 
-      // Parse outfile_path parameter
-      if (const auto raw_outfile_path = option(argc, argv, "-outfile=")) {
-         outfile_path = *raw_outfile_path;
-      } else {
-         throw std::runtime_error("Please specify the path to the output csv file using "
-                                  "\"-outfile_path=<PATH_TO_DATA>\"");
-      }
-
-      return {datapath, outfile_path, load_factors, datasets};
-   }
-
-  private:
-   static std::optional<std::string> option(const int argc, const char* argv[], const std::string& option) {
-      for (int i = 0; i < argc; i++) {
-         std::string arg = argv[i];
-         auto start = arg.find(option);
-         if (0 == start) {
-            return arg.substr(option.length(), arg.length() - option.length());
+            // Extract
+            outfile = result[outfile_key].as<std::string>();
+            load_factors = result[load_factors_key].as<std::vector<double>>();
+            sample_sizes = result[sample_sizes_key].as<std::vector<double>>();
+            pgm_epsilons = result[sample_sizes_key].as<std::vector<unsigned int>>();
+            datasets = result[datasets_key].as<std::vector<Dataset>>();
+         } catch (const std::exception& ex) {
+            std::cerr << "error: " << ex.what() << std::endl;
+            std::cerr << "Use --help for information on how to run this benchmark" << std::endl;
+            exit(1);
          }
       }
-      return {};
-   }
-};
+   };
+
+   struct HashCollisionArgs {
+      std::string outfile;
+      std::vector<double> load_factors;
+      std::vector<Dataset> datasets;
+
+      HashCollisionArgs(int argc, char* argv[]) {
+         const std::vector<std::string> required{outfile_key, datasets_key};
+
+         try {
+            // Define
+            cxxopts::Options options("Hash Collision",
+                                     "Benchmark designed to measure collision statistics for various hash functions.");
+            options.add_options()("h," + help_key, "display help") //
+               (outfile_key,
+                "path to output file for storing results as csv. NOTE: file will always be overwritten",
+                cxxopts::value<std::string>()) //
+               (load_factors_key,
+                "comma separated list of load factors, i.e., percentage floating point values",
+                cxxopts::value<std::vector<double>>()->default_value("1.0")) //
+               (datasets_key,
+                "datasets to benchmark on, formatted as '<PATH_TO_DATASET>:<BYTES_PER_NUMBER>'. Collects positional "
+                "arguments",
+                cxxopts::value<std::vector<Dataset>>());
+            options.parse_positional({datasets_key});
+
+            if (argc <= 1) {
+               std::cout << options.help() << std::endl;
+               exit(0);
+            }
+
+            // Parse
+            auto result = options.parse(argc, argv);
+
+            // Validate
+            if (result.count(help_key)) {
+               std::cout << options.help() << std::endl;
+               exit(0);
+            }
+            for (const auto& key : required) {
+               if (!result.count(key)) {
+                  throw std::runtime_error("Please specify the required '" + key + "' option");
+               }
+            }
+
+            // Extract
+            outfile = result[outfile_key].as<std::string>();
+            load_factors = result[load_factors_key].as<std::vector<double>>();
+            datasets = result[datasets_key].as<std::vector<Dataset>>();
+         } catch (const std::exception& ex) {
+            std::cerr << "error: " << ex.what() << std::endl;
+            std::cerr << "Use --help for information on how to run this benchmark" << std::endl;
+            exit(1);
+         }
+      }
+   };
+
+   struct ThroughputArgs {
+      std::string outfile;
+      std::vector<Dataset> datasets;
+
+      ThroughputArgs(int argc, char* argv[]) {
+         const std::vector<std::string> required{outfile_key, datasets_key};
+
+         try {
+            // Define
+            cxxopts::Options options("Throughput",
+                                     "Benchmark designed to measure throughput statistics for various hash functions.");
+            options.add_options()("h," + help_key, "display help") //
+               (outfile_key,
+                "path to output file for storing results as csv. NOTE: file will always be overwritten",
+                cxxopts::value<std::string>()) //
+               (datasets_key,
+                "datasets to benchmark on, formatted as '<PATH_TO_DATASET>:<BYTES_PER_NUMBER>'. Collects positional "
+                "arguments",
+                cxxopts::value<std::vector<Dataset>>());
+            options.parse_positional({datasets_key});
+
+            if (argc <= 1) {
+               std::cout << options.help() << std::endl;
+               exit(0);
+            }
+
+            // Parse
+            auto result = options.parse(argc, argv);
+
+            // Validate
+            if (result.count(help_key)) {
+               std::cout << options.help() << std::endl;
+               exit(0);
+            }
+            for (const auto& key : required) {
+               if (!result.count(key)) {
+                  throw std::runtime_error("Please specify the required '" + key + "' option");
+               }
+            }
+
+            // Extract
+            outfile = result[outfile_key].as<std::string>();
+            datasets = result[datasets_key].as<std::vector<Dataset>>();
+         } catch (const std::exception& ex) {
+            std::cerr << "error: " << ex.what() << std::endl;
+            std::cerr << "Use --help for information on how to run this benchmark" << std::endl;
+            exit(1);
+         }
+      }
+   };
+} // namespace BenchmarkArgs
