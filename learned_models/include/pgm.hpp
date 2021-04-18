@@ -8,7 +8,7 @@ namespace pgm {
    template<typename K, size_t Epsilon = 64, typename Floating = float, size_t EpsilonRecursive = 4>
    class PGMHash : public PGMIndex<K, Epsilon, EpsilonRecursive, Floating> {
      protected:
-      const size_t first_key;
+      const K first_key;
       const size_t sample_size;
 
      public:
@@ -19,7 +19,7 @@ namespace pgm {
        * @param first, last the range containing the sorted (!) keys to be indexed
        */
       template<typename RandomIt>
-      PGMHash(RandomIt first, RandomIt last)
+      PGMHash(const RandomIt& first, const RandomIt& last)
          : PGMIndex<K, Epsilon, EpsilonRecursive, Floating>(first, last), first_key(*first),
            sample_size(std::distance(first, last)) {}
 
@@ -44,7 +44,7 @@ namespace pgm {
       template<typename Result = size_t, typename Precision = double>
       forceinline Result hash(const K& key, const Result& N) const {
          auto k = std::max(first_key, key);
-         auto it = segment_for_key(k);
+         auto it = this->segment_for_key(k);
 
          // compute estimated pos (contrary to standard PGM, don't just throw slope precision away)
          auto segment_pos = static_cast<Precision>(it->slope * (k - key)) + it->intercept;

@@ -154,6 +154,12 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
          return static_cast<HASH_64>(sample_pos * fac);
       }, //
       "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
+
+   measure_model(
+      "pgm_hash_eps128", sort_prepare,
+      [](const auto& sample) { return pgm::PGMHash<HASH_64, 128>(sample.begin(), sample.end()); }, //
+      [](const auto& pgm, const size_t& sample_n, const HASH_64& N, const HASH_64& key) { return pgm.hash(key, N); }, //
+      "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
 }
 
 int main(int argc, char* argv[]) {
