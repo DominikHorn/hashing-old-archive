@@ -1,38 +1,38 @@
 [submodule "hash_functions/cityhash"]
-	path = hash_functions/external/cityhash
+	path = hashing/external/cityhash
 	url = https://github.com/google/cityhash
 [submodule "hash_functions/murmur"]
-	path = hash_functions/external/murmur
+	path = hashing/external/murmur
 	url = https://github.com/aappleby/smhasher
 [submodule "hash_functions/smhasher"]
-	path = hash_functions/external/smhasher
+	path = hashing/external/smhasher
 	url = https://github.com/aappleby/smhasher
 [submodule "hash_functions/fastrange"]
-	path = hash_functions/external/fastrange
+	path = hashing/external/fastrange
 	url = https://github.com/lemire/fastrange
 [submodule "hash_functions/xxHash"]
-	path = hash_functions/external/xxHash
+	path = hashing/external/xxHash
 	url = https://github.com/Cyan4973/xxHash
 [submodule "hash_functions/aquahash"]
-	path = hash_functions/external/aquahash
+	path = hashing/external/aquahash
 	url = https://github.com/jandrewrogers/AquaHash.git
 [submodule "hash_functions/farmhash"]
-	path = hash_functions/external/farmhash
+	path = hashing/external/farmhash
 	url = https://github.com/google/farmhash.git
 [submodule "hash_functions/bbhash"]
-	path = hash_functions/external/bbhash
+	path = hashing/external/bbhash
 	url = https://github.com/rizkg/BBHash.git
 [submodule "hash_functions/chd"]
-	path = hash_functions/external/chd
+	path = hashing/external/chd
 	url = https://git.code.sf.net/p/cmph/git
 [submodule "hash_functions/sux4j"]
-	path = hash_functions/external/sux4j
+	path = hashing/external/sux4j
 	url = https://github.com/vigna/Sux4J.git
 [submodule "hash_functions/suxcpp"]
-	path = hash_functions/external/suxcpp
+	path = hashing/external/suxcpp
 	url = https://github.com/vigna/sux.git
 [submodule "hash_functions/meow_hash"]
-	path = hash_functions/external/meow_hash
+	path = hashing/external/meow_hash
 	url = https://github.com/cmuratori/meow_hash.git
 [submodule "learned_models/pgm"]
 	path = learned_models/pgm
