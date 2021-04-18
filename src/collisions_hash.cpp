@@ -78,7 +78,7 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
          {"colliding_slots", str(stats.colliding_slots)},
          {"colliding_slots_percent", str(relative_to(stats.colliding_slots, hashtable_size))},
          {"total_colliding_keys", str(stats.total_colliding_keys)},
-         {"total_colliding_keys_percent", str(relative_to(stats.total_colliding_keys, hashtable_size))},
+         {"total_colliding_keys_percent", str(relative_to(stats.total_colliding_keys, dataset.size()))},
          {"nanoseconds_total", str(stats.inference_reduction_memaccess_total_ns)},
          {"nanoseconds_per_key", str(relative_to(stats.inference_reduction_memaccess_total_ns, dataset.size()))},
       });
