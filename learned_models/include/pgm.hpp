@@ -47,7 +47,8 @@ namespace pgm {
          auto it = this->segment_for_key(k);
 
          // compute estimated pos (contrary to standard PGM, don't just throw slope precision away)
-         auto segment_pos = static_cast<Precision>(it->slope * (k - key)) + it->intercept;
+         const auto first_key_in_segment = it->key;
+         auto segment_pos = static_cast<Precision>(it->slope * (k - first_key_in_segment)) + it->intercept;
          Precision relative_pos = segment_pos / static_cast<double>(sample_size);
          auto global_pos = static_cast<Result>(static_cast<Precision>(N) * relative_pos);
 
