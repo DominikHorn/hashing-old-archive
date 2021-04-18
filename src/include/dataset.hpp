@@ -19,6 +19,10 @@ struct Dataset {
    /// Bytes per value, i.e., 4 for 32-bit integers, 8 for 64 bit integers
    size_t bytesPerValue;
 
+   std::string name() const {
+      return filepath.substr(filepath.find_last_of("/\\") + 1);
+   }
+
    /**
     * Loads the datasets values into memory
     * @return a sorted and deduplicated list of all members of the dataset

@@ -166,7 +166,7 @@ int main(int argc, char* argv[]) {
          for (auto load_factor : args.load_factors) {
             threads.emplace_back(std::thread([&, load_factor] {
                cpu_blocker.aquire();
-               measure(it.filepath, dataset, load_factor, outfile, iomutex);
+               measure(it.name(), dataset, load_factor, outfile, iomutex);
                cpu_blocker.release();
             }));
          }

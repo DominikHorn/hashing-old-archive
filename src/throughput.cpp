@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
             // Write to csv
             const auto str = [](auto s) { return std::to_string(s); };
             outfile.write({
-               {"dataset", it.filepath},
+               {"dataset", it.name()},
                {"numelements", str(dataset.size())},
                {"hash", hash_name},
                {"reducer", reducer_name},
