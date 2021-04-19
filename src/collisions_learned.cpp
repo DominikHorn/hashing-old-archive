@@ -156,10 +156,9 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
          return sample;
       };
 
-      const auto max_hash_val = std::numeric_limits<HASH_64>::max();
       const auto pgm_hash = [&](const auto& pgm, const HASH_64& N, const HASH_64& key) {
          // Otherwise pgm will EXC_BAD_ACCESS
-         if (unlikely(key == max_hash_val)) {
+         if (unlikely(key == std::numeric_limits<HASH_64>::max())) {
             return N;
          }
 

@@ -43,6 +43,11 @@ namespace pgm {
        */
       template<typename Result = size_t, typename Precision = double>
       forceinline Result hash(const K& key, const Result& N) const {
+         // Otherwise pgm will EXC_BAD_ACCESS
+         if (unlikely(key == std::numeric_limits<HASH_64>::max())) {
+            return N;
+         }
+
          auto k = std::max(first_key, key);
          auto it = this->segment_for_key(k);
 
