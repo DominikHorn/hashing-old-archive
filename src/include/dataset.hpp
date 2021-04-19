@@ -41,7 +41,8 @@ struct Dataset {
          throw std::runtime_error("Dataset file at data_folder_path '" + filepath + "' does not exist");
       }
 
-      std::vector<uint64_t> dataset(size / sizeof(uint64_t) - 1, 0);
+      const auto max_num_elements = (size - sizeof(uint64_t)) / bytesPerValue;
+      std::vector<uint64_t> dataset(max_num_elements, 0);
       {
          std::vector<unsigned char> buffer(size);
          if (!input.read(reinterpret_cast<char*>(buffer.data()), size)) {
@@ -50,13 +51,14 @@ struct Dataset {
 
          // Parse file
          uint64_t num_elements = read_little_endian_8(buffer, 0);
-         if (this->bytesPerValue == 8)
+         assert(num_elements <= max_num_elements);
+         if (bytesPerValue == 8)
             for (uint64_t i = 0; i < num_elements; i++) {
                // 8 byte header, 8 bytes per entry
                uint64_t offset = i * 8 + 8;
                dataset[i] = read_little_endian_8(buffer, offset);
             }
-         else if (this->bytesPerValue == 4)
+         else if (bytesPerValue == 4)
             for (uint64_t i = 0; i < num_elements; i++) {
                // 8 byte header, 4 bytes per entry
                uint64_t offset = i * 4 + 8;
