@@ -1,6 +1,7 @@
 # Project files
 data/
 !data/synthetic.py
+benchmark/
 
 # IDE 
 
@@ -13,7 +14,8 @@ cmake_install.cmake
 Makefile
 CMakeCache.txt
 CMakeFiles/
-hashing.cbp
+*.cbp
+compile_commands.json
 
 # MacOS
 .DS_Store

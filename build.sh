@@ -1,8 +1,8 @@
-#/bin/bash
+#!/bin/bash
 
 # SET THESE ACCORDING TO YOUR SYSTEM CONFIG
 CLANG_BIN=clang
-CLANGPP_BIN=clang++
+CLANGCPP_BIN=clang++
 GCC_BIN=gcc-10
 GCCPP_BIN=g++-10
 
@@ -10,15 +10,21 @@ GCCPP_BIN=g++-10
 set -e
 cd "$(dirname "$0")"
 
+mkdir -p benchmark
+
 # build with clang
 cmake \
   -D CMAKE_BUILD_TYPE=Release \
   -D CMAKE_C_COMPILER=${CLANG_BIN} \
-  -D CMAKE_CXX_COMPILER=${CLANGPP_BIN} \
+  -D CMAKE_CXX_COMPILER=${CLANGCPP_BIN} \
   -G "CodeBlocks - Unix Makefiles" \
   .
-cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release
-mv src/main benchmark-clang
+cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target throughput
+mv src/throughput benchmark/throughput-${CLANGCPP_BIN}
+cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target collisions_hash
+mv src/collisions_hash benchmark/collisions_hash-${CLANGCPP_BIN}
+cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target collisions_learned
+mv src/collisions_learned benchmark/collisions_learned-${CLANGCPP_BIN}
 
 # build with gcc
 cmake \
@@ -27,5 +33,9 @@ cmake \
   -D CMAKE_CXX_COMPILER=${GCCPP_BIN} \
   -G "CodeBlocks - Unix Makefiles" \
   .
-cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release
-mv src/main benchmark-gcc
+cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target throughput
+mv src/throughput benchmark/throughput-${GCCPP_BIN}
+cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target collisions_hash
+mv src/collisions_hash benchmark/collisions_hash-${GCCPP_BIN}
+cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target collisions_learned
+mv src/collisions_learned benchmark/collisions_learned-${GCCPP_BIN}

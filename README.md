@@ -37,6 +37,9 @@ resulting binaries. To see the inline help text describing how to work
 with the benchmarks, simply execute the binary without arguments or with "-h" or
 with "--help".
 
+Alternatively you may use the `build.sh` or `benchmark.sh` scripts.
+The latter will execute `build.sh` automatically.
+
 # Results
 ## Throughput
 ![books_200M_uint32](https://github.com/andreaskipf/hashing/blob/main/results/throughput_books_200M_uint32.ds.png)
