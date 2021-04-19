@@ -131,9 +131,6 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
    // TODO: test different reduction methods (optimize with unlikely() annotation etc)
 
    for (const auto sample_size : args.sample_sizes) {
-      // TODO: pgm will EXC_BAD_ACCESS (out of bounds) if we query for a key larger than the largest key from
-      //  the sample. As a fix, we ensure that min/max key is always present. Discuss a proper solution
-      //  (change algorithm? but how, i.e., extrapolate from last segment? change sampling?).
       const auto sample_n = static_cast<size_t>(sample_size * static_cast<long double>(dataset.size()));
       const auto pgm_sample_fn = [&]() {
          std::vector<uint64_t> sample(sample_n, 0);
