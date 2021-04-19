@@ -222,6 +222,7 @@ int main(int argc, char* argv[]) {
          for (auto& t : threads) {
             t.join();
          }
+         threads.clear();
       }
    } catch (const std::exception& ex) {
       std::cerr << ex.what() << std::endl;
