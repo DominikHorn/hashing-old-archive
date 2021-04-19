@@ -137,16 +137,18 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
       const auto sample_n = static_cast<size_t>(sample_size * static_cast<long double>(dataset.size()));
       const auto pgm_sample_fn = [&]() {
          std::vector<uint64_t> sample(sample_n, 0);
-         if (sample_n < 2)
+         if (sample_n == 0)
             return sample;
-         assert(dataset.size() > 0);
-         sample[0] = *std::min_element(dataset.begin(), dataset.end());
-         sample[1] = *std::max_element(dataset.begin(), dataset.end());
+         if (sample_n == dataset.size()) {
+            sample = dataset;
+            return sample;
+         }
 
-         const uint64_t seed = 0x9E3779B9LU; // Random constant to ensure reproducibility
+         // Random constant to ensure reproducibility for debuggin. TODO: make truely random for benchmark/use varying constants (?) -> also adjust fisher yates shuffle and other such constants
+         const uint64_t seed = 0x9E3779B9LU;
          std::default_random_engine gen(seed);
          std::uniform_int_distribution<uint64_t> dist(0, dataset.size() - 1);
-         for (size_t i = 0; i < sample_n - 2; i++) {
+         for (size_t i = 0; i < sample_n; i++) {
             const auto random_index = dist(gen);
             sample[i] = dataset[random_index];
          }
@@ -154,27 +156,28 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
          return sample;
       };
 
+      const auto max_hash_val = std::numeric_limits<HASH_64>::max();
+      const auto pgm_hash = [&](const auto& pgm, const HASH_64& N, const HASH_64& key) {
+         // Otherwise pgm will EXC_BAD_ACCESS
+         if (unlikely(key == max_hash_val)) {
+            return N;
+         }
+
+         // Since we're training pgm on a sample, pos has to be scaled to fill the full [0, N]
+         const auto sample_pos = static_cast<long double>(pgm.search(key).pos);
+         const auto fac = static_cast<long double>(N) / static_cast<long double>(sample_n);
+         return static_cast<HASH_64>(sample_pos * fac);
+      };
+
       measure_model(
          "pgm_eps128", pgm_sample_fn, sort_prepare,
-         [](const auto& sample) { return pgm::PGMIndex<HASH_64, 128>(sample); }, //
-         [&](const auto& pgm, const HASH_64& N, const HASH_64& key) {
-            // Since we're training pgm on a sample, pos has to be scaled to fill the full [0, N]
-            const auto sample_pos = static_cast<long double>(pgm.search(key).pos);
-            const auto fac = static_cast<long double>(N) / static_cast<long double>(sample_n);
-            return static_cast<HASH_64>(sample_pos * fac);
-         }, //
-         "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
+         [](const auto& sample) { return pgm::PGMIndex<HASH_64, 128>(sample); }, pgm_hash, "min_max_cutoff",
+         Reduction::min_max_cutoff<HASH_64>);
 
       measure_model(
          "pgm_eps16", pgm_sample_fn, sort_prepare,
-         [](const auto& sample) { return pgm::PGMIndex<HASH_64, 16>(sample); }, //
-         [&](const auto& pgm, const HASH_64& N, const HASH_64& key) {
-            // Since we're training pgm on a sample, pos has to be scaled to fill the full [0, N]
-            const auto sample_pos = static_cast<long double>(pgm.search(key).pos);
-            const auto fac = static_cast<long double>(N) / static_cast<long double>(sample_n);
-            return static_cast<HASH_64>(sample_pos * fac);
-         }, //
-         "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
+         [](const auto& sample) { return pgm::PGMIndex<HASH_64, 16>(sample); }, pgm_hash, "min_max_cutoff",
+         Reduction::min_max_cutoff<HASH_64>);
 
       measure_model(
          "pgm_hash_eps128", pgm_sample_fn, sort_prepare,
