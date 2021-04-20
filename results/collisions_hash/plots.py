@@ -35,24 +35,6 @@ colors = {method: _colors[i] for i, method in enumerate(hash_methods)}
 for compiler in compilers:
     csv = pandas.read_csv(f'collisions_hash-{compiler}.csv')
 
-    def gen_colors(max=40.0, s_sawtooth_min=0.7, s_sawtooth_max=0.9, s_sawtooth_step=0.1, v_sawtooth_min=0.5,
-                   v_sawtooth_max=1.0, v_sawtooth_step=0.15):
-        s_next = s_sawtooth_min
-        v_next = v_sawtooth_min
-        for i in range(max):
-            h = (2 * i / max) if 2 * i <= max else (2 * i - max) / max
-            s = s_next
-            v = v_next
-            yield colorsys.hsv_to_rgb(h, s, v)
-
-            s_next += s_sawtooth_step
-            if s_next > s_sawtooth_max:
-                s_next = s_sawtooth_min
-
-            v_next += v_sawtooth_step
-            if v_next > v_sawtooth_max:
-                v_next = v_sawtooth_min
-
     for fig, dataset_name in enumerate(dataset_names):
         dataset = csv[csv['dataset'] == dataset_name]
 
