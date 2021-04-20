@@ -32,7 +32,7 @@ hash_methods = list(OrderedDict.fromkeys(list(_csv[_csv['reducer'] != 'do_nothin
 _colors = list(gen_colors(len(hash_methods)))
 colors = {method: _colors[i] for i, method in enumerate(hash_methods)}
 
-for compiler in ["clang++", "g++-10"]:
+for compiler in compilers:
     csv = pandas.read_csv(f"throughput-{compiler}.csv")
 
     for fig, dataset_name in enumerate(dataset_names):
