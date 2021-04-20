@@ -42,11 +42,21 @@ The latter will execute `build.sh` automatically.
 
 # Results
 ## Throughput
-![books_200M_uint32](https://github.com/andreaskipf/hashing/blob/main/results/throughput_books_200M_uint32.ds.png)
-![books_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_books_200M_uint64.ds.png)
-![fb_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_fb_200M_uint64.ds.png)
-![osm_cellids_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_osm_cellids_200M_uint64.ds.png)
-![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_wiki_ts_200M_uint64.ds.png)
+
+### Clang++
+![books_200M_uint32](https://github.com/andreaskipf/hashing/blob/main/results/throughput/graphs/throughput-clang++_books_200M_uint32.ds.png)
+![books_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput/graphs/throughput-clang++_books_200M_uint64.ds.png)
+![fb_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput/graphs/throughput-clang++_fb_200M_uint64.ds.png)
+![osm_cellids_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput/graphs/throughput-clang++_osm_cellids_200M_uint64.ds.png)
+![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput/graphs/throughput-clang++_wiki_ts_200M_uint64.ds.png)
+
+### G++-10
+
+![books_200M_uint32](https://github.com/andreaskipf/hashing/blob/main/results/throughput/graphs/throughput-g++-10_books_200M_uint32.ds.png)
+![books_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput/graphs/throughput-g++-10_books_200M_uint64.ds.png)
+![fb_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput/graphs/throughput-g++-10_fb_200M_uint64.ds.png)
+![osm_cellids_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput/graphs/throughput-g++-10_osm_cellids_200M_uint64.ds.png)
+![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput/graphs/throughput-g++-10_wiki_ts_200M_uint64.ds.png)
 
 ## Collisions
 ![books_200M_uint32](https://github.com/andreaskipf/hashing/blob/main/results/total_colliding_keys_percent_books_200M_uint32.ds.png)
