@@ -78,7 +78,7 @@ for compiler in compilers:
 
             plt.grid(linestyle='--', linewidth=0.5)
             plt.title(f"collisions on {dataset_name}, load_factor {load_factor}, compiler {compiler}")
-            plt.xticks(np.arange(len(reducers)) + 0.5, reducers)
+            plt.xticks(np.arange(len(reducers)) + (1.0 / len(reducers)), reducers)
             pred_collision_chance = 1 - pow(math.e, -load_factor)
             plt.yticks([x for x in [0.0, 0.2, 0.4, 0.6, 0.8, 1.0] if abs(x - pred_collision_chance) > 0.1] + [
                 pred_collision_chance])
