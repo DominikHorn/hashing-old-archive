@@ -216,14 +216,19 @@ int main(int argc, char* argv[]) {
             }));
          }
 
-         // TODO: to increase parallelization degree, move this await/join() one scope up.
-         //  The semaphore already prevents executing more threads than available cpus.
-         //  The only reason to keep the join() here is to limit ram usage
+#ifdef LOW_MEMORY
          for (auto& t : threads) {
             t.join();
          }
          threads.clear();
       }
+#else
+      }
+      for (auto& t : threads) {
+         t.join();
+      }
+      threads.clear();
+#endif
    } catch (const std::exception& ex) {
       std::cerr << ex.what() << std::endl;
       return -1;
