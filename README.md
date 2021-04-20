@@ -1,5 +1,6 @@
-This repository contains implementations for various state of the art hashing 
-functions ("classic", perfect, minimal perfect, order-preserving).
+This repository aims to benchmark classical vs. learned hash functions. For this
+purpose, it contains various state of the art implementations as well as
+benchmarking code.
 
 For further information, see our [collaborative google doc](https://docs.google.com/document/d/1akVt7XBPm3aWRnguZh88jpCAp97yZUwT8V5Po_p2Hxo/edit?usp=sharing)
 
@@ -42,15 +43,23 @@ For further information, see our [collaborative google doc](https://docs.google.
 ## Repository layout
 The repository is setup as a monorepo c++ project using CMake. 
 
-* *data/* is meant to contain synthetic and real datasets. You may find a script for generating synthetic example datasets in there aswell. 
-  **NOTE: Datasets should never be uploaded to github** and should instead remain on your local device.
-* *hash_functions/* contains various hash function implementations wrapped in a single header only library: `hashing.hpp` (to enable full compiler optimizations,   
-  like inlining). Some related convenience code/definitions, e.g., `forceinline`, are located in `convenience.hpp`. Hash reduction algorithms, i.e., to reduce 
-  values from \[0,2^w\] down to \[0, N\] for arbitrary N, is implemented in `reduction.hpp`
-* *libdivide/* contains code for magic number modulo division. This folder will likely be moved into *hash_functions/* in the future
-* *results* contains data collected from the benchmarks together with some visualizations
-* *src/* contains the actual benchmark targets/implementations. Code shared between benchmarks/potentially useful for multiple benchmarks is located in  
-  *src/include* (header only to enable full compiler optimizations, like inlining).
+* `convenience/` contains an interface library comprised of convenience code 
+  (e.g., forceinline macros), used throughout the repository
+* `data/` is meant to contain datasets. Also contains a python script for
+  generating synthetic datasets and debug/test data
+* `hashing/` contains an interface library exposing various classical hash
+  function implementations, optimized and tuned for small, fixed size keys
+* `learned_models/` contains an interface library exposing learned models,
+  prepared to be used as a replacement for classical hash functions
+* `reduction/` contains an interface library implementing several methods for
+  reducing hash values from [0, 2^p] to [0, N]
+* `results/` contains benchmark results (csv) as well as plots and python code
+  for generating said plots
+* `src/` contains the actual benchmarking targets. Each target is implemented
+  as a single .cpp file, linking against interface libraries from this
+  repository aswell as shared convenience code found in `src/include`
+* `thirdparty/` contains an interface library exposing third party libraries
+  used by this project, e.g., cxxopts for parsing benchmark cli arguments 
 
 ## Setup
 ### Cloning this repository
