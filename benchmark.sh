@@ -19,9 +19,7 @@ cd "$(dirname "$0")"
 # Ensure binaries are freshly built
 ./build.sh
 
-mkdir -p results/throughput
-mkdir -p results/collisions_hash
-mkdir -p results/collisions_learned
+mkdir -p results/{throughput,collisions_hash,collisions_learned}
 
 # Clang benchmarks
 benchmark/throughput-${CLANGCPP_BIN} \
