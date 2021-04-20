@@ -40,71 +40,72 @@ For further information, see our [collaborative google doc](https://docs.google.
       - [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-3)
       - [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-3)
   * [Collisions for learned hash functions](#collisions-for-learned-hash-functions)
+    + [Colliding keys](#colliding-keys-1)
       - [books_200M_uint32](#books-200m-uint32-4)
       - [books_200M_uint64](#books-200m-uint64-4)
       - [fb_200M_uint64](#fb-200m-uint64-4)
       - [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-4)
       - [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-4)
-  * [Sample nanoseconds per key](#sample-nanoseconds-per-key)
-    + [Clang++](#clang---1)
-      - [books_200M_uint32](#books-200m-uint32-5)
-      - [fb_200M_uint64](#fb-200m-uint64-5)
-      - [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-5)
-      - [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-5)
-    + [G++-10](#g---10-1)
-      - [books_200M_uint32](#books-200m-uint32-6)
-      - [books_200M_uint64](#books-200m-uint64-5)
-      - [fb_200M_uint64](#fb-200m-uint64-6)
-      - [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-6)
-      - [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-6)
-  * [Prepare sample nanoseconds per key](#prepare-sample-nanoseconds-per-key)
-    + [Clang++](#clang---2)
-      - [books_200M_uint32](#books-200m-uint32-7)
-      - [fb_200M_uint64](#fb-200m-uint64-7)
-      - [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-7)
-      - [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-7)
-    + [G++-10](#g---10-2)
-      - [books_200M_uint32](#books-200m-uint32-8)
-      - [books_200M_uint64](#books-200m-uint64-6)
-      - [fb_200M_uint64](#fb-200m-uint64-8)
-      - [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-8)
-      - [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-8)
-  * [Build nanoseconds per key](#build-nanoseconds-per-key)
-    + [Clang++](#clang---3)
-      - [books_200M_uint32](#books-200m-uint32-9)
-      - [fb_200M_uint64](#fb-200m-uint64-9)
-      - [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-9)
-      - [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-9)
-    + [G++-10](#g---10-3)
-      - [books_200M_uint32](#books-200m-uint32-10)
-      - [books_200M_uint64](#books-200m-uint64-7)
-      - [fb_200M_uint64](#fb-200m-uint64-10)
-      - [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-10)
-      - [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-10)
-  * [Hashing nanoseconds per key](#hashing-nanoseconds-per-key)
-    + [Clang++](#clang---4)
-      - [books_200M_uint32](#books-200m-uint32-11)
-      - [fb_200M_uint64](#fb-200m-uint64-11)
-      - [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-11)
-      - [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-11)
-    + [G++-10](#g---10-4)
-      - [books_200M_uint32](#books-200m-uint32-12)
-      - [books_200M_uint64](#books-200m-uint64-8)
-      - [fb_200M_uint64](#fb-200m-uint64-12)
-      - [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-12)
-      - [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-12)
-  * [Total nanoseconds per key](#total-nanoseconds-per-key)
-    + [Clang++](#clang---5)
-      - [books_200M_uint32](#books-200m-uint32-13)
-      - [fb_200M_uint64](#fb-200m-uint64-13)
-      - [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-13)
-      - [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-13)
-    + [G++-10](#g---10-5)
-      - [books_200M_uint32](#books-200m-uint32-14)
-      - [books_200M_uint64](#books-200m-uint64-9)
-      - [fb_200M_uint64](#fb-200m-uint64-14)
-      - [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-14)
-      - [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-14)
+    + [Sample nanoseconds per key](#sample-nanoseconds-per-key)
+      - [Clang++](#clang---1)
+        * [books_200M_uint32](#books-200m-uint32-5)
+        * [fb_200M_uint64](#fb-200m-uint64-5)
+        * [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-5)
+        * [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-5)
+      - [G++-10](#g---10-1)
+        * [books_200M_uint32](#books-200m-uint32-6)
+        * [books_200M_uint64](#books-200m-uint64-5)
+        * [fb_200M_uint64](#fb-200m-uint64-6)
+        * [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-6)
+        * [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-6)
+    + [Prepare sample nanoseconds per key](#prepare-sample-nanoseconds-per-key)
+      - [Clang++](#clang---2)
+        * [books_200M_uint32](#books-200m-uint32-7)
+        * [fb_200M_uint64](#fb-200m-uint64-7)
+        * [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-7)
+        * [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-7)
+      - [G++-10](#g---10-2)
+        * [books_200M_uint32](#books-200m-uint32-8)
+        * [books_200M_uint64](#books-200m-uint64-6)
+        * [fb_200M_uint64](#fb-200m-uint64-8)
+        * [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-8)
+        * [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-8)
+    + [Build nanoseconds per key](#build-nanoseconds-per-key)
+      - [Clang++](#clang---3)
+        * [books_200M_uint32](#books-200m-uint32-9)
+        * [fb_200M_uint64](#fb-200m-uint64-9)
+        * [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-9)
+        * [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-9)
+      - [G++-10](#g---10-3)
+        * [books_200M_uint32](#books-200m-uint32-10)
+        * [books_200M_uint64](#books-200m-uint64-7)
+        * [fb_200M_uint64](#fb-200m-uint64-10)
+        * [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-10)
+        * [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-10)
+    + [Hashing nanoseconds per key](#hashing-nanoseconds-per-key)
+      - [Clang++](#clang---4)
+        * [books_200M_uint32](#books-200m-uint32-11)
+        * [fb_200M_uint64](#fb-200m-uint64-11)
+        * [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-11)
+        * [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-11)
+      - [G++-10](#g---10-4)
+        * [books_200M_uint32](#books-200m-uint32-12)
+        * [books_200M_uint64](#books-200m-uint64-8)
+        * [fb_200M_uint64](#fb-200m-uint64-12)
+        * [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-12)
+        * [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-12)
+    + [Total nanoseconds per key](#total-nanoseconds-per-key)
+      - [Clang++](#clang---5)
+        * [books_200M_uint32](#books-200m-uint32-13)
+        * [fb_200M_uint64](#fb-200m-uint64-13)
+        * [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-13)
+        * [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-13)
+      - [G++-10](#g---10-5)
+        * [books_200M_uint32](#books-200m-uint32-14)
+        * [books_200M_uint64](#books-200m-uint64-9)
+        * [fb_200M_uint64](#fb-200m-uint64-14)
+        * [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-14)
+        * [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-14)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
@@ -227,6 +228,8 @@ The latter will execute `build.sh` automatically.
 
 ## Collisions for learned hash functions
 
+### Colliding keys
+
 #### books_200M_uint32
 ![books_200M_uint32](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/colliding_keys_percent_books_200M_uint32_clang++.png)
 
@@ -250,168 +253,165 @@ The latter will execute `build.sh` automatically.
 ![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/colliding_keys_percent_wiki_ts_200M_uint64_g++-10.png)
 -->
 
-## Sample nanoseconds per key
-### Clang++
-
-#### books_200M_uint32
+### Sample nanoseconds per key
+#### Clang++
+##### books_200M_uint32
 ![books_200M_uint32](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/sample_nanoseconds_per_key_books_200M_uint32_clang++.png)
 <!-- ![books_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/sample_nanoseconds_per_key_books_200M_uint64_clang++.png) -->
 
-#### fb_200M_uint64
+##### fb_200M_uint64
 ![fb_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/sample_nanoseconds_per_key_fb_200M_uint64_clang++.png)
 
-#### osm_cellids_200M_uint64
+##### osm_cellids_200M_uint64
 ![osm_cellids_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/sample_nanoseconds_per_key_osm_cellids_200M_uint64_clang++.png)
 
-#### wiki_ts_200M_uint64
+##### wiki_ts_200M_uint64
 ![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/sample_nanoseconds_per_key_wiki_ts_200M_uint64_clang++.png)
 
-### G++-10
-
-
-#### books_200M_uint32
+#### G++-10
+##### books_200M_uint32
 ![books_200M_uint32](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/sample_nanoseconds_per_key_books_200M_uint32_g++-10.png)
 
-#### books_200M_uint64
+##### books_200M_uint64
 ![books_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/sample_nanoseconds_per_key_books_200M_uint64_g++-10.png)
 
-#### fb_200M_uint64
+##### fb_200M_uint64
 ![fb_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/sample_nanoseconds_per_key_fb_200M_uint64_g++-10.png)
 
-#### osm_cellids_200M_uint64
+##### osm_cellids_200M_uint64
 ![osm_cellids_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/sample_nanoseconds_per_key_osm_cellids_200M_uint64_g++-10.png)
 
-#### wiki_ts_200M_uint64
+##### wiki_ts_200M_uint64
 ![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/sample_nanoseconds_per_key_wiki_ts_200M_uint64_g++-10.png)
 
-## Prepare sample nanoseconds per key
-### Clang++
+### Prepare sample nanoseconds per key
+#### Clang++
 
-#### books_200M_uint32
+##### books_200M_uint32
 ![books_200M_uint32](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/prepare_nanoseconds_per_key_books_200M_uint32_clang++.png)
 <!-- ![books_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/prepare_nanoseconds_per_key_books_200M_uint64_clang++.png) -->
 
-#### fb_200M_uint64
+##### fb_200M_uint64
 ![fb_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/prepare_nanoseconds_per_key_fb_200M_uint64_clang++.png)
 
-#### osm_cellids_200M_uint64
+##### osm_cellids_200M_uint64
 ![osm_cellids_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/prepare_nanoseconds_per_key_osm_cellids_200M_uint64_clang++.png)
 
-#### wiki_ts_200M_uint64
+##### wiki_ts_200M_uint64
 ![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/prepare_nanoseconds_per_key_wiki_ts_200M_uint64_clang++.png)
 
-### G++-10
+#### G++-10
 
-#### books_200M_uint32
+##### books_200M_uint32
 ![books_200M_uint32](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/prepare_nanoseconds_per_key_books_200M_uint32_g++-10.png)
 
-#### books_200M_uint64
+##### books_200M_uint64
 ![books_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/prepare_nanoseconds_per_key_books_200M_uint64_g++-10.png)
 
-#### fb_200M_uint64
+##### fb_200M_uint64
 ![fb_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/prepare_nanoseconds_per_key_fb_200M_uint64_g++-10.png)
 
-#### osm_cellids_200M_uint64
+##### osm_cellids_200M_uint64
 ![osm_cellids_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/prepare_nanoseconds_per_key_osm_cellids_200M_uint64_g++-10.png)
 
-#### wiki_ts_200M_uint64
+##### wiki_ts_200M_uint64
 ![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/prepare_nanoseconds_per_key_wiki_ts_200M_uint64_g++-10.png)
 
-## Build nanoseconds per key
-### Clang++
+### Build nanoseconds per key
+#### Clang++
 
-#### books_200M_uint32
+##### books_200M_uint32
 ![books_200M_uint32](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/build_nanoseconds_per_key_books_200M_uint32_clang++.png)
 <!-- ![books_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/build_nanoseconds_per_key_books_200M_uint64_clang++.png)-->
 
-#### fb_200M_uint64
+##### fb_200M_uint64
 ![fb_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/build_nanoseconds_per_key_fb_200M_uint64_clang++.png)
 
-#### osm_cellids_200M_uint64
+##### osm_cellids_200M_uint64
 ![osm_cellids_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/build_nanoseconds_per_key_osm_cellids_200M_uint64_clang++.png)
 
-#### wiki_ts_200M_uint64
+##### wiki_ts_200M_uint64
 ![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/build_nanoseconds_per_key_wiki_ts_200M_uint64_clang++.png)
 
-### G++-10
+#### G++-10
 
-#### books_200M_uint32
+##### books_200M_uint32
 ![books_200M_uint32](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/build_nanoseconds_per_key_books_200M_uint32_g++-10.png)
 
-#### books_200M_uint64
+##### books_200M_uint64
 ![books_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/build_nanoseconds_per_key_books_200M_uint64_g++-10.png)
 
-#### fb_200M_uint64
+##### fb_200M_uint64
 ![fb_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/build_nanoseconds_per_key_fb_200M_uint64_g++-10.png)
 
-#### osm_cellids_200M_uint64
+##### osm_cellids_200M_uint64
 ![osm_cellids_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/build_nanoseconds_per_key_osm_cellids_200M_uint64_g++-10.png)
 
-#### wiki_ts_200M_uint64
+##### wiki_ts_200M_uint64
 ![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/build_nanoseconds_per_key_wiki_ts_200M_uint64_g++-10.png)
 
-## Hashing nanoseconds per key
-### Clang++
+### Hashing nanoseconds per key
+#### Clang++
 
-#### books_200M_uint32
+##### books_200M_uint32
 ![books_200M_uint32](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/hashing_nanoseconds_per_key_books_200M_uint32_clang++.png)
 <!-- ![books_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/hashing_nanoseconds_per_key_books_200M_uint64_clang++.png) -->
 
-#### fb_200M_uint64
+##### fb_200M_uint64
 ![fb_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/hashing_nanoseconds_per_key_fb_200M_uint64_clang++.png)
 
-#### osm_cellids_200M_uint64
+##### osm_cellids_200M_uint64
 ![osm_cellids_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/hashing_nanoseconds_per_key_osm_cellids_200M_uint64_clang++.png)
 
-#### wiki_ts_200M_uint64
+##### wiki_ts_200M_uint64
 ![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/hashing_nanoseconds_per_key_wiki_ts_200M_uint64_clang++.png)
 
-### G++-10
+#### G++-10
 
-#### books_200M_uint32
+##### books_200M_uint32
 ![books_200M_uint32](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/hashing_nanoseconds_per_key_books_200M_uint32_g++-10.png)
 
-#### books_200M_uint64
+##### books_200M_uint64
 ![books_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/hashing_nanoseconds_per_key_books_200M_uint64_g++-10.png)
 
-#### fb_200M_uint64
+##### fb_200M_uint64
 ![fb_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/hashing_nanoseconds_per_key_fb_200M_uint64_g++-10.png)
 
-#### osm_cellids_200M_uint64
+##### osm_cellids_200M_uint64
 ![osm_cellids_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/hashing_nanoseconds_per_key_osm_cellids_200M_uint64_g++-10.png)
 
-#### wiki_ts_200M_uint64
+##### wiki_ts_200M_uint64
 ![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/hashing_nanoseconds_per_key_wiki_ts_200M_uint64_g++-10.png)
 
-## Total nanoseconds per key
-### Clang++
+### Total nanoseconds per key
+#### Clang++
 
-#### books_200M_uint32
+##### books_200M_uint32
 ![books_200M_uint32](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/total_nanoseconds_per_key_books_200M_uint32_clang++.png)
 <!-- ![books_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/total_nanoseconds_per_key_books_200M_uint64_clang++.png) -->
 
-#### fb_200M_uint64
+##### fb_200M_uint64
 ![fb_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/total_nanoseconds_per_key_fb_200M_uint64_clang++.png)
 
-#### osm_cellids_200M_uint64
+##### osm_cellids_200M_uint64
 ![osm_cellids_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/total_nanoseconds_per_key_osm_cellids_200M_uint64_clang++.png)
 
-#### wiki_ts_200M_uint64
+##### wiki_ts_200M_uint64
 ![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/total_nanoseconds_per_key_wiki_ts_200M_uint64_clang++.png)
 
-### G++-10
+#### G++-10
 
-#### books_200M_uint32
+##### books_200M_uint32
 ![books_200M_uint32](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/total_nanoseconds_per_key_books_200M_uint32_g++-10.png)
 
-#### books_200M_uint64
+##### books_200M_uint64
 ![books_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/total_nanoseconds_per_key_books_200M_uint64_g++-10.png)
 
-#### fb_200M_uint64
+##### fb_200M_uint64
 ![fb_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/total_nanoseconds_per_key_fb_200M_uint64_g++-10.png)
 
-#### osm_cellids_200M_uint64
+##### osm_cellids_200M_uint64
 ![osm_cellids_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/total_nanoseconds_per_key_osm_cellids_200M_uint64_g++-10.png)
 
-#### wiki_ts_200M_uint64
+##### wiki_ts_200M_uint64
 ![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/total_nanoseconds_per_key_wiki_ts_200M_uint64_g++-10.png)
