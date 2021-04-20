@@ -28,9 +28,12 @@ struct Dataset {
     * Loads the datasets values into memory
     * @return a sorted and deduplicated list of all members of the dataset
     */
-   std::vector<uint64_t> load() const {
+   std::vector<uint64_t> load(std::mutex& iomutex) const {
 #ifdef VERBOSE
-      std::cout << "Loading dataset " << filepath << " ... " << std::flush;
+      {
+         std::unique_lock<std::mutex> lock(iomutex);
+         std::cout << "Loading dataset " << filepath << " ... " << std::flush;
+      }
 #endif
 
       // Read file into memory from disk. Directly map file for more performance
@@ -71,27 +74,42 @@ struct Dataset {
       }
 
 #ifdef VERBOSE
-      std::cout << "Sorting ... " << std::flush;
+      {
+         std::unique_lock<std::mutex> lock(iomutex);
+         std::cout << "Sorting ... " << std::flush;
+      }
 #endif
       sort(dataset);
 
 #ifdef VERBOSE
-      std::cout << "Removing duplicates ... " << std::flush;
+      {
+         std::unique_lock<std::mutex> lock(iomutex);
+         std::cout << "Removing duplicates ... " << std::flush;
+      }
 #endif
       deduplicate(dataset);
 
 #ifdef VERBOSE
-      std::cout << "Fisher-Yates shuffling ... " << std::flush;
+      {
+         std::unique_lock<std::mutex> lock(iomutex);
+         std::cout << "Fisher-Yates shuffling ... " << std::flush;
+      }
 #endif
       shuffle(dataset);
 
 #ifdef VERBOSE
-      std::cout << "Shrinking ... " << std::flush;
+      {
+         std::unique_lock<std::mutex> lock(iomutex);
+         std::cout << "Shrinking ... " << std::flush;
+      }
 #endif
       dataset.shrink_to_fit();
 
 #ifdef VERBOSE
-      std::cout << "done. " << dataset.size() << " elements loaded" << std::endl;
+      {
+         std::unique_lock<std::mutex> lock(iomutex);
+         std::cout << "done. " << dataset.size() << " elements loaded" << std::endl;
+      }
 #endif
 
       return dataset;

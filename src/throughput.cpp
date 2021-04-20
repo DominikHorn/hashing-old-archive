@@ -35,8 +35,10 @@ int main(int argc, char* argv[]) {
       TabulationHash::gen_column(small_tabulation_table);
       TabulationHash::gen_table(large_tabulation_table);
 
+      std::mutex iomutex;
+
       for (const auto& it : args.datasets) {
-         auto dataset = it.load();
+         auto dataset = it.load(iomutex);
 
          // TODO: Build dataset specific auxiliary data (e.g., pgm, rmi)
 

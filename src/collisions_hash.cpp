@@ -37,12 +37,12 @@ const std::vector<std::string> csv_columns = {
    "nanoseconds_per_key",
 };
 
-static void measure(const std::string& dataset_name, const std::vector<uint64_t>& dataset, const double load_factor,
+static void measure(const std::string& dataset_name, const std::shared_ptr<const std::vector<uint64_t>> dataset, const double load_factor,
                     CSV& outfile, std::mutex& iomutex, const HASH_64 (&small_tabulation_table)[0xFF],
                     const HASH_64 (&large_tabulation_table)[sizeof(HASH_64)][0xFF]) {
    // Theoretical slot count of a hashtable on which we want to measure collisions
    const auto hashtable_size =
-      static_cast<uint64_t>(static_cast<double>(dataset.size()) / static_cast<double>(load_factor));
+      static_cast<uint64_t>(static_cast<double>(dataset->size()) / static_cast<double>(load_factor));
 
    // Build load factor specific auxiliary data
    const auto magic_branchfree_div = Reduction::make_branchfree_magic_divider(static_cast<HASH_64>(hashtable_size));
@@ -52,13 +52,13 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
    const auto measure_hashfn_with_reducer = [&](const std::string& hash_name, const auto& hashfn,
                                                 const std::string& reducer_name, const auto& reducerfn) {
       // Measure
-      const auto stats = Benchmark::measure_collisions(dataset, collision_counter, hashfn, reducerfn);
+      const auto stats = Benchmark::measure_collisions(*dataset, collision_counter, hashfn, reducerfn);
 
 #ifdef VERBOSE
       {
          std::unique_lock<std::mutex> lock(iomutex);
          std::cout << std::setw(55) << std::right << reducer_name + "(" + hash_name + ") took "
-                   << relative_to(stats.inference_reduction_memaccess_total_ns, dataset.size()) << " ns/key ("
+                   << relative_to(stats.inference_reduction_memaccess_total_ns, dataset->size()) << " ns/key ("
                    << nanoseconds_to_seconds(stats.inference_reduction_memaccess_total_ns) << " s total)" << std::endl;
       };
 #endif
@@ -66,7 +66,7 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
       const auto str = [](auto s) { return std::to_string(s); };
       outfile.write({
          {"dataset", dataset_name},
-         {"numelements", str(dataset.size())},
+         {"numelements", str(dataset->size())},
          {"load_factor", str(load_factor)},
          {"hash", hash_name},
          {"reducer", reducer_name},
@@ -78,9 +78,9 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
          {"colliding_slots", str(stats.colliding_slots)},
          {"colliding_slots_percent", str(relative_to(stats.colliding_slots, hashtable_size))},
          {"total_colliding_keys", str(stats.total_colliding_keys)},
-         {"total_colliding_keys_percent", str(relative_to(stats.total_colliding_keys, dataset.size()))},
+         {"total_colliding_keys_percent", str(relative_to(stats.total_colliding_keys, dataset->size()))},
          {"nanoseconds_total", str(stats.inference_reduction_memaccess_total_ns)},
-         {"nanoseconds_per_key", str(relative_to(stats.inference_reduction_memaccess_total_ns, dataset.size()))},
+         {"nanoseconds_per_key", str(relative_to(stats.inference_reduction_memaccess_total_ns, dataset->size()))},
       });
    };
 
@@ -205,12 +205,12 @@ int main(int argc, char* argv[]) {
       for (const auto& it : args.datasets) {
          // TODO: once we have more RAM we maybe should load the dataset per thread (prevent cache conflicts)
          //  and purely operate on thread local data. i.e. move this load into threads after aquire()
-         const std::vector<uint64_t> dataset = it.load();
+         const auto dataset_ptr = std::make_shared<const std::vector<uint64_t>>(it.load(iomutex));
 
          for (auto load_factor : args.load_factors) {
             threads.emplace_back(std::thread([&, load_factor] {
                cpu_blocker.aquire();
-               measure(it.name(), dataset, load_factor, outfile, iomutex, small_tabulation_table,
+               measure(it.name(), dataset_ptr, load_factor, outfile, iomutex, small_tabulation_table,
                        large_tabulation_table);
                cpu_blocker.release();
             }));

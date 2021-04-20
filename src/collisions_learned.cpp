@@ -44,11 +44,11 @@ const std::vector<std::string> csv_columns = {"dataset",
                                               "total_nanoseconds",
                                               "total_nanoseconds_per_key"};
 
-static void measure(const std::string& dataset_name, const std::vector<uint64_t>& dataset, const double load_factor,
-                    const Args& args, CSV& outfile, std::mutex& iomutex) {
+static void measure(const std::string& dataset_name, const std::shared_ptr<const std::vector<uint64_t>> dataset,
+                    const double load_factor, const Args& args, CSV& outfile, std::mutex& iomutex) {
    // Theoretical slot count of a hashtable on which we want to measure collisions
    const auto hashtable_size =
-      static_cast<uint64_t>(static_cast<double>(dataset.size()) / static_cast<double>(load_factor));
+      static_cast<uint64_t>(static_cast<double>(dataset->size()) / static_cast<double>(load_factor));
 
    // lambda to measure a given hash function with a given reducer. Will be entirely inlined by default
    std::vector<uint32_t> collision_counter(hashtable_size);
@@ -75,7 +75,7 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
 
       // Measure
       const auto stats = Benchmark::measure_collisions(
-         dataset, collision_counter, [&](const HASH_64& key) { return modelfn(model, hashtable_size, key); },
+         *dataset, collision_counter, [&](const HASH_64& key) { return modelfn(model, hashtable_size, key); },
          reducerfn);
 
       // Sum up for easier access
@@ -85,7 +85,7 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
       {
          std::unique_lock<std::mutex> lock(iomutex);
          std::cout << std::setw(55) << std::right << reducer_name + "(" + model_name + ") took "
-                   << relative_to(total_ns, dataset.size()) << " ns/key (" << nanoseconds_to_seconds(total_ns)
+                   << relative_to(total_ns, dataset->size()) << " ns/key (" << nanoseconds_to_seconds(total_ns)
                    << " s total)" << std::endl;
       };
 #endif
@@ -93,11 +93,11 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
       const auto str = [](auto s) { return std::to_string(s); };
       outfile.write({
          {"dataset", dataset_name},
-         {"numelements", str(dataset.size())},
+         {"numelements", str(dataset->size())},
          {"load_factor", str(load_factor)},
          {"model", model_name},
          {"reducer", reducer_name},
-         {"sample_size", str(relative_to(sample.size(), dataset.size()))},
+         {"sample_size", str(relative_to(sample.size(), dataset->size()))},
          {"min", str(stats.min)},
          {"max", str(stats.max)},
          {"std_dev", str(stats.std_dev)},
@@ -106,18 +106,18 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
          {"colliding_slots", str(stats.colliding_slots)},
          {"colliding_slots_percent", str(relative_to(stats.colliding_slots, hashtable_size))},
          {"total_colliding_keys", str(stats.total_colliding_keys)},
-         {"total_colliding_keys_percent", str(relative_to(stats.total_colliding_keys, dataset.size()))},
+         {"total_colliding_keys_percent", str(relative_to(stats.total_colliding_keys, dataset->size()))},
          {"sample_nanoseconds_total", str(sample_ns)},
-         {"sample_nanoseconds_per_key", str(relative_to(sample_ns, dataset.size()))},
+         {"sample_nanoseconds_per_key", str(relative_to(sample_ns, dataset->size()))},
          {"prepare_nanoseconds_total", str(prepare_ns)},
-         {"prepare_nanoseconds_per_key", str(relative_to(prepare_ns, dataset.size()))},
+         {"prepare_nanoseconds_per_key", str(relative_to(prepare_ns, dataset->size()))},
          {"build_nanoseconds_total", str(build_ns)},
-         {"build_nanoseconds_per_key", str(relative_to(build_ns, dataset.size()))},
+         {"build_nanoseconds_per_key", str(relative_to(build_ns, dataset->size()))},
          {"hashing_nanoseconds_total", str(stats.inference_reduction_memaccess_total_ns)},
          {"hashing_nanoseconds_per_key",
-          str(relative_to(stats.inference_reduction_memaccess_total_ns, dataset.size()))},
+          str(relative_to(stats.inference_reduction_memaccess_total_ns, dataset->size()))},
          {"total_nanoseconds", str(total_ns)},
-         {"total_nanoseconds_per_key", str(relative_to(total_ns, dataset.size()))},
+         {"total_nanoseconds_per_key", str(relative_to(total_ns, dataset->size()))},
       });
    };
 
@@ -131,23 +131,23 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
    // TODO: test different reduction methods (optimize with unlikely() annotation etc)
 
    for (const auto sample_size : args.sample_sizes) {
-      const auto sample_n = static_cast<size_t>(sample_size * static_cast<long double>(dataset.size()));
+      const auto sample_n = static_cast<size_t>(sample_size * static_cast<long double>(dataset->size()));
       const auto pgm_sample_fn = [&]() {
          std::vector<uint64_t> sample(sample_n, 0);
          if (sample_n == 0)
             return sample;
-         if (sample_n == dataset.size()) {
-            sample = dataset;
+         if (sample_n == dataset->size()) {
+            sample = *dataset;
             return sample;
          }
 
-         // Random constant to ensure reproducibility for debuggin. TODO: make truely random for benchmark/use varying constants (?) -> also adjust fisher yates shuffle and other such constants
+         // Random constant to ensure reproducibility for debugging. TODO: make truely random for benchmark/use varying constants (?) -> also adjust fisher yates shuffle and other such constants
          const uint64_t seed = 0x9E3779B9LU;
          std::default_random_engine gen(seed);
-         std::uniform_int_distribution<uint64_t> dist(0, dataset.size() - 1);
+         std::uniform_int_distribution<uint64_t> dist(0, dataset->size() - 1);
          for (size_t i = 0; i < sample_n; i++) {
             const auto random_index = dist(gen);
-            sample[i] = dataset[random_index];
+            sample[i] = dataset->at(random_index);
          }
 
          return sample;
@@ -206,12 +206,12 @@ int main(int argc, char* argv[]) {
       for (const auto& it : args.datasets) {
          // TODO: once we are on a NUMA machine, we should maybe load the dataset per thread (prevent cache conflicts)
          //  and purely operate on thread local data. i.e. move this load into threads after aquire()
-         const std::vector<uint64_t> dataset = it.load();
+         const auto dataset_ptr = std::make_shared<const std::vector<uint64_t>>(it.load(iomutex));
 
          for (const auto load_factor : args.load_factors) {
-            threads.emplace_back(std::thread([&, load_factor] {
+            threads.emplace_back(std::thread([&, dataset_ptr, load_factor] {
                cpu_blocker.aquire();
-               measure(it.name(), dataset, load_factor, args, outfile, iomutex);
+               measure(it.name(), dataset_ptr, load_factor, args, outfile, iomutex);
                cpu_blocker.release();
             }));
          }

@@ -24,11 +24,12 @@ namespace std {
        * such as due to being blocked in acquire, will subsequently be unblocked.
        */
       forceinline void release(const unsigned int& update = 1) {
+         std::unique_lock<std::mutex> lock(mutex);
+
          if (unlikely(update > max_value - counter)) {
             throw std::runtime_error("Can not increase semaphore value by more than max_value - counter");
          }
 
-         std::unique_lock<std::mutex> lock(mutex);
          counter += update;
          condition_variable.notify_one();
       }
