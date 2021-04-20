@@ -46,7 +46,10 @@ The repository is setup as a monorepo c++ project using CMake.
 * `convenience/` contains an interface library comprised of convenience code 
   (e.g., forceinline macros), used throughout the repository
 * `data/` is meant to contain datasets. Also contains a python script for
-  generating synthetic datasets and debug/test data
+  generating synthetic datasets and debug/test data. **NOTE: datasets 
+  should under no circumstances be uploaded to github (licensing, large file
+  size)**. Real world datasets from our results may be found
+  [here](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/JGVF9A)
 * `hashing/` contains an interface library exposing various classical hash
   function implementations, optimized and tuned for small, fixed size keys
 * `learned_models/` contains an interface library exposing learned models,
