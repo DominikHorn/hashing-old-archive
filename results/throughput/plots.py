@@ -25,13 +25,15 @@ def gen_colors(max=40.0, s_sawtooth_min=0.7, s_sawtooth_max=0.9, s_sawtooth_step
             v_next = v_sawtooth_min
 
 
+compilers = ["clang++", "g++-10"]
+_csv = pandas.read_csv(f"throughput-{compilers[0]}.csv")
+dataset_names = sorted(set(_csv['dataset']))
+hash_methods = list(OrderedDict.fromkeys(list(_csv[_csv['reducer'] != 'do_nothing'].sort_values('nanoseconds_per_key')['hash'])))
+_colors = list(gen_colors(len(hash_methods)))
+colors = {method: _colors[i] for i, method in enumerate(hash_methods)}
+
 for compiler in ["clang++", "g++-10"]:
     csv = pandas.read_csv(f"throughput-{compiler}.csv")
-    dataset_names = sorted(set(csv['dataset']))
-    hash_methods = list(OrderedDict.fromkeys(list(csv[csv['reducer'] != 'do_nothing'].sort_values('nanoseconds_per_key')['hash'])))
-
-    _colors = list(gen_colors(len(hash_methods)))
-    colors = {method: _colors[i] for i, method in enumerate(hash_methods)}
 
     for fig, dataset_name in enumerate(dataset_names):
         dataset = csv[csv['dataset'] == dataset_name]
