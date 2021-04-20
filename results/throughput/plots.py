@@ -51,7 +51,7 @@ for compiler in ["clang++", "g++-10"]:
                         color=colors.get(hash_name) or "white")
 
         plt.grid(linestyle='--', linewidth=0.5)
-        plt.title(f"throughput on {dataset_name}")
+        plt.title(f"throughput on {dataset_name} using {compiler}")
         plt.xticks(np.arange(len(reducers)) + 0.4, reducers)
         plt.yticks(list(plt.yticks()[0]) + [1, 2, 3, 4])
         plt.ylabel('ns per key')
