@@ -233,7 +233,6 @@ int main(int argc, char* argv[]) {
       CSV outfile(args.outfile, csv_columns);
 
       // Worker pool for speeding up the benchmarking
-      // TODO: Look into setting CPU affinity
       std::mutex iomutex;
       std::counting_semaphore cpu_blocker(args.max_threads);
       std::vector<std::thread> threads{};
