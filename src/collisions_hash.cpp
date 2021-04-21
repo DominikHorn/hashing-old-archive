@@ -232,7 +232,7 @@ int main(int argc, char* argv[]) {
          const auto dataset_ptr = std::make_shared<const std::vector<uint64_t>>(it.load(iomutex));
 
          for (auto load_factor : args.load_factors) {
-            threads.emplace_back(std::thread([&, load_factor] {
+            threads.emplace_back(std::thread([&, dataset_ptr, load_factor] {
                cpu_blocker.aquire();
                measure(it.name(), dataset_ptr, load_factor, outfile, iomutex, small_tabulation_table,
                        large_tabulation_table);
