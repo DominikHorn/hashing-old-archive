@@ -1,6 +1,7 @@
 import colorsys
 from collections import OrderedDict
 
+import math
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pandas
@@ -40,25 +41,39 @@ for compiler in compilers:
         dataset = csv[csv['dataset'] == dataset_name]
         reducers = sorted(list(set(dataset['reducer'])))
 
-        plt.figure(figsize=(15, 7))
+        plot_keys = ["sample_nanoseconds_per_key", "prepare_nanoseconds_per_key", "build_nanoseconds_per_key",
+                     "hashing_nanoseconds_per_key"]
+        plt_cnt_x = math.floor(math.sqrt(len(plot_keys)))
+        fig, subplts = plt.subplots(plt_cnt_x, math.ceil(len(plot_keys) / plt_cnt_x), figsize=(15, 7))
 
-        # order preserving deduplication
-        for j, hash_name in enumerate([m for m in hash_methods if m in set(dataset['model'])]):
-            series = list(dataset[dataset['model'] == hash_name].sort_values('reducer')['total_nanoseconds_per_key'])
-            width = 0.95 / len(hash_methods)
+        for k, plot_key in enumerate(plot_keys):
+            subplt = subplts[k % plt_cnt_x, int(k / plt_cnt_x)]
 
-            for i, reducer in enumerate(reducers):
-                # We only want to set label once as otherwise legend will contain duplicates
-                plt.bar(i + j * width, series[i], width, label=hash_name if i == 0 else None,
-                        color=colors.get(hash_name) or "white")
+            # order preserving deduplication
+            for j, model_name in enumerate([m for m in hash_methods if m in set(dataset['model'])]):
+                series = list(
+                    dataset[dataset['model'] == model_name].sort_values('reducer')[plot_key])
+                width = 0.95 / len(hash_methods)
 
-        plt.grid(linestyle='--', linewidth=0.5)
-        plt.title(f"throughput on {dataset_name} using {compiler}")
-        plt.xticks(np.arange(len(reducers)) + 0.4, reducers)
-        plt.yticks(list(plt.yticks()[0]) + [1, 2, 3, 4])
-        plt.ylabel('ns per key')
-        plt.xlabel('reduction algorithm')
-        plt.legend(bbox_to_anchor=(0.5, -0.4), loc="lower center", ncol=7)
+                for i, reducer in enumerate(reducers):
+                    # We only want to set label once as otherwise legend will contain duplicates
+                    subplt.bar(i + j * width, series[i], width, label=model_name if i == 0 and k == 0 else None,
+                               color=colors.get(model_name) or "white")
+
+            subplt.grid(linestyle='--', linewidth=0.5)
+            subplt.set_title(f"{plot_key.replace('_', ' ')}")
+
+            xticks = np.arange(len(reducers)) + 0.4
+            subplt.set_xticks(xticks, minor=False)
+            subplt.set_xticklabels(reducers, fontdict=None, minor=False)
+            yticks = list(subplt.get_yticks())
+            subplt.set_yticks(yticks, minor=False)
+
+        fig.text(0.5, 0.04, 'reduction algorithm', ha='center', va='center')
+        fig.text(0.06, 0.5, 'nanoseconds per key', ha='center', va='center', rotation='vertical')
+        fig.suptitle(f"throughput on {dataset_name} using {compiler}")
+        fig.legend(bbox_to_anchor=(0.5, -0.1), loc="lower center", ncol=7)
 
         plt.savefig(f"graphs/throughput_learned-{compiler}_{dataset_name}.pdf", bbox_inches='tight', pad_inches=0.5)
         plt.savefig(f"graphs/throughput_learned-{compiler}_{dataset_name}.png", bbox_inches='tight', pad_inches=0.5)
+        plt.close()
