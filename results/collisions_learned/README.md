@@ -1,6 +1,22 @@
 # Collisions Learned
 
-Results for the collisions experiment using learned hash functions.
+Results for the collisions experiment using learned hash functions. The experiment (in pseudocode) measures collisions
+as follows:
+
+```
+raw_sample = sample(dataset)
+
+sample = prepare(raw_sample)
+
+model = Model(sample)
+
+for key in dataset {
+    index = reduce(model.search(key))
+    collision_counter[index]++
+}
+
+colliding_keys = sum([x for x in collision_counter where x > 1])
+```
 
 ## Colliding Keys
 
@@ -31,7 +47,17 @@ i.e., a single collision will result in 2 reported colliding keys.
 
 ## Sample nanoseconds per key
 
-Amount of time creating the data sample took, relative to the total amount of keys in the keyset.
+Amount of time creating the data sample took, relative to the total amount of keys in the keyset. Sampling is done by
+repeatedly choosing random elements from the dataset, i.e.:
+
+```
+sample = []
+for i = 0, i < sample_size, i++ {
+    sample[i] = dataset[random_index()]
+}
+```
+
+Note that for `sample size == 1`, we dont uniformly random sample the dataset but instead memcopy it.
 
 ### g++ (Ubuntu 9.3.0-23ubuntu1~16.04) 9.3.0
 
@@ -60,6 +86,10 @@ Amount of time creating the data sample took, relative to the total amount of ke
 Amount of time preparing the sample took, relative to the total amount of keys in the keyset. Preparation currently only
 consists of sorting the sample.
 
+```
+sample = sort(raw_sample)
+```
+
 ### g++ (Ubuntu 9.3.0-23ubuntu1~16.04) 9.3.0
 
 #### books_200M_uint32
@@ -82,6 +112,10 @@ consists of sorting the sample.
 
 Amount of time building the learned hash function took, relative to the total amount of keys in the keyset. Sampling and
 preparation does not count towards build time and is instead listed separately above.
+
+```
+model = Model(sample)
+```
 
 ### g++ (Ubuntu 9.3.0-23ubuntu1~16.04) 9.3.0
 
