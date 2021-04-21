@@ -4,40 +4,6 @@ the art implementations as well as benchmarking code.
 For further information, see
 our [collaborative google doc](https://docs.google.com/document/d/1akVt7XBPm3aWRnguZh88jpCAp97yZUwT8V5Po_p2Hxo/edit?usp=sharing)
 
-# Table of Contents
-
-- [Table of Contents](#table-of-contents)
-- [Development](#development)
-    * [Repository layout](#repository-layout)
-    * [Setup](#setup)
-        + [Cloning this repository](#cloning-this-repository)
-        + [Running Benchmarks](#running-benchmarks)
-- [Results](#results)
-    * [Throughput classical hash functions](#throughput-classical-hash-functions)
-        + [Clang++](#clang--)
-            - [books_200M_uint32](#books-200m-uint32)
-            - [books_200M_uint64](#books-200m-uint64)
-            - [fb_200M_uint64](#fb-200m-uint64)
-            - [osm_cellids_200M_uint64](#osm-cellids-200m-uint64)
-            - [wiki_ts_200M_uint64](#wiki-ts-200m-uint64)
-        + [G++-10](#g---10)
-            - [books_200M_uint32](#books-200m-uint32-1)
-            - [books_200M_uint64](#books-200m-uint64-1)
-            - [fb_200M_uint64](#fb-200m-uint64-1)
-            - [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-1)
-            - [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-1)
-    * [Collisions for classical hash functions](#collisions-for-classical-hash-functions)
-        + [Colliding keys](#colliding-keys)
-        + [Nanoseconds per key](#nanoseconds-per-key)
-            - [books_200M_uint32](#books-200m-uint32-2)
-            - [books_200M_uint64](#books-200m-uint64-2)
-            - [fb_200M_uint64](#fb-200m-uint64-2)
-            - [osm_cellids_200M_uint64](#osm-cellids-200m-uint64-2)
-            - [wiki_ts_200M_uint64](#wiki-ts-200m-uint64-2)
-
-<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with
-markdown-toc</a></i></small>
-
 # Development
 
 ## Repository layout
