@@ -12,7 +12,7 @@
 #include "include/benchmark.hpp"
 #include "include/csv.hpp"
 
-using Args = BenchmarkArgs::ThroughputArgs;
+using Args = BenchmarkArgs::HashThroughputArgs;
 
 // TODO: ensure that we don't use two separate reducers for 128bit hashes for throughput benchmark, i.e.,
 //  some 64 bit hashes are already implemented as 128bit hash + reducer!
@@ -47,9 +47,6 @@ int main(int argc, char* argv[]) {
 
             auto dataset = it.load(iomutex);
 
-            // TODO: Build dataset specific auxiliary data (e.g., pgm, rmi)
-
-            const auto over_alloc = 1.0;
             const auto hashtable_size = static_cast<size_t>(dataset.size());
             const auto magic_div = Reduction::make_magic_divider(static_cast<HASH_64>(hashtable_size));
             const auto magic_branchfree_div =
@@ -60,7 +57,7 @@ int main(int argc, char* argv[]) {
                                                          const std::string& reducer_name,
                                                          const auto& reducerfn) {
                // Measure & log
-               const auto stats = Benchmark::measure_throughput(dataset, over_alloc, hashfn, reducerfn);
+               const auto stats = Benchmark::measure_throughput(dataset, hashfn, reducerfn);
 #ifdef VERBOSE
                {
                   std::unique_lock<std::mutex> lock(iomutex);

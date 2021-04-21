@@ -12,5 +12,8 @@ target_link_libraries(collisions_hash convenience reduction hashing cxxopts)
 add_executable(collisions_learned collisions_learned.cpp)
 target_link_libraries(collisions_learned convenience reduction learned_models cxxopts)
 
-add_executable(throughput throughput.cpp)
-target_link_libraries(throughput convenience reduction hashing cxxopts)
+add_executable(throughput_hash throughput_hash.cpp)
+target_link_libraries(throughput_hash convenience reduction hashing cxxopts)
+
+add_executable(throughput_learned throughput_learned.cpp)
+target_link_libraries(throughput_learned convenience reduction learned_models cxxopts)
