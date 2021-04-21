@@ -12,7 +12,7 @@ def gen_colors(max=40.0, s_sawtooth_min=0.7, s_sawtooth_max=0.9, s_sawtooth_step
     s_next = s_sawtooth_min
     v_next = v_sawtooth_min
     for i in range(max):
-        h = (2 * i / max) if 2 * i <= max else (2 * i - max) / max
+        h = i / max
         s = s_next
         v = v_next
         yield colorsys.hsv_to_rgb(h, s, v)

@@ -20,7 +20,7 @@ for more information.
 Amount of colliding keys in percent. Note that these graphs count each key participating in a collision separately,
 i.e., a single collision will result in 2 reported colliding keys.
 
-### g++ (Ubuntu 9.3.0-23ubuntu1~16.04) 9.3.0
+### g++ (Ubuntu 9.3.0-23ubuntu1~16.04) 9.3.0 Intel(R) Core(TM) i9-9900K 16 Core @ 3.60GHz
 
 #### books_200M_uint32
 
@@ -60,7 +60,7 @@ for key in keyset {
 indicate up to 80x performance gain when compiled with Clang, making MeowHash the fasted hashing schema throughout.
 Proper benchmarking will be conducted with clang in the future.
 
-### g++ (Ubuntu 9.3.0-23ubuntu1~16.04) 9.3.0
+### g++ (Ubuntu 9.3.0-23ubuntu1~16.04) 9.3.0 Intel(R) Core(TM) i9-9900K 16 Core @ 3.60GHz
 
 #### books_200M_uint32
 
