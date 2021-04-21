@@ -1,5 +1,3 @@
-#define VERBOSE
-
 #include <iomanip>
 #include <iostream>
 #include <string>

@@ -1,5 +1,3 @@
-#define VERBOSE
-
 #include <chrono>
 #include <filesystem>
 #include <iomanip>
