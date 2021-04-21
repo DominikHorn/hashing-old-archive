@@ -56,6 +56,10 @@ for key in keyset {
 }
 ```
 
+**NOTE:** For some reason Clang is able to produce significantly more efficient MeowHash machine code. Sample benchmarks
+indicate up to 80x performance gain when compiled with Clang, making MeowHash the fasted hashing schema throughout.
+Proper benchmarking will be conducted with clang in the future.
+
 ### g++ (Ubuntu 9.3.0-23ubuntu1~16.04) 9.3.0
 
 #### books_200M_uint32
