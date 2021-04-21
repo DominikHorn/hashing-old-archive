@@ -11,7 +11,7 @@ def gen_colors(max=40.0, s_sawtooth_min=0.7, s_sawtooth_max=0.9, s_sawtooth_step
     s_next = s_sawtooth_min
     v_next = v_sawtooth_min
     for i in range(max):
-        h = (2 * i / max) if 2 * i <= max else (2 * i - max) / max
+        h = i / max
         s = s_next
         v = v_next
         yield colorsys.hsv_to_rgb(h, s, v)
@@ -25,22 +25,22 @@ def gen_colors(max=40.0, s_sawtooth_min=0.7, s_sawtooth_max=0.9, s_sawtooth_step
             v_next = v_sawtooth_min
 
 
-compilers = ["clang++", "g++-10"]
-_csv = pandas.read_csv(f"throughput-{compilers[0]}.csv")
+compilers = ["g++", "clang++"]  # , "g++-10"]
+_csv = pandas.read_csv(f"throughput_hash-{compilers[0]}.csv")
 dataset_names = sorted(set(_csv['dataset']))
-hash_methods = list(OrderedDict.fromkeys(list(_csv[_csv['reducer'] != 'do_nothing'].sort_values('nanoseconds_per_key')['hash'])))
+hash_methods = list(
+    OrderedDict.fromkeys(list(_csv[_csv['reducer'] != 'do_nothing'].sort_values('nanoseconds_per_key')['hash'])))
 _colors = list(gen_colors(len(hash_methods)))
 colors = {method: _colors[i] for i, method in enumerate(hash_methods)}
 
 for compiler in compilers:
-    csv = pandas.read_csv(f"throughput-{compiler}.csv")
+    csv = pandas.read_csv(f"throughput_hash-{compiler}.csv")
 
-    for fig, dataset_name in enumerate(dataset_names):
+    for dataset_name in dataset_names:
         dataset = csv[csv['dataset'] == dataset_name]
-
         reducers = sorted(list(set(dataset['reducer'])))
 
-        plt.figure(figsize=(30, 10))
+        plt.figure(figsize=(15, 7))
 
         # order preserving deduplication
         for j, hash_name in enumerate([m for m in hash_methods if m in set(dataset['hash'])]):
@@ -58,7 +58,7 @@ for compiler in compilers:
         plt.yticks(list(plt.yticks()[0]) + [1, 2, 3, 4])
         plt.ylabel('ns per key')
         plt.xlabel('hash reduction method')
-        plt.legend(bbox_to_anchor=(0.5, -0.1), ncol=7)
+        plt.legend(bbox_to_anchor=(0.5, -0.4), loc="lower center", ncol=7)
 
-        plt.savefig(f"graphs/throughput-{compiler}_{dataset_name}.pdf", bbox_inches='tight', pad_inches=0.5)
-        plt.savefig(f"graphs/throughput-{compiler}_{dataset_name}.png", bbox_inches='tight', pad_inches=0.5)
+        plt.savefig(f"graphs/throughput_hash-{compiler}_{dataset_name}.pdf", bbox_inches='tight', pad_inches=0.5)
+        plt.savefig(f"graphs/throughput_hash-{compiler}_{dataset_name}.png", bbox_inches='tight', pad_inches=0.5)

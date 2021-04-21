@@ -26,7 +26,7 @@ for more information.
 Amount of colliding keys in percent. Note that these graphs count each key participating in a collision separately,
 i.e., a single collision will result in 2 reported colliding keys.
 
-### g++ (Ubuntu 9.3.0-23ubuntu1~16.04) 9.3.0
+### g++ (Ubuntu 9.3.0-23ubuntu1~16.04) 9.3.0 Intel(R) Core(TM) i9-9900K 16 Core @ 3.60GHz
 
 #### books_200M_uint32
 
@@ -62,7 +62,7 @@ for i = 0, i < sample_size, i++ {
 
 Note that for `sample size == 1`, we dont uniformly random sample the dataset but instead memcopy it.
 
-### g++ (Ubuntu 9.3.0-23ubuntu1~16.04) 9.3.0
+### g++ (Ubuntu 9.3.0-23ubuntu1~16.04) 9.3.0 Intel(R) Core(TM) i9-9900K 16 Core @ 3.60GHz
 
 #### books_200M_uint32
 
@@ -93,7 +93,7 @@ consists of sorting the sample.
 sample = sort(raw_sample)
 ```
 
-### g++ (Ubuntu 9.3.0-23ubuntu1~16.04) 9.3.0
+### g++ (Ubuntu 9.3.0-23ubuntu1~16.04) 9.3.0 Intel(R) Core(TM) i9-9900K 16 Core @ 3.60GHz
 
 #### books_200M_uint32
 
@@ -120,7 +120,7 @@ preparation does not count towards build time and is instead listed separately a
 model = Model(sample)
 ```
 
-### g++ (Ubuntu 9.3.0-23ubuntu1~16.04) 9.3.0
+### g++ (Ubuntu 9.3.0-23ubuntu1~16.04) 9.3.0 Intel(R) Core(TM) i9-9900K 16 Core @ 3.60GHz
 
 #### books_200M_uint32
 
@@ -152,7 +152,7 @@ for key in keyset {
 }
 ```
 
-### g++ (Ubuntu 9.3.0-23ubuntu1~16.04) 9.3.0
+### g++ (Ubuntu 9.3.0-23ubuntu1~16.04) 9.3.0 Intel(R) Core(TM) i9-9900K 16 Core @ 3.60GHz
 
 #### books_200M_uint32
 
