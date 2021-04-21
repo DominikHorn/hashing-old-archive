@@ -1,0 +1,2 @@
+This folder contains benchmark results for the various experiments in this repository, together with graphs visualizing
+the raw data. The subfolders are named after the experiment who's results they contain.

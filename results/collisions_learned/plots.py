@@ -12,7 +12,7 @@ def gen_colors(max=40.0, s_sawtooth_min=0.7, s_sawtooth_max=0.9, s_sawtooth_step
     s_next = s_sawtooth_min
     v_next = v_sawtooth_min
     for i in range(max):
-        h = (2 * i / max) if 2 * i <= max else (2 * i - max) / max
+        h = i / max
         s = s_next
         v = v_next
         yield colorsys.hsv_to_rgb(h, s, v)
@@ -26,7 +26,7 @@ def gen_colors(max=40.0, s_sawtooth_min=0.7, s_sawtooth_max=0.9, s_sawtooth_step
             v_next = v_sawtooth_min
 
 
-compilers = ["clang++", "g++-10"]
+compilers = ["g++"]  # ["clang++", "g++"]
 _csv = pandas.read_csv(f"collisions_learned-{compilers[0]}.csv")
 dataset_names = sorted(set(_csv['dataset']))
 models = list(
@@ -43,20 +43,18 @@ for compiler in compilers:
 
     for fig, dataset_name in enumerate(dataset_names):
         dataset = csv[csv['dataset'] == dataset_name]
-
-        plt.figure(figsize=(40, 30))
-        plt.subplots_adjust(hspace=0.5)
-
         load_factors = sorted(set(dataset['load_factor']))
         sample_sizes = sorted(set(dataset['sample_size']))
+
+        fig, subplts = plt.subplots(len(sample_sizes), len(load_factors), sharex=True, sharey=True, figsize=(15, 10))
+
         for k, load_factor in enumerate(reversed(load_factors)):
             for l, sample_size in enumerate(reversed(sample_sizes)):
                 ds = dataset[dataset['sample_size'] == sample_size]
-                ds = dataset[dataset['load_factor'] == load_factor]
-                ds = ds[ds['reducer'] != 'do_nothing']
+                ds = ds[ds['load_factor'] == load_factor]
                 reducers = sorted(list(set(ds['reducer'])))
 
-                plt.subplot(len(load_factors), len(sample_sizes), l * len(load_factors) + k + 1)
+                subplt = subplts[l, k]
 
                 # order preserving deduplication
                 for j, model_name in enumerate([m for m in models if m in set(ds['model'])]):
@@ -65,19 +63,24 @@ for compiler in compilers:
 
                     for i, reducer in enumerate(reducers):
                         # We only want to set label once as otherwise legend will contain duplicates
-                        plt.bar(i + j * width + j * 0.005, series[i], width, label=model_name if i == 0 else None,
-                                color=colors.get(model_name) or "white")
+                        subplt.bar(i + j * width + j * 0.005, series[i], width,
+                                   label=model_name if i == 0 and l == 0 and k == 0 else None,
+                                   color=colors.get(model_name) or "white")
 
-                plt.grid(linestyle='--', linewidth=0.5)
-                plt.title(f"collisions on {dataset_name}, load_factor {load_factor}, sample_size {sample_size}, compiler {compiler}")
-                plt.xticks(np.arange(len(reducers)) + (1.0 / len(reducers)), reducers)
-                pred_collision_chance = 1 - pow(math.e, -load_factor)
-                plt.yticks([x for x in [0.0, 0.2, 0.4, 0.6, 0.8, 1.0] if abs(x - pred_collision_chance) > 0.1] + [
-                    pred_collision_chance])
-                plt.ylabel('colliding keys / total keys')
-                plt.xlabel('model reduction method')
+                subplt.grid(axis='y', linestyle='--', linewidth=0.5)
+                subplt.set_title(f"sample_size {sample_size}, load_factor {load_factor}")
 
-                plt.legend(bbox_to_anchor=(0.5, -0.1), loc="upper center", ncol=7)
+                xticks = np.arange(len(reducers)) + 0.4
+                subplt.set_xticks(xticks, minor=False)
+                subplt.set_yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], minor=False)
+                subplt.set_xticklabels(reducers, fontdict=None, minor=False)
+                subplt.axhline(1 - pow(math.e, -load_factor), color="blue", ls="-")
+
+            fig.text(0.5, 0.04, 'reduction algorithm', ha='center', va='center')
+            fig.text(0.06, 0.5, 'colliding keys / total keys', ha='center', va='center', rotation='vertical')
+            fig.suptitle(
+                f"collisions on {dataset_name} using compiler {compiler}")
+            fig.legend(bbox_to_anchor=(0.3, 0), loc="lower left", ncol=3)
 
         plt.savefig(f"graphs/colliding_keys_percent_{dataset_name}_{compiler}.png", bbox_inches='tight', pad_inches=0.5)
         plt.savefig(f"graphs/colliding_keys_percent_{dataset_name}_{compiler}.pdf", bbox_inches='tight', pad_inches=0.5)
@@ -94,45 +97,46 @@ def plot_timing(key):
 
         for fig, dataset_name in enumerate(dataset_names):
             dataset = csv[csv['dataset'] == dataset_name]
-
-            plt.figure(figsize=(50, 30))
-            plt.subplots_adjust(hspace=0.5)
-
-            load_factors = sorted(set(dataset['load_factor']))
             sample_sizes = sorted(set(dataset['sample_size']))
-            for k, load_factor in enumerate(reversed(load_factors)):
-                for l, sample_size in enumerate(reversed(sample_sizes)):
-                    ds = dataset[dataset['sample_size'] == sample_size]
-                    ds = dataset[dataset['load_factor'] == load_factor]
-                    ds = ds[ds['reducer'] != 'do_nothing']
-                    reducers = sorted(list(set(ds['reducer'])))
 
-                    plt.subplot(len(load_factors), len(sample_sizes), l * len(load_factors) + k + 1)
+            plt_cnt = int(len(sample_sizes) / 2)
+            fig, subplts = plt.subplots(plt_cnt, plt_cnt, sharex=True, sharey=True)
 
-                    # order preserving deduplication
-                    for j, model_name in enumerate([m for m in models if m in set(ds['model'])]):
-                        series = list(ds[ds['model'] == model_name].sort_values('reducer')[key])
-                        width = 0.95 / len(models)
+            for l, sample_size in enumerate(reversed(sample_sizes)):
+                ds = dataset[dataset['sample_size'] == sample_size]
+                reducers = sorted(list(set(ds['reducer'])))
 
-                        for i, reducer in enumerate(reducers):
-                            # We only want to set label once as otherwise legend will contain duplicates
-                            plt.bar(i + j * width + j * 0.005, series[i], width, label=model_name if i == 0 else None,
-                                    color=colors.get(model_name) or "white")
+                subplt = subplts[int(l / 2), l % 2]
+                # order preserving deduplication
+                for j, model_name in enumerate([m for m in models if m in set(ds['model'])]):
+                    series = list(ds[ds['model'] == model_name].sort_values('reducer')[key])
+                    width = 0.95 / len(models)
 
-                    plt.grid(linestyle='--', linewidth=0.5)
-                    plt.title(
-                        f"{key.replace('_', ' ')} on {dataset_name}, load_factor {load_factor}, sample_size {sample_size}, compiler {compiler}")
-                    plt.xticks(np.arange(len(reducers)) + (1.0 / len(reducers)), reducers)
-                    plt.ylabel('nanoseconds per key')
-                    plt.xlabel('model reduction method')
+                    for i, reducer in enumerate(reducers):
+                        # We only want to set label once as otherwise legend will contain duplicates
+                        subplt.bar(i + j * width + j * 0.005, series[i], width,
+                                   label=model_name if i == 0 and l == 0 else None,
+                                   color=colors.get(model_name) or "white")
 
-                    plt.legend(bbox_to_anchor=(0.5, -0.1), loc="upper center", ncol=7)
+                subplt.grid(axis='y', linestyle='--', linewidth=0.5)
+                subplt.set_title(f"sample_size {sample_size}")
+
+                xticks = np.arange(len(reducers)) + 0.4
+                subplt.set_xticks(xticks, minor=False)
+                subplt.set_xticklabels(reducers, fontdict=None, minor=False)
+
+            fig.text(0.5, 0.04, 'reduction algorithm', ha='center', va='center')
+            fig.text(0.06, 0.5, 'nanoseconds per key', ha='center', va='center', rotation='vertical')
+            fig.suptitle(f"{key.replace('_', ' ')} on {dataset_name} using {compiler}")
+            fig.legend(bbox_to_anchor=(0.05, -0.1), loc="lower left", ncol=3)
 
             plt.savefig(f"graphs/{key}_{dataset_name}_{compiler}.png", bbox_inches='tight', pad_inches=0.5)
             plt.savefig(f"graphs/{key}_{dataset_name}_{compiler}.pdf", bbox_inches='tight', pad_inches=0.5)
             plt.close()
 
-timings = ['sample_nanoseconds_per_key', 'prepare_nanoseconds_per_key', 'build_nanoseconds_per_key',
-           'hashing_nanoseconds_per_key', 'total_nanoseconds_per_key']
+
+timings = [
+    'sample_nanoseconds_per_key', 'prepare_nanoseconds_per_key', 'build_nanoseconds_per_key',
+    'hashing_nanoseconds_per_key', 'total_nanoseconds_per_key']
 for timing in timings:
     plot_timing(timing)
