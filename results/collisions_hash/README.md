@@ -59,6 +59,7 @@ for key in keyset {
 **NOTE: For some reason Apple clang 12.0 is able to produce significantly more efficient MeowHash machine code. Sample
 benchmarks on my laptop indicate up to 80x performance gain compared to g++ 9.3, making MeowHash the fasted hashing
 schema period. Proper benchmarking will be conducted with clang on the benchmarking server in the future.**
+Meanwhile, for more information on this issue, see `results/throughput_hash` and `results/gcc-vs-clang`.
 
 ### g++ (Ubuntu 9.3.0-23ubuntu1~16.04) 9.3.0 Intel(R) Core(TM) i9-9900K 16 Core @ 3.60GHz
 
