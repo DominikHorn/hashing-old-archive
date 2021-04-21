@@ -1,6 +1,7 @@
 #define VERBOSE
 
 #include <chrono>
+#include <filesystem>
 #include <iomanip>
 #include <iostream>
 #include <mutex>
@@ -37,8 +38,9 @@ const std::vector<std::string> csv_columns = {
    "nanoseconds_per_key",
 };
 
-static void measure(const std::string& dataset_name, const std::shared_ptr<const std::vector<uint64_t>> dataset, const double load_factor,
-                    CSV& outfile, std::mutex& iomutex, const HASH_64 (&small_tabulation_table)[0xFF],
+static void measure(const std::string& dataset_name, const std::shared_ptr<const std::vector<uint64_t>> dataset,
+                    const double load_factor, CSV& outfile, std::mutex& iomutex,
+                    const HASH_64 (&small_tabulation_table)[0xFF],
                     const HASH_64 (&large_tabulation_table)[sizeof(HASH_64)][0xFF]) {
    // Theoretical slot count of a hashtable on which we want to measure collisions
    const auto hashtable_size =
@@ -182,9 +184,37 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
    measure_hashfn("aqua_upp", [](const HASH_64& key) { return AquaHash::hash64<1>(key); });
 }
 
+void print_max_resource_usage(const Args& args) {
+   auto spawned_thread_count = args.datasets.size() * args.load_factors.size();
+   const auto max_thread_count = std::min(static_cast<size_t>(args.max_threads), spawned_thread_count);
+   std::vector<size_t> thread_mem;
+   size_t max_bytes = 0;
+   for (const auto& dataset : args.datasets) {
+      const auto path = std::filesystem::current_path() / dataset.filepath;
+      const auto dataset_size = std::filesystem::file_size(path);
+      max_bytes += dataset_size; // each dataset is loaded in memory once
+
+      for (const auto& load_fac : args.load_factors) {
+         thread_mem.emplace_back(static_cast<long double>(dataset_size) / load_fac);
+      }
+   }
+   std::sort(thread_mem.rbegin(), thread_mem.rend());
+
+   for (size_t i = 0; i < max_thread_count; i++) {
+      max_bytes += thread_mem[i];
+   }
+
+   std::cout << "Will concurrently schedule <= " << max_thread_count
+             << " threads while consuming <= " << max_bytes / (std::pow(1024, 3)) << " GB of ram" << std::endl;
+}
+
 int main(int argc, char* argv[]) {
    try {
       auto args = Args(argc, argv);
+#ifdef VERBOSE
+      print_max_resource_usage(args);
+#endif
+
       CSV outfile(args.outfile, csv_columns);
 
       // Worker pool for speeding up the benchmarking
@@ -192,9 +222,6 @@ int main(int argc, char* argv[]) {
       std::mutex iomutex;
       std::counting_semaphore cpu_blocker(args.max_threads);
       std::vector<std::thread> threads{};
-#ifdef VERBOSE
-      std::cout << "Will concurrently schedule at most " << args.max_threads << " threads" << std::endl;
-#endif
 
       // Precompute tabulation hash tables once (don't have to change per dataset)
       HASH_64 small_tabulation_table[0xFF];

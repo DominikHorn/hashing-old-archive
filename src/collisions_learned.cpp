@@ -1,6 +1,7 @@
 #define VERBOSE
 
 #include <chrono>
+#include <filesystem>
 #include <iomanip>
 #include <iostream>
 #include <mutex>
@@ -189,9 +190,48 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
    }
 }
 
+void print_max_resource_usage(const Args& args) {
+   auto spawned_thread_count = args.datasets.size() * args.load_factors.size();
+   const auto max_thread_count = std::min(static_cast<size_t>(args.max_threads), spawned_thread_count);
+   std::vector<size_t> thread_mem;
+   size_t max_bytes = 0;
+   for (const auto& dataset : args.datasets) {
+      const auto path = std::filesystem::current_path() / dataset.filepath;
+      const auto dataset_size = std::filesystem::file_size(path);
+      max_bytes += dataset_size; // each dataset is loaded in memory once
+
+      for (const auto& load_fac : args.load_factors) {
+         for (const auto& sample_size : args.sample_sizes) {
+            size_t mem = 0;
+
+            // collision counter
+            mem += static_cast<double>(dataset_size) / load_fac;
+            // sample
+            mem += sample_size * dataset_size;
+            // TODO: model
+            //            thread_mem +=
+
+            thread_mem.emplace_back(mem);
+         }
+      }
+   }
+   std::sort(thread_mem.rbegin(), thread_mem.rend());
+
+   for (size_t i = 0; i < max_thread_count; i++) {
+      max_bytes += thread_mem[i];
+   }
+
+   std::cout << "Will concurrently schedule <= " << max_thread_count
+             << " threads while consuming <= " << max_bytes / (std::pow(1024, 3)) << " GB of ram" << std::endl;
+}
+
 int main(int argc, char* argv[]) {
    try {
       auto args = Args(argc, argv);
+#ifdef VERBOSE
+      print_max_resource_usage(args);
+#endif
+
       CSV outfile(args.outfile, csv_columns);
 
       // Worker pool for speeding up the benchmarking
@@ -199,9 +239,6 @@ int main(int argc, char* argv[]) {
       std::mutex iomutex;
       std::counting_semaphore cpu_blocker(args.max_threads);
       std::vector<std::thread> threads{};
-#ifdef VERBOSE
-      std::cout << "Will concurrently schedule at most " << args.max_threads << " threads" << std::endl;
-#endif
 
       for (const auto& it : args.datasets) {
          // TODO: once we are on a NUMA machine, we should maybe load the dataset per thread (prevent cache conflicts)
