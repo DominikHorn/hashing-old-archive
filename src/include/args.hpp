@@ -150,6 +150,7 @@ namespace BenchmarkArgs {
 
    struct ThroughputArgs {
       std::string outfile;
+      unsigned int max_threads;
       std::vector<Dataset> datasets;
 
       ThroughputArgs(int argc, char* argv[]) {
@@ -163,6 +164,10 @@ namespace BenchmarkArgs {
                (outfile_key,
                 "path to output file for storing results as csv. NOTE: file will always be overwritten",
                 cxxopts::value<std::string>()) //
+               (max_threads_key,
+                "maximum amount of threads to concurrently execute. NOTE: more threads may be created but only " +
+                   max_threads_key + " will actually execute at the same time.",
+                cxxopts::value<unsigned int>()->default_value(std::to_string(std::thread::hardware_concurrency()))) //
                (datasets_key,
                 "datasets to benchmark on, formatted as '<PATH_TO_DATASET>:<BYTES_PER_NUMBER>'. Collects positional "
                 "arguments",
@@ -190,6 +195,7 @@ namespace BenchmarkArgs {
 
             // Extract
             outfile = result[outfile_key].as<std::string>();
+            max_threads = result[max_threads_key].as<unsigned int>();
             datasets = result[datasets_key].as<std::vector<Dataset>>();
          } catch (const std::exception& ex) {
             std::cerr << "error: " << ex.what() << std::endl;

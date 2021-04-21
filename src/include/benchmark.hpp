@@ -86,7 +86,7 @@ namespace Benchmark {
     * @tparam HashFunction
     * @tparam Reducer
     */
-   template<unsigned int repeatCnt = 5, typename HashFunction, typename Reducer>
+   template<unsigned int repeatCnt = 10, typename HashFunction, typename Reducer>
    ThroughputStats measure_throughput(const std::vector<uint64_t>& dataset, const double& over_alloc,
                                       const HashFunction& hashfn, const Reducer& reduce) {
       const auto n = static_cast<uint64_t>(std::ceil(static_cast<long double>(dataset.size()) * over_alloc));
