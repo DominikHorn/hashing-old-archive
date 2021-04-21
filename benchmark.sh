@@ -19,11 +19,18 @@ cd "$(dirname "$0")"
 # Ensure binaries are freshly built
 ./build.sh
 
-mkdir -p results/{throughput,collisions_hash,collisions_learned}
+mkdir -p results/{throughput_hash,throughput_learned,collisions_hash,collisions_learned}
 
 # Clang benchmarks
-benchmark/throughput-${CLANGCPP_BIN} \
-  --outfile results/throughput/throughput-${CLANGCPP_BIN}.csv \
+benchmark/throughput_hash-${CLANGCPP_BIN} \
+  --outfile results/throughput_hash/throughput_hash-${CLANGCPP_BIN}.csv \
+  --max_threads=${MAX_THREADS} \
+  $DATASETS
+
+benchmark/throughput_learned-${CLANGCPP_BIN} \
+  --outfile results/throughput_learned/throughput_learned-${CLANGCPP_BIN}.csv \
+  --sample_sizes=${SAMPLE_SIZES} \
+  --max_threads=${MAX_THREADS} \
   $DATASETS
 
 benchmark/collisions_hash-${CLANGCPP_BIN} \
@@ -40,8 +47,15 @@ benchmark/collisions_learned-${CLANGCPP_BIN} \
   $DATASETS
 
 # GCC benchmarks
-benchmark/throughput-${GCCPP_BIN} \
-  --outfile results/throughput/throughput-${GCCPP_BIN}.csv \
+benchmark/throughput_hash-${GCCPP_BIN} \
+  --outfile results/throughput_hash/throughput_hash-${GCCPP_BIN}.csv \
+  --max_threads=${MAX_THREADS} \
+  $DATASETS
+
+benchmark/throughput_learned-${GCCPP_BIN} \
+  --outfile results/throughput_learned/throughput_learned-${GCCPP_BIN}.csv \
+  --sample_sizes=${SAMPLE_SIZES} \
+  --max_threads=${MAX_THREADS} \
   $DATASETS
 
 benchmark/collisions_hash-${GCCPP_BIN} \
