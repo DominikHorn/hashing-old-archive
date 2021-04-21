@@ -11,12 +11,15 @@ sample = prepare(raw_sample)
 model = Model(sample)
 
 for key in dataset {
-    index = reduce(model.search(key))
+    index = reduce(model.predict(key))
     collision_counter[index]++
 }
 
 colliding_keys = sum([x for x in collision_counter where x > 1])
 ```
+
+Other stats are collected from the experiment but currently not visualized in any plots. See the `.csv` files' header
+for more information.
 
 ## Colliding Keys
 
@@ -140,12 +143,11 @@ model = Model(sample)
 Amount of time for hashing the entire dataset and recording collisions, relative to the total amount of keys in the
 keyset. Collisions are recorded in a `uint32_t` vector with `dataset.size() / load_factor` elements. Since the input
 keyset is randomly permutated, each collision_counter increment is expected to result in an L3 cache miss for the read,
-thus emulating a hashtable. Note however that contrary to a hashtable, no collision resolution schema is implemented in
-this benchmark. In pseudo code:
+thus sort of emulating a hashtable without collision reolution. The following code is measured (in pseudo code form):
 
 ```
 for key in keyset {
-    index = reduce(hash(key))
+    index = reduce(model.predict(key))
     collision_counter[index]++
 }
 ```

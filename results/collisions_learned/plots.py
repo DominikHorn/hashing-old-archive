@@ -72,8 +72,8 @@ for compiler in compilers:
 
                 xticks = np.arange(len(reducers)) + 0.4
                 subplt.set_xticks(xticks, minor=False)
-                subplt.set_yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], minor=False)
                 subplt.set_xticklabels(reducers, fontdict=None, minor=False)
+                subplt.set_yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], minor=False)
                 subplt.axhline(1 - pow(math.e, -load_factor), color="blue", ls="-")
 
             fig.text(0.5, 0.04, 'reduction algorithm', ha='center', va='center')
@@ -106,7 +106,8 @@ def plot_timing(key):
                 ds = dataset[dataset['sample_size'] == sample_size]
                 reducers = sorted(list(set(ds['reducer'])))
 
-                subplt = subplts[int(l / 2), l % 2]
+                subplt = subplts[int(l / plt_cnt), l % plt_cnt]
+
                 # order preserving deduplication
                 for j, model_name in enumerate([m for m in models if m in set(ds['model'])]):
                     series = list(ds[ds['model'] == model_name].sort_values('reducer')[key])
