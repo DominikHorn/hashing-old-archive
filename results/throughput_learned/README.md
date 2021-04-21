@@ -4,6 +4,12 @@ Results for the throughput experiment using learned hash functions. The experime
 as follows:
 
 ```
+raw_sample = sample(dataset)
+
+sample = prepare(raw_sample)
+
+model = Model(sample)
+
 for key in dataset {
     index = reduce(model.predict(key))
 }
