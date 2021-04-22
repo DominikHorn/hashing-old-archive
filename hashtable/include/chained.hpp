@@ -57,14 +57,16 @@ namespace Hashtable {
          while (slot != nullptr) {
             for (size_t i = 0; i < BucketSize; i++) {
                const auto entry = slot->entries[i];
-               if (entry->first == key) {
+               if (entry == std::nullopt) {
+                  return std::nullopt;
+               } else if (entry->first == key) {
                   return {entry->second};
                }
             }
             slot = slot->next;
          }
 
-         return {};
+         return std::nullopt;
       }
 
       forceinline size_t size() const {
