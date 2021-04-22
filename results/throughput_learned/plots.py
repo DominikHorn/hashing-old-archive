@@ -43,7 +43,7 @@ for compiler in compilers:
         plot_keys = ["sample_nanoseconds_per_key", "prepare_nanoseconds_per_key", "build_nanoseconds_per_key",
                      "hashing_nanoseconds_per_key"]
 
-        fig, subplts = plt.subplots(len(sample_sizes), len(plot_keys), figsize=(20, 15))
+        fig, subplts = plt.subplots(len(sample_sizes), len(plot_keys), sharey=True, sharex=True, figsize=(20, 15))
 
         for k, plot_key in enumerate(plot_keys):
             for l, sample_size in enumerate(sample_sizes):
@@ -69,8 +69,6 @@ for compiler in compilers:
                 xticks = np.arange(len(reducers)) + 0.4
                 subplt.set_xticks(xticks, minor=False)
                 subplt.set_xticklabels(reducers, fontdict=None, minor=False)
-                yticks = list(subplt.get_yticks())
-                subplt.set_yticks(yticks, minor=False)
 
         fig.text(0.5, 0.04, 'reduction algorithm', ha='center', va='center')
         fig.text(0.06, 0.5, 'nanoseconds per key', ha='center', va='center', rotation='vertical')
