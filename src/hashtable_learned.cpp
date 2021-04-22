@@ -120,7 +120,7 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
 }
 
 void print_max_resource_usage(const Args& args) {
-   auto spawned_thread_count = args.datasets.size() * args.load_factors.size();
+   auto spawned_thread_count = args.datasets.size() * args.load_factors.size() * 3;
    const auto max_thread_count = std::min(static_cast<size_t>(args.max_threads), spawned_thread_count);
    std::vector<size_t> thread_mem;
    size_t max_bytes = 0;
@@ -169,7 +169,7 @@ int main(int argc, char* argv[]) {
                static_cast<uint64_t>(static_cast<double>(dataset_ptr->size()) / static_cast<double>(load_factor));
 
             // Bucket size 1
-            threads.emplace_back(std::thread([&, dataset_ptr, load_factor] {
+            threads.emplace_back(std::thread([&, dataset_ptr, load_factor, hashtable_size] {
                cpu_blocker.aquire();
                Hashtable::Chained<HASH_64, uint64_t, 1> chained_1(hashtable_size);
                measure(it.name(), dataset_ptr, chained_1, 1, load_factor, outfile, iomutex);
@@ -177,7 +177,7 @@ int main(int argc, char* argv[]) {
             }));
 
             // Bucket size 2
-            threads.emplace_back(std::thread([&, dataset_ptr, load_factor] {
+            threads.emplace_back(std::thread([&, dataset_ptr, load_factor, hashtable_size] {
                cpu_blocker.aquire();
                Hashtable::Chained<HASH_64, uint64_t, 2> chained_2(hashtable_size);
                measure(it.name(), dataset_ptr, chained_2, 2, load_factor, outfile, iomutex);
@@ -185,7 +185,7 @@ int main(int argc, char* argv[]) {
             }));
 
             // Bucket size 4
-            threads.emplace_back(std::thread([&, dataset_ptr, load_factor] {
+            threads.emplace_back(std::thread([&, dataset_ptr, load_factor, hashtable_size] {
                cpu_blocker.aquire();
                Hashtable::Chained<HASH_64, uint64_t, 4> chained_4(hashtable_size);
                measure(it.name(), dataset_ptr, chained_4, 4, load_factor, outfile, iomutex);
