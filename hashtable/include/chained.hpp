@@ -89,7 +89,7 @@ namespace Hashtable {
 
       ~Chained() {
          for (auto& slot : slots) {
-            auto current = slot->next;
+            auto current = slot.next;
             while (current != nullptr) {
                auto next = current->next;
                delete current;
