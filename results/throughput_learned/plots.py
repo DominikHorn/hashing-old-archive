@@ -39,7 +39,7 @@ for compiler in compilers:
     for dataset_name in dataset_names:
         dataset = csv[csv['dataset'] == dataset_name]
         reducers = sorted(list(set(dataset['reducer'])))
-        sample_sizes = sorted(list(set(dataset['sample_size'])))
+        sample_sizes = list(reversed(sorted(list(set(dataset['sample_size'])))))
         plot_keys = ["sample_nanoseconds_per_key", "prepare_nanoseconds_per_key", "build_nanoseconds_per_key",
                      "hashing_nanoseconds_per_key"]
 
