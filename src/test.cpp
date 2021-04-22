@@ -16,8 +16,22 @@ struct mult64_fastrange64 {
 int main(int argc, char* argv[]) {
    Hashtable::Chained<HASH_64, uint64_t, mult64_fastrange64> chained(50);
 
-   for (HASH_64 key = 0; key < 100; key++) {
-      chained.insert(key, key - 5);
+   std::vector<HASH_64> keys(100, 0);
+   std::cout << "keys: ";
+   for (HASH_64& key : keys) {
+      key = rand();
+      std::cout << key << ", ";
+   }
+   std::cout << std::endl;
+
+   for (auto key : keys) {
+      const auto payload = key - 5;
+      chained.insert(key, payload);
+      assert(chained.lookup(key) == payload);
+   }
+
+   for (auto key : keys) {
+      assert(chained.lookup(key) == key - 5);
    }
 
    std::cout << "Test: " << chained.size() << std::endl;
