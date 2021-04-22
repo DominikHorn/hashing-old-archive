@@ -17,11 +17,12 @@ cd "$(dirname "$0")"
 mkdir -p results/{throughput_hash,throughput_learned,collisions_hash,collisions_learned,hashtable_hash,hashtable_learned}
 
 # Build with various compilers. SET THIS ACCORDING TO YOUR SYSTEM CONFIG
-compilers=(clang++ g++-10)
 for c in clang,clang++ gcc-10,g++-10
 do
+  _IFS=$IFS
   IFS=","
   set -- $c
+  IFS=$_IFS
 
   benchmark/throughput_hash-${2} \
     --outfile results/throughput_hash/throughput_hash-${2}.csv \

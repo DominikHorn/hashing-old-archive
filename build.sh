@@ -7,11 +7,12 @@ cd "$(dirname "$0")"
 mkdir -p benchmark
 
 # Build with various compilers. SET THIS ACCORDING TO YOUR SYSTEM CONFIG
-compilers=(clang++ g++-10)
 for c in clang,clang++ gcc-10,g++-10
 do
+  _IFS=$IFS
   IFS=","
   set -- $c
+  IFS=$_IFS
 
   cmake \
     -D CMAKE_BUILD_TYPE=Release \
