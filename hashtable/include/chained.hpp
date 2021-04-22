@@ -9,14 +9,15 @@
 #include <hashing.hpp>
 
 namespace Hashtable {
-   template<typename Key, typename Payload, typename HashFunctor, size_t BucketSize = 1>
+   template<typename Key, typename Payload, size_t BucketSize = 1>
    struct Chained {
       Chained(const size_t size) : slots(size){};
 
       // TODO: insert is not properly inlined at callsite by clang (gcc untested)
-      forceinline bool insert(const Key& key, const Payload payload) {
+      template<typename Hash>
+      forceinline bool insert(const Key& key, const Payload payload, const Hash& hashfn) {
          // Using template functor should successfully inline actual hash computation
-         const auto slot_index = HashFunctor()(key, this->size());
+         const auto slot_index = hashfn(key, this->size());
 
          Bucket* next_slot = &slots[slot_index];
          Bucket* slot = nullptr;
@@ -46,9 +47,10 @@ namespace Hashtable {
       }
 
       // TODO: lookup is not properly inlined at callsite by clang (gcc untested)
-      forceinline std::optional<Payload> lookup(const Key& key) const {
+      template<typename Hash>
+      forceinline std::optional<Payload> lookup(const Key& key, const Hash& hashfn) const {
          // Using template functor should successfully inline actual hash computation
-         const auto slot_index = HashFunctor()(key, this->size());
+         const auto slot_index = hashfn(key, this->size());
 
          auto slot = &slots[slot_index];
 
