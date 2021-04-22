@@ -8,7 +8,6 @@
 #include <convenience.hpp>
 #include <hashing.hpp>
 
-// TODO: virtual causes runtime polymorphism -> extra cache misses due to dynamic lookup (?)
 namespace Hashtable {
    template<typename Key, typename Payload, typename HashFunctor, size_t BucketSize = 1>
    struct Chained {
