@@ -6,7 +6,7 @@
 #include <reduction.hpp>
 
 struct mult64_fastrange64 {
-   static forceinline size_t hash(const HASH_64& key, const size_t& N) {
+   forceinline size_t operator()(const HASH_64& key, const size_t& N) {
       const auto hash = MultHash::mult64_hash(key);
       const auto index = Reduction::fastrange(hash, N);
       return index;
@@ -14,7 +14,7 @@ struct mult64_fastrange64 {
 };
 
 int main(int argc, char* argv[]) {
-   Hashtable::Chained<HASH_64, uint64_t, mult64_fastrange64> chained(100000000);
+   Hashtable::Chained<HASH_64, uint64_t, mult64_fastrange64> chained(100);
 
    std::vector<HASH_64> keys(100, 0);
    std::cout << "keys: ";

@@ -13,9 +13,10 @@ namespace Hashtable {
    struct Chained {
       Chained(const size_t size) : slots(size){};
 
+      // TODO: insert is not properly inlined at callsite by clang (gcc untested)
       forceinline bool insert(const Key& key, const Payload payload) {
          // Using template functor should successfully inline actual hash computation
-         const auto slot_index = HashFunctor::hash(key, this->size());
+         const auto slot_index = HashFunctor()(key, this->size());
 
          Bucket* next_slot = &slots[slot_index];
          Bucket* slot = nullptr;
@@ -44,9 +45,11 @@ namespace Hashtable {
          return true;
       }
 
+      // TODO: lookup is not properly inlined at callsite by clang (gcc untested)
       forceinline std::optional<Payload> lookup(const Key& key) const {
          // Using template functor should successfully inline actual hash computation
-         const auto slot_index = HashFunctor::hash(key, this->size());
+         const auto slot_index = HashFunctor()(key, this->size());
+
          auto slot = &slots[slot_index];
 
          while (slot != nullptr) {
