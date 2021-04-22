@@ -74,10 +74,10 @@ namespace Hashtable {
       void clear() {
          for (auto& slot : slots) {
             for (size_t i = 0; i < BucketSize; i++) {
-               slot->entries[i] = std::nullopt;
+               slot.entries[i] = std::nullopt;
             }
             auto current = slot.next;
-            slot->next = nullptr;
+            slot.next = nullptr;
 
             while (current != nullptr) {
                auto next = current->next;

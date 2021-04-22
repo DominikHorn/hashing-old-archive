@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
                measure_hashfn_with_reducer(hash_name, hashfn, "do_nothing", Reduction::do_nothing<HASH_64>);
                measure_hashfn_with_reducer(hash_name, hashfn, "fastrange32", Reduction::fastrange<HASH_32>);
                measure_hashfn_with_reducer(hash_name, hashfn, "fastrange64", Reduction::fastrange<HASH_64>);
-               measure_hashfn_with_reducer(hash_name, hashfn, "modulo", Reduction::modulo<HASH_64>);
+               measure_hashfn_with_reducer(hash_name, hashfn, "modulo", Reduction::modulo<HASH_64, HASH_64>);
                measure_hashfn_with_reducer(hash_name,
                                            hashfn,
                                            "fast_modulo",

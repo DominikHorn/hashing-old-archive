@@ -98,7 +98,7 @@ namespace Benchmark {
          for (const auto& key : dataset) {
             // Ensure the compiler does not simply remove this index
             // calculation during optimization.
-            Barrier::DoNotOptimize(reduce(hashfn(key), n));
+            CompilerHint::DoNotEliminate(reduce(hashfn(key), n));
          }
          const auto end_time = std::chrono::steady_clock::now();
          const auto delta_ns =
@@ -110,5 +110,38 @@ namespace Benchmark {
       }
 
       return {avg, repeatCnt};
+   }
+
+   struct HashtableStats {
+      uint64_t total_insert_ns;
+      uint64_t total_lookup_ns;
+   };
+
+   template<typename Hash, typename Hashtable>
+   HashtableStats measure_hashtable(const std::vector<uint64_t>& dataset, Hashtable& ht, const Hash& hashfn) {
+      // Ensure hashtable is empty when we begin
+      ht.clear();
+
+      // Insert every key
+      auto start_time = std::chrono::steady_clock::now();
+      for (const auto key : dataset) {
+         ht.insert(key, key - 5, hashfn);
+      }
+      auto end_time = std::chrono::steady_clock::now();
+      uint64_t total_insert_ns =
+         static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
+
+      // Lookup every key
+      start_time = std::chrono::steady_clock::now();
+      for (const auto& key : dataset) {
+         auto payload = ht.lookup(key, hashfn);
+         CompilerHint::DoNotEliminate(payload);
+         assert(payload == key - 5);
+      }
+      end_time = std::chrono::steady_clock::now();
+      uint64_t total_lookup_ns =
+         static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
+
+      return {total_insert_ns, total_lookup_ns};
    }
 } // namespace Benchmark

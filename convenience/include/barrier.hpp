@@ -211,10 +211,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Barrier {
+namespace CompilerHint {
 #if defined(__GNUC__) || defined(__clang__)
    template<class Tp>
-   forceinline void DoNotOptimize(Tp const& value) {
+   forceinline void DoNotEliminate(Tp const& value) {
       asm volatile("" : : "r,m"(value) : "memory");
    }
 
@@ -227,4 +227,4 @@ namespace Barrier {
    #endif
    }
 #endif
-} // namespace Barrier
+} // namespace CompilerHint

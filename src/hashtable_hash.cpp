@@ -8,12 +8,12 @@
 
 #include <convenience.hpp>
 #include <hashing.hpp>
+#include <hashtable.hpp>
 #include <reduction.hpp>
 
 #include "include/args.hpp"
 #include "include/benchmark.hpp"
 #include "include/csv.hpp"
-#include "include/random_hash.hpp"
 
 using Args = BenchmarkArgs::HashCollisionArgs;
 
@@ -23,17 +23,10 @@ const std::vector<std::string> csv_columns = {
    "load_factor",
    "hash",
    "reducer",
-   "min",
-   "max",
-   "std_dev",
-   "empty_slots",
-   "empty_slots_percent",
-   "colliding_slots",
-   "colliding_slots_percent",
-   "total_colliding_keys",
-   "total_colliding_keys_percent",
-   "nanoseconds_total",
-   "nanoseconds_per_key",
+   "insert_nanoseconds_total",
+   "insert_nanoseconds_per_key",
+   "lookup_nanoseconds_total",
+   "lookup_nanoseconds_per_key",
 };
 
 static void measure(const std::string& dataset_name, const std::shared_ptr<const std::vector<uint64_t>> dataset,
@@ -44,22 +37,23 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
    const auto hashtable_size =
       static_cast<uint64_t>(static_cast<double>(dataset->size()) / static_cast<double>(load_factor));
 
-   // Build load factor specific auxiliary data
-   const auto magic_branchfree_div = Reduction::make_branchfree_magic_divider(static_cast<HASH_64>(hashtable_size));
+   // Different hashtable implementations
+   Hashtable::Chained<HASH_64, uint64_t> chained(hashtable_size);
 
    // lambda to measure a given hash function with a given reducer. Will be entirely inlined by default
-   std::vector<uint32_t> collision_counter(hashtable_size);
-   const auto measure_hashfn_with_reducer = [&](const std::string& hash_name, const auto& hashfn,
-                                                const std::string& reducer_name, const auto& reducerfn) {
-      // Measure
-      const auto stats = Benchmark::measure_collisions(*dataset, collision_counter, hashfn, reducerfn);
+   const auto measure_hashfn_with_reducer = [&](const std::string& hash_name, const std::string& reducer_name,
+                                                const auto& hashfn) {
+      // Measure (TODO: also measure other hash table implementations)
+      const auto stats = Benchmark::measure_hashtable(*dataset, chained, hashfn);
 
 #ifdef VERBOSE
       {
          std::unique_lock<std::mutex> lock(iomutex);
-         std::cout << std::setw(55) << std::right << reducer_name + "(" + hash_name + ") took "
-                   << relative_to(stats.inference_reduction_memaccess_total_ns, dataset->size()) << " ns/key ("
-                   << nanoseconds_to_seconds(stats.inference_reduction_memaccess_total_ns) << " s total)" << std::endl;
+         std::cout << std::setw(55) << std::right << reducer_name + "(" + hash_name + ") insert took "
+                   << relative_to(stats.total_insert_ns, dataset->size()) << " ns/key ("
+                   << nanoseconds_to_seconds(stats.total_insert_ns) << " s total), lookup took "
+                   << relative_to(stats.total_lookup_ns, dataset->size()) << " ns/key ("
+                   << nanoseconds_to_seconds(stats.total_lookup_ns) << " s total)" << std::endl;
       };
 #endif
 
@@ -70,30 +64,38 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
          {"load_factor", str(load_factor)},
          {"hash", hash_name},
          {"reducer", reducer_name},
-         {"min", str(stats.min)},
-         {"max", str(stats.max)},
-         {"std_dev", str(stats.std_dev)},
-         {"empty_slots", str(stats.empty_slots)},
-         {"empty_slots_percent", str(relative_to(stats.empty_slots, hashtable_size))},
-         {"colliding_slots", str(stats.colliding_slots)},
-         {"colliding_slots_percent", str(relative_to(stats.colliding_slots, hashtable_size))},
-         {"total_colliding_keys", str(stats.total_colliding_keys)},
-         {"total_colliding_keys_percent", str(relative_to(stats.total_colliding_keys, dataset->size()))},
-         {"nanoseconds_total", str(stats.inference_reduction_memaccess_total_ns)},
-         {"nanoseconds_per_key", str(relative_to(stats.inference_reduction_memaccess_total_ns, dataset->size()))},
+         {"insert_nanoseconds_total", str(stats.total_insert_ns)},
+         {"insert_nanoseconds_per_key", str(relative_to(stats.total_insert_ns, dataset->size()))},
+         {"lookup_nanoseconds_total", str(stats.total_lookup_ns)},
+         {"lookup_nanoseconds_per_key", str(relative_to(stats.total_lookup_ns, dataset->size()))},
       });
    };
 
+   // Build load factor specific auxiliary data
+   const auto magic_div = Reduction::make_magic_divider(static_cast<HASH_64>(hashtable_size));
+   const auto magic_branchfree_div = Reduction::make_branchfree_magic_divider(static_cast<HASH_64>(hashtable_size));
+
    // measures a hash function using every reducer
    const auto measure_hashfn = [&](const std::string& hash_name, const auto& hashfn) {
-      measure_hashfn_with_reducer(hash_name, hashfn, "fastrange32", Reduction::fastrange<HASH_32>);
-      measure_hashfn_with_reducer(hash_name, hashfn, "fastrange64", Reduction::fastrange<HASH_64>);
+      const auto hash_fastrange32 = [&](const HASH_64& key, const size_t& N) {
+         return Reduction::fastrange<HASH_32>(hashfn(key), N);
+      };
+      const auto hash_fastrange64 = [&](const HASH_64& key, const size_t& N) {
+         return Reduction::fastrange<HASH_64>(hashfn(key), N);
+      };
+      const auto hash_modulo = [&](const HASH_64& key, const size_t& N) { return Reduction::modulo(hashfn(key), N); };
+      const auto hash_fast_modulo = [&](const HASH_64& key, const size_t& N) {
+         return Reduction::magic_modulo(hashfn(key), N, magic_div);
+      };
+      const auto hash_branchless_fast_modulo = [&](const HASH_64& key, const size_t& N) {
+         return Reduction::magic_modulo(hashfn(key), N, magic_branchfree_div);
+      };
 
-      // modulo, fast_modulo and branchless_fast_modulo only differ in the speed at which they complete computations
-      measure_hashfn_with_reducer(hash_name, hashfn, "branchless_fast_modulo",
-                                  [&magic_branchfree_div](const HASH_64& value, const HASH_64& n) {
-                                     return Reduction::magic_modulo(value, n, magic_branchfree_div);
-                                  });
+      measure_hashfn_with_reducer(hash_name, "fastrange32", hash_fastrange32);
+      measure_hashfn_with_reducer(hash_name, "fastrange64", hash_fastrange64);
+      measure_hashfn_with_reducer(hash_name, "modulo", hash_modulo);
+      measure_hashfn_with_reducer(hash_name, "fast_modulo", hash_fast_modulo);
+      measure_hashfn_with_reducer(hash_name, "branchless_fast_modulo", hash_branchless_fast_modulo);
    };
 
    /**
@@ -175,7 +177,8 @@ void print_max_resource_usage(const Args& args) {
       max_bytes += dataset_size; // each dataset is loaded in memory once
 
       for (const auto& load_fac : args.load_factors) {
-         thread_mem.emplace_back(static_cast<long double>(dataset_size) / load_fac);
+         // Chained hashtable memory consumption upper estimate
+         thread_mem.emplace_back((static_cast<long double>(dataset_size) / (load_fac * sizeof(uint64_t))) * 32);
       }
    }
    std::sort(thread_mem.rbegin(), thread_mem.rend());

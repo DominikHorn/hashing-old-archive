@@ -40,13 +40,13 @@ struct Reduction {
     * @param n upper bound for result interval
     * @return value mapped to interval [0, n]
     */
-   template<typename T>
-   static constexpr forceinline T modulo(const T& value, const T& n) {
+   template<typename T, typename R>
+   static constexpr forceinline T modulo(const T& value, const R& n) {
       return value % n;
    }
 
-   template<typename T, typename Divider = libdivide::divider<T>>
-   static constexpr forceinline T magic_modulo(const T& value, const T& n, const Divider& fast_d) {
+   template<typename T, typename R, typename Divider = libdivide::divider<T>>
+   static constexpr forceinline T magic_modulo(const T& value, const R& n, const Divider& fast_d) {
       // TODO: investigate SIMD batching opportunities (see libdivide include for different options)
 
       const auto div = value / fast_d; // Operator overloading ensures this is not an actual division
@@ -84,8 +84,8 @@ struct Reduction {
     * @param n upper bound for the result interval
     * @return value mapped to interval [0, n]
     */
-   template<typename T, typename R>
-   static constexpr forceinline T fastrange(const T& value, const R& n);
+   template<typename T>
+   static constexpr forceinline T fastrange(const T& value, const size_t& n);
 
    /**
     * min/max cuts the value
