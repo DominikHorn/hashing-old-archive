@@ -27,6 +27,8 @@ cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target collisions_has
 mv src/collisions_hash benchmark/collisions_hash-${CLANGCPP_BIN}
 cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target collisions_learned
 mv src/collisions_learned benchmark/collisions_learned-${CLANGCPP_BIN}
+cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target hashtable_hash
+mv src/hashtable_hash benchmark/hashtable_hash-${CLANGCPP_BIN}
 
 # build with gcc
 cmake \
@@ -43,3 +45,6 @@ cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target collisions_has
 mv src/collisions_hash benchmark/collisions_hash-${GCCPP_BIN}
 cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target collisions_learned
 mv src/collisions_learned benchmark/collisions_learned-${GCCPP_BIN}
+cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target hashtable_hash
+mv src/hashtable_hash benchmark/hashtable_hash-${GCCPP_BIN}
+
