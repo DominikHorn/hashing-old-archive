@@ -21,6 +21,7 @@ const std::vector<std::string> csv_columns = {
    "dataset",
    "numelements",
    "load_factor",
+   "bucket_size",
    "hash",
    "reducer",
    "insert_nanoseconds_total",
@@ -29,22 +30,20 @@ const std::vector<std::string> csv_columns = {
    "lookup_nanoseconds_per_key",
 };
 
+template<typename T>
 static void measure(const std::string& dataset_name, const std::shared_ptr<const std::vector<uint64_t>> dataset,
-                    const double load_factor, CSV& outfile, std::mutex& iomutex,
-                    const HASH_64 (&small_tabulation_table)[0xFF],
+                    const T& hashtable, const size_t bucket_size, const double load_factor, CSV& outfile,
+                    std::mutex& iomutex, const HASH_64 (&small_tabulation_table)[0xFF],
                     const HASH_64 (&large_tabulation_table)[sizeof(HASH_64)][0xFF]) {
    // Theoretical slot count of a hashtable on which we want to measure collisions
    const auto hashtable_size =
       static_cast<uint64_t>(static_cast<double>(dataset->size()) / static_cast<double>(load_factor));
 
-   // Different hashtable implementations
-   Hashtable::Chained<HASH_64, uint64_t> chained(hashtable_size);
-
    // lambda to measure a given hash function with a given reducer. Will be entirely inlined by default
    const auto measure_hashfn_with_reducer = [&](const std::string& hash_name, const std::string& reducer_name,
                                                 const auto& hashfn) {
-      // Measure (TODO: also measure other hash table implementations)
-      const auto stats = Benchmark::measure_hashtable(*dataset, chained, hashfn);
+      // Measure
+      const auto stats = Benchmark::measure_hashtable(*dataset, hashtable, hashfn);
 
 #ifdef VERBOSE
       {
@@ -62,6 +61,7 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
          {"dataset", dataset_name},
          {"numelements", str(dataset->size())},
          {"load_factor", str(load_factor)},
+         {"bucket_size", str(bucket_size)},
          {"hash", hash_name},
          {"reducer", reducer_name},
          {"insert_nanoseconds_total", str(stats.total_insert_ns)},
@@ -73,7 +73,6 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
 
    // Build load factor specific auxiliary data
    const auto magic_div = Reduction::make_magic_divider(static_cast<HASH_64>(hashtable_size));
-   const auto magic_branchfree_div = Reduction::make_branchfree_magic_divider(static_cast<HASH_64>(hashtable_size));
 
    // measures a hash function using every reducer
    const auto measure_hashfn = [&](const std::string& hash_name, const auto& hashfn) {
@@ -83,87 +82,27 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
       const auto hash_fastrange64 = [&](const HASH_64& key, const size_t& N) {
          return Reduction::fastrange<HASH_64>(hashfn(key), N);
       };
-      const auto hash_modulo = [&](const HASH_64& key, const size_t& N) { return Reduction::modulo(hashfn(key), N); };
       const auto hash_fast_modulo = [&](const HASH_64& key, const size_t& N) {
          return Reduction::magic_modulo(hashfn(key), N, magic_div);
-      };
-      const auto hash_branchless_fast_modulo = [&](const HASH_64& key, const size_t& N) {
-         return Reduction::magic_modulo(hashfn(key), N, magic_branchfree_div);
       };
 
       measure_hashfn_with_reducer(hash_name, "fastrange32", hash_fastrange32);
       measure_hashfn_with_reducer(hash_name, "fastrange64", hash_fastrange64);
-      measure_hashfn_with_reducer(hash_name, "modulo", hash_modulo);
       measure_hashfn_with_reducer(hash_name, "fast_modulo", hash_fast_modulo);
-      measure_hashfn_with_reducer(hash_name, "branchless_fast_modulo", hash_branchless_fast_modulo);
    };
 
-   /**
-    * ====================================
-    *        Classic hash functions
-    * ====================================
-    */
    measure_hashfn("mult64", [](const HASH_64& key) { return MultHash::mult64_hash(key); });
-   measure_hashfn("fibo64", [](const HASH_64& key) { return MultHash::fibonacci64_hash(key); });
-   measure_hashfn("fibo_prime64", [](const HASH_64& key) { return MultHash::fibonacci_prime64_hash(key); });
    measure_hashfn("multadd64", [](const HASH_64& key) { return MultAddHash::multadd64_hash(key); });
 
    // More significant bits supposedly are of higher quality for multiplicative methods -> compute
    // how much we need to shift/rotate to throw away the least/make 'high quality bits' as prominent as possible
    const auto p = (sizeof(hashtable_size) * 8) - __builtin_clz(hashtable_size - 1);
-   measure_hashfn("mult64_shift" + std::to_string(p),
-                  [p](const HASH_64& key) { return MultHash::mult64_hash(key, p); });
-   measure_hashfn("fibo64_shift" + std::to_string(p),
-                  [p](const HASH_64& key) { return MultHash::fibonacci64_hash(key, p); });
-   measure_hashfn("fibo_prime64_shift" + std::to_string(p),
-                  [p](const HASH_64& key) { return MultHash::fibonacci_prime64_hash(key, p); });
    measure_hashfn("multadd64_shift" + std::to_string(p),
                   [p](const HASH_64& key) { return MultAddHash::multadd64_hash(key, p); });
-   const unsigned int rot = 64 - p;
-   measure_hashfn("mult64_rotate" + std::to_string(rot),
-                  [&](const HASH_64& key) { return rotr(MultHash::mult64_hash(key), rot); });
-   measure_hashfn("fibo64_rotate" + std::to_string(rot),
-                  [&](const HASH_64& key) { return rotr(MultHash::fibonacci64_hash(key), rot); });
-   measure_hashfn("fibo_prime64_rotate" + std::to_string(rot),
-                  [&](const HASH_64& key) { return rotr(MultHash::fibonacci_prime64_hash(key), rot); });
-   measure_hashfn("multadd64_rotate" + std::to_string(rot),
-                  [&](const HASH_64& key) { return rotr(MultAddHash::multadd64_hash(key), rot); });
 
-   measure_hashfn("murmur3_128_low",
-                  [](const HASH_64& key) { return Reduction::lower_half(MurmurHash3::murmur3_128(key)); });
-   measure_hashfn("murmur3_128_upp",
-                  [](const HASH_64& key) { return Reduction::upper_half(MurmurHash3::murmur3_128(key)); });
-   measure_hashfn("murmur3_128_xor",
-                  [](const HASH_64& key) { return Reduction::xor_both(MurmurHash3::murmur3_128(key)); });
-   measure_hashfn("murmur3_128_city",
-                  [](const HASH_64& key) { return Reduction::hash_128_to_64(MurmurHash3::murmur3_128(key)); });
    measure_hashfn("murmur3_fin64", [](const HASH_64& key) { return MurmurHash3::finalize_64(key); });
-
-   measure_hashfn("xxh64", [](const HASH_64& key) { return XXHash::XXH64_hash(key); });
-   measure_hashfn("xxh3", [](const HASH_64& key) { return XXHash::XXH3_hash(key); });
-   measure_hashfn("xxh3_128_low", [](const HASH_64& key) { return Reduction::lower_half(XXHash::XXH3_128_hash(key)); });
-   measure_hashfn("xxh3_128_upp", [](const HASH_64& key) { return Reduction::upper_half(XXHash::XXH3_128_hash(key)); });
-   measure_hashfn("xxh3_128_xor", [](const HASH_64& key) { return Reduction::xor_both(XXHash::XXH3_128_hash(key)); });
-   measure_hashfn("xxh3_128_city",
-                  [](const HASH_64& key) { return Reduction::hash_128_to_64(XXHash::XXH3_128_hash(key)); });
-
-   measure_hashfn("tabulation_small64",
-                  [&](const HASH_64& key) { return TabulationHash::small_hash(key, small_tabulation_table); });
-   measure_hashfn("tabulation_large64",
-                  [&](const HASH_64& key) { return TabulationHash::large_hash(key, large_tabulation_table); });
-
-   measure_hashfn("city64", [](const HASH_64& key) { return CityHash::CityHash64(key); });
-   measure_hashfn("city128_low", [](const HASH_64& key) { return Reduction::lower_half(CityHash::CityHash128(key)); });
-   measure_hashfn("city128_upp", [](const HASH_64& key) { return Reduction::upper_half(CityHash::CityHash128(key)); });
-   measure_hashfn("city128_xor", [](const HASH_64& key) { return Reduction::xor_both(CityHash::CityHash128(key)); });
-   measure_hashfn("city128_city",
-                  [](const HASH_64& key) { return Reduction::hash_128_to_64(CityHash::CityHash128(key)); });
-
-   measure_hashfn("meow64_low", [](const HASH_64& key) { return MeowHash::hash64(key); });
-   measure_hashfn("meow64_upp", [](const HASH_64& key) { return MeowHash::hash64<1>(key); });
-
+   //   measure_hashfn("meow64_low", [](const HASH_64& key) { return MeowHash::hash64(key); });
    measure_hashfn("aqua_low", [](const HASH_64& key) { return AquaHash::hash64(key); });
-   measure_hashfn("aqua_upp", [](const HASH_64& key) { return AquaHash::hash64<1>(key); });
 }
 
 void print_max_resource_usage(const Args& args) {
@@ -217,9 +156,33 @@ int main(int argc, char* argv[]) {
          const auto dataset_ptr = std::make_shared<const std::vector<uint64_t>>(it.load(iomutex));
 
          for (auto load_factor : args.load_factors) {
+            // Theoretical slot count of a hashtable on which we want to measure collisions
+            const auto hashtable_size =
+               static_cast<uint64_t>(static_cast<double>(dataset_ptr->size()) / static_cast<double>(load_factor));
+
+            // Bucket size 1
             threads.emplace_back(std::thread([&, dataset_ptr, load_factor] {
                cpu_blocker.aquire();
-               measure(it.name(), dataset_ptr, load_factor, outfile, iomutex, small_tabulation_table,
+               Hashtable::Chained<HASH_64, uint64_t, 1> chained_1(hashtable_size);
+               measure(it.name(), dataset_ptr, chained_1, 1, load_factor, outfile, iomutex, small_tabulation_table,
+                       large_tabulation_table);
+               cpu_blocker.release();
+            }));
+
+            // Bucket size 2
+            threads.emplace_back(std::thread([&, dataset_ptr, load_factor] {
+               cpu_blocker.aquire();
+               Hashtable::Chained<HASH_64, uint64_t, 2> chained_2(hashtable_size);
+               measure(it.name(), dataset_ptr, chained_2, 2, load_factor, outfile, iomutex, small_tabulation_table,
+                       large_tabulation_table);
+               cpu_blocker.release();
+            }));
+
+            // Bucket size 4
+            threads.emplace_back(std::thread([&, dataset_ptr, load_factor] {
+               cpu_blocker.aquire();
+               Hashtable::Chained<HASH_64, uint64_t, 4> chained_4(hashtable_size);
+               measure(it.name(), dataset_ptr, chained_4, 4, load_factor, outfile, iomutex, small_tabulation_table,
                        large_tabulation_table);
                cpu_blocker.release();
             }));
