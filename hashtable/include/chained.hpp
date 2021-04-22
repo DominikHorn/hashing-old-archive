@@ -6,7 +6,6 @@
 #include <vector>
 
 #include <convenience.hpp>
-#include <hashing.hpp>
 
 namespace Hashtable {
    template<typename Key, typename Payload, size_t BucketSize = 1>
