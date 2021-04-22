@@ -32,8 +32,8 @@ const std::vector<std::string> csv_columns = {
 
 template<typename T>
 static void measure(const std::string& dataset_name, const std::shared_ptr<const std::vector<uint64_t>> dataset,
-                    const T& hashtable, const size_t bucket_size, const double load_factor, CSV& outfile,
-                    std::mutex& iomutex, const HASH_64 (&small_tabulation_table)[0xFF],
+                    T& hashtable, const size_t bucket_size, const double load_factor, CSV& outfile, std::mutex& iomutex,
+                    const HASH_64 (&small_tabulation_table)[0xFF],
                     const HASH_64 (&large_tabulation_table)[sizeof(HASH_64)][0xFF]) {
    // Theoretical slot count of a hashtable on which we want to measure collisions
    const auto hashtable_size =
