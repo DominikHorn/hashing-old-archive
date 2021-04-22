@@ -84,8 +84,8 @@ struct Reduction {
     * @param n upper bound for the result interval
     * @return value mapped to interval [0, n]
     */
-   template<typename T>
-   static constexpr forceinline T fastrange(const T& value, const T& n);
+   template<typename T, typename R>
+   static constexpr forceinline T fastrange(const T& value, const R& n);
 
    /**
     * min/max cuts the value
@@ -202,12 +202,12 @@ struct Reduction {
 };
 
 template<>
-constexpr forceinline HASH_32 Reduction::fastrange(const HASH_32& value, const HASH_32& n) {
+constexpr forceinline HASH_32 Reduction::fastrange(const HASH_32& value, const size_t& n) {
    return static_cast<HASH_32>((static_cast<uint64_t>(value) * static_cast<uint64_t>(n)) >> 32);
 }
 
 template<>
-constexpr forceinline HASH_64 Reduction::fastrange(const HASH_64& value, const HASH_64& n) {
+constexpr forceinline HASH_64 Reduction::fastrange(const HASH_64& value, const size_t& n) {
 #ifdef __SIZEOF_INT128__
    return static_cast<HASH_64>((static_cast<__uint128_t>(value) * static_cast<__uint128_t>(n)) >> 64);
 #else

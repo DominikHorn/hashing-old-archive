@@ -4,7 +4,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_compile_definitions(VERBOSE)
 
 add_executable(test test.cpp)
-target_link_libraries(test convenience hashing cxxopts)
+target_link_libraries(test convenience hashtable hashing reduction)
 
 add_executable(collisions_hash collisions_hash.cpp)
 target_link_libraries(collisions_hash convenience reduction hashing cxxopts)
