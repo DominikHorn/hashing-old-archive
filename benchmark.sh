@@ -19,7 +19,7 @@ cd "$(dirname "$0")"
 # Ensure binaries are freshly built
 ./build.sh
 
-mkdir -p results/{throughput_hash,throughput_learned,collisions_hash,collisions_learned}
+mkdir -p results/{throughput_hash,throughput_learned,collisions_hash,collisions_learned,hashtable_hash,hashtable_learned}
 
 # Clang benchmarks
 benchmark/throughput_hash-${CLANGCPP_BIN} \
@@ -46,6 +46,12 @@ benchmark/collisions_learned-${CLANGCPP_BIN} \
   --max_threads=${MAX_THREADS} \
   $DATASETS
 
+benchmark/hashtable_hash-${CLANGCPP_BIN} \
+  --load_factors=${LOAD_FACTORS} \
+  --outfile results/hashtable_hash/hashtable_hash-${CLANGCPP_BIN}.csv \
+  --max_threads=${MAX_THREADS} \
+  $DATASETS
+
 # GCC benchmarks
 benchmark/throughput_hash-${GCCPP_BIN} \
   --outfile results/throughput_hash/throughput_hash-${GCCPP_BIN}.csv \
@@ -68,6 +74,12 @@ benchmark/collisions_learned-${GCCPP_BIN} \
   --load_factors=${LOAD_FACTORS} \
   --sample_sizes=${SAMPLE_SIZES} \
   --outfile results/collisions_learned/collisions_learned-${GCCPP_BIN}.csv \
+  --max_threads=${MAX_THREADS} \
+  $DATASETS
+
+benchmark/hashtable_hash-${GCCPP_BIN} \
+  --load_factors=${LOAD_FACTORS} \
+  --outfile results/hashtable_hash/hashtable_hash-${GCCPP_BIN}.csv \
   --max_threads=${MAX_THREADS} \
   $DATASETS
 
