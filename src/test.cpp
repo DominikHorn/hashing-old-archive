@@ -14,7 +14,7 @@ struct mult64_fastrange64 {
 };
 
 int main(int argc, char* argv[]) {
-   Hashtable::Chained<HASH_64, uint64_t, mult64_fastrange64> chained(50);
+   Hashtable::Chained<HASH_64, uint64_t, mult64_fastrange64> chained(100000000);
 
    std::vector<HASH_64> keys(100, 0);
    std::cout << "keys: ";
