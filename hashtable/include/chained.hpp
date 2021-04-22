@@ -69,6 +69,17 @@ namespace Hashtable {
          return slots.size();
       }
 
+      ~Chained() {
+         for (auto& slot : slots) {
+            auto current = slot->next;
+            while (current != nullptr) {
+               auto next = current->next;
+               delete current;
+               current = next;
+            }
+         }
+      }
+
      protected:
       struct Bucket {
          std::array<std::optional<std::pair<Key, Payload>>, BucketSize> entries;
