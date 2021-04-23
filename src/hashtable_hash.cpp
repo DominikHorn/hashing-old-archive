@@ -163,27 +163,33 @@ int main(int argc, char* argv[]) {
             // Bucket size 1
             threads.emplace_back(std::thread([&, dataset_ptr, load_factor, hashtable_size] {
                cpu_blocker.aquire();
-               Hashtable::Chained<HASH_64, uint64_t, 1> chained_1(hashtable_size);
-               measure(it.name(), dataset_ptr, chained_1, 1, load_factor, outfile, iomutex, small_tabulation_table,
-                       large_tabulation_table);
+               {
+                  Hashtable::Chained<HASH_64, uint64_t, 1> chained_1(hashtable_size);
+                  measure(it.name(), dataset_ptr, chained_1, 1, load_factor, outfile, iomutex, small_tabulation_table,
+                          large_tabulation_table);
+               }
                cpu_blocker.release();
             }));
 
             // Bucket size 2
             threads.emplace_back(std::thread([&, dataset_ptr, load_factor, hashtable_size] {
                cpu_blocker.aquire();
-               Hashtable::Chained<HASH_64, uint64_t, 2> chained_2(hashtable_size);
-               measure(it.name(), dataset_ptr, chained_2, 2, load_factor, outfile, iomutex, small_tabulation_table,
-                       large_tabulation_table);
+               {
+                  Hashtable::Chained<HASH_64, uint64_t, 2> chained_2(hashtable_size);
+                  measure(it.name(), dataset_ptr, chained_2, 2, load_factor, outfile, iomutex, small_tabulation_table,
+                          large_tabulation_table);
+               }
                cpu_blocker.release();
             }));
 
             // Bucket size 4
             threads.emplace_back(std::thread([&, dataset_ptr, load_factor, hashtable_size] {
                cpu_blocker.aquire();
-               Hashtable::Chained<HASH_64, uint64_t, 4> chained_4(hashtable_size);
-               measure(it.name(), dataset_ptr, chained_4, 4, load_factor, outfile, iomutex, small_tabulation_table,
-                       large_tabulation_table);
+               {
+                  Hashtable::Chained<HASH_64, uint64_t, 4> chained_4(hashtable_size);
+                  measure(it.name(), dataset_ptr, chained_4, 4, load_factor, outfile, iomutex, small_tabulation_table,
+                          large_tabulation_table);
+               }
                cpu_blocker.release();
             }));
          }
