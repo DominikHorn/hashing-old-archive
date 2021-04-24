@@ -3,36 +3,24 @@
 #include <convenience.hpp>
 #include <hashing.hpp>
 #include <hashtable.hpp>
-#include <reduction.hpp>
-
-struct mult64_fastrange64 {
-   forceinline size_t operator()(const HASH_64& key, const size_t& N) {
-      const auto hash = MultHash::mult64_hash(key);
-      const auto index = Reduction::fastrange(hash, N);
-      return index;
-   }
-};
 
 int main(int argc, char* argv[]) {
-   Hashtable::Chained<HASH_64, uint64_t, mult64_fastrange64> chained(100);
+   const auto zero_hash = [](const HASH_64& val, const size_t& N) { return 0; };
 
-   std::vector<HASH_64> keys(100, 0);
-   std::cout << "keys: ";
-   for (HASH_64& key : keys) {
-      key = rand();
-      std::cout << key << ", ";
+   {
+      Hashtable::Chained<HASH_64, uint64_t> chained(10);
+
+      for (size_t r = 0; r < 10; r++) {
+         for (size_t i = 0; i < 10000; i++) {
+            auto key = rand();
+            auto payload = key - 5;
+            chained.insert(key, payload, zero_hash);
+            assert(chained.lookup(key, zero_hash) == payload);
+         }
+
+         chained.clear();
+      }
+      std::cout << "Test: " << chained.size() << std::endl;
    }
-   std::cout << std::endl;
-
-   for (auto key : keys) {
-      const auto payload = key - 5;
-      chained.insert(key, payload);
-      assert(chained.lookup(key) == payload);
-   }
-
-   for (auto key : keys) {
-      assert(chained.lookup(key) == key - 5);
-   }
-
-   std::cout << "Test: " << chained.size() << std::endl;
+   return 0;
 }
