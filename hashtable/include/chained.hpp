@@ -123,7 +123,7 @@ namespace Hashtable {
 
          std::array<Entry, BucketSize> entries;
          Bucket* next = nullptr;
-      };
+      } packed;
 
       // First bucket is always inline in the slot
       std::vector<Bucket> slots;
