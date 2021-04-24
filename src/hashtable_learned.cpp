@@ -125,17 +125,16 @@ void print_max_resource_usage(const Args& args) {
    for (const auto& dataset : args.datasets) {
       const auto path = std::filesystem::current_path() / dataset.filepath;
       const auto dataset_size = std::filesystem::file_size(path);
-      max_bytes += dataset_size; // each dataset is loaded in memory once
 
       for (const auto& load_fac : args.load_factors) {
          const auto base_ht_size =
             (static_cast<long double>(dataset_size - dataset.bytesPerValue) / (load_fac * dataset.bytesPerValue)) * 32;
          const auto max_excess_buckets_size =
             (static_cast<long double>(dataset_size - 2 * dataset.bytesPerValue) / (dataset.bytesPerValue)) * 32;
-         //         const auto model_size = (?)
+         //         const auto learned_index_size = (?)
 
          // Chained hashtable memory consumption upper estimate
-         exec_mem.emplace_back(base_ht_size + max_excess_buckets_size);
+         exec_mem.emplace_back(dataset_size + base_ht_size + max_excess_buckets_size);
       }
    }
 
