@@ -98,7 +98,7 @@ namespace Benchmark {
          for (const auto& key : dataset) {
             // Ensure the compiler does not simply remove this index
             // calculation during optimization.
-            CompilerHint::DoNotEliminate(reduce(hashfn(key), n));
+            Optimizer::DoNotEliminate(reduce(hashfn(key), n));
          }
          const auto end_time = std::chrono::steady_clock::now();
          const auto delta_ns =
@@ -135,7 +135,7 @@ namespace Benchmark {
       start_time = std::chrono::steady_clock::now();
       for (const auto& key : dataset) {
          auto payload = ht.lookup(key, hashfn);
-         CompilerHint::DoNotEliminate(payload);
+         Optimizer::DoNotEliminate(payload);
          assert(payload == key - 5);
       }
       end_time = std::chrono::steady_clock::now();

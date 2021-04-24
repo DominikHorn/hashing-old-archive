@@ -211,20 +211,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace CompilerHint {
+namespace Optimizer {
 #if defined(__GNUC__) || defined(__clang__)
    template<class Tp>
    forceinline void DoNotEliminate(Tp const& value) {
       asm volatile("" : : "r,m"(value) : "memory");
    }
-
-   template<class Tp>
-   forceinline void DoNotOptimize(Tp& value) {
-   #if defined(__clang__)
-      asm volatile("" : "+r,m"(value) : : "memory");
-   #else
-      asm volatile("" : "+m,r"(value) : : "memory");
-   #endif
-   }
 #endif
-} // namespace CompilerHint
+} // namespace Optimizer
