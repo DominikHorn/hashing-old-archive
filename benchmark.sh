@@ -51,12 +51,10 @@ do
   benchmark/hashtable_hash-${2} \
     --load_factors=${LOAD_FACTORS} \
     --outfile results/hashtable_hash/hashtable_hash-${2}.csv \
-    --max_threads=${MAX_THREADS} \
     $DATASETS
 
   benchmark/hashtable_learned-${2} \
     --load_factors=${LOAD_FACTORS} \
     --outfile results/hashtable_learned/hashtable_learned-${2}.csv \
-    --max_threads=${MAX_THREADS} \
     $DATASETS
 done

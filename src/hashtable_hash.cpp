@@ -106,28 +106,27 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
 }
 
 void print_max_resource_usage(const Args& args) {
-   auto spawned_thread_count = args.datasets.size() * args.load_factors.size() * 3;
-   const auto max_thread_count = std::min(static_cast<size_t>(args.max_threads), spawned_thread_count);
-   std::vector<size_t> thread_mem;
+   std::vector<size_t> exec_mem;
    size_t max_bytes = 0;
    for (const auto& dataset : args.datasets) {
       const auto path = std::filesystem::current_path() / dataset.filepath;
       const auto dataset_size = std::filesystem::file_size(path);
-      max_bytes += dataset_size; // each dataset is loaded in memory once
 
       for (const auto& load_fac : args.load_factors) {
+         const auto base_ht_size =
+            (static_cast<long double>(dataset_size - dataset.bytesPerValue) / (load_fac * dataset.bytesPerValue)) * 32;
+         const auto max_excess_buckets_size =
+            (static_cast<long double>(dataset_size - 2 * dataset.bytesPerValue) / (dataset.bytesPerValue)) * 32;
+
          // Chained hashtable memory consumption upper estimate
-         thread_mem.emplace_back((static_cast<long double>(dataset_size) / (load_fac * sizeof(uint64_t))) * 32);
+         exec_mem.emplace_back(dataset_size + base_ht_size + max_excess_buckets_size);
       }
    }
-   std::sort(thread_mem.rbegin(), thread_mem.rend());
 
-   for (size_t i = 0; i < max_thread_count; i++) {
-      max_bytes += thread_mem[i];
-   }
+   std::sort(exec_mem.rbegin(), exec_mem.rend());
+   max_bytes += exec_mem[0];
 
-   std::cout << "Will concurrently schedule <= " << max_thread_count
-             << " threads while consuming <= " << max_bytes / (std::pow(1024, 3)) << " GB of ram" << std::endl;
+   std::cout << "Will consume max <= " << max_bytes / (std::pow(1024, 3)) << " GB of ram" << std::endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -137,12 +136,8 @@ int main(int argc, char* argv[]) {
       print_max_resource_usage(args);
 #endif
 
-      CSV outfile(args.outfile, csv_columns);
-
-      // Worker pool for speeding up the benchmarking
       std::mutex iomutex;
-      std::counting_semaphore cpu_blocker(args.max_threads);
-      std::vector<std::thread> threads{};
+      CSV outfile(args.outfile, csv_columns);
 
       // Precompute tabulation hash tables once (don't have to change per dataset)
       HASH_64 small_tabulation_table[0xFF];
@@ -161,52 +156,27 @@ int main(int argc, char* argv[]) {
                static_cast<uint64_t>(static_cast<double>(dataset_ptr->size()) / static_cast<double>(load_factor));
 
             // Bucket size 1
-            threads.emplace_back(std::thread([&, dataset_ptr, load_factor, hashtable_size] {
-               cpu_blocker.aquire();
-               {
-                  Hashtable::Chained<HASH_64, uint64_t, 1> chained_1(hashtable_size);
-                  measure(it.name(), dataset_ptr, chained_1, 1, load_factor, outfile, iomutex, small_tabulation_table,
-                          large_tabulation_table);
-               }
-               cpu_blocker.release();
-            }));
+            {
+               Hashtable::Chained<HASH_64, uint64_t, 1> chained_1(hashtable_size);
+               measure(it.name(), dataset_ptr, chained_1, 1, load_factor, outfile, iomutex, small_tabulation_table,
+                       large_tabulation_table);
+            }
 
             // Bucket size 2
-            threads.emplace_back(std::thread([&, dataset_ptr, load_factor, hashtable_size] {
-               cpu_blocker.aquire();
-               {
-                  Hashtable::Chained<HASH_64, uint64_t, 2> chained_2(hashtable_size);
-                  measure(it.name(), dataset_ptr, chained_2, 2, load_factor, outfile, iomutex, small_tabulation_table,
-                          large_tabulation_table);
-               }
-               cpu_blocker.release();
-            }));
+            {
+               Hashtable::Chained<HASH_64, uint64_t, 2> chained_2(hashtable_size);
+               measure(it.name(), dataset_ptr, chained_2, 2, load_factor, outfile, iomutex, small_tabulation_table,
+                       large_tabulation_table);
+            }
 
             // Bucket size 4
-            threads.emplace_back(std::thread([&, dataset_ptr, load_factor, hashtable_size] {
-               cpu_blocker.aquire();
-               {
-                  Hashtable::Chained<HASH_64, uint64_t, 4> chained_4(hashtable_size);
-                  measure(it.name(), dataset_ptr, chained_4, 4, load_factor, outfile, iomutex, small_tabulation_table,
-                          large_tabulation_table);
-               }
-               cpu_blocker.release();
-            }));
+            {
+               Hashtable::Chained<HASH_64, uint64_t, 4> chained_4(hashtable_size);
+               measure(it.name(), dataset_ptr, chained_4, 4, load_factor, outfile, iomutex, small_tabulation_table,
+                       large_tabulation_table);
+            }
          }
-
-#ifdef LOW_MEMORY
-         for (auto& t : threads) {
-            t.join();
-         }
-         threads.clear();
       }
-#else
-      }
-      for (auto& t : threads) {
-         t.join();
-      }
-      threads.clear();
-#endif
    } catch (const std::exception& ex) {
       std::cerr << ex.what() << std::endl;
       return -1;
