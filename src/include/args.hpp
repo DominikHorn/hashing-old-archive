@@ -208,6 +208,7 @@ namespace BenchmarkArgs {
 
    struct LearnedThroughputArgs {
       std::string outfile;
+      unsigned int max_threads;
       std::vector<Dataset> datasets;
       std::vector<double> sample_sizes;
 
@@ -222,6 +223,10 @@ namespace BenchmarkArgs {
                (outfile_key,
                 "path to output file for storing results as csv. NOTE: file will always be overwritten",
                 cxxopts::value<std::string>()) //
+               (max_threads_key,
+                "maximum amount of threads to concurrently execute. NOTE: more threads may be created but only " +
+                   max_threads_key + " will actually execute at the same time.",
+                cxxopts::value<unsigned int>()->default_value(std::to_string(std::thread::hardware_concurrency()))) //
                (sample_sizes_key,
                 "comma separated list of sample sizes to measure, i.e., percentage floating point values",
                 cxxopts::value<std::vector<double>>()->default_value("0.01")) //
@@ -253,6 +258,7 @@ namespace BenchmarkArgs {
             // Extract
             outfile = result[outfile_key].as<std::string>();
             sample_sizes = result[sample_sizes_key].as<std::vector<double>>();
+            max_threads = result[max_threads_key].as<unsigned int>();
             datasets = result[datasets_key].as<std::vector<Dataset>>();
          } catch (const std::exception& ex) {
             std::cerr << "error: " << ex.what() << std::endl;
