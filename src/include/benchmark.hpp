@@ -136,7 +136,6 @@ namespace Benchmark {
       for (const auto& key : dataset) {
          auto payload = ht.lookup(key, hashfn);
          Optimizer::DoNotEliminate(payload);
-         assert(payload == key - 5); // debug only
          full_mem_barrier // emulate doing something with payload, i.e., wait for it!
       }
       end_time = std::chrono::steady_clock::now();
