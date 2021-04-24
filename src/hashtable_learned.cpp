@@ -127,10 +127,14 @@ void print_max_resource_usage(const Args& args) {
       const auto dataset_size = std::filesystem::file_size(path);
 
       for (const auto& load_fac : args.load_factors) {
+         const auto max_bucket_size = std::max(Hashtable::Chained<uint64_t, uint8_t, 4>::bucket_size(),
+                                               Hashtable::Chained<uint64_t, uint32_t, 2>::bucket_size());
          const auto base_ht_size =
-            (static_cast<long double>(dataset_size - dataset.bytesPerValue) / (load_fac * dataset.bytesPerValue)) * 32;
+            (static_cast<long double>(dataset_size - dataset.bytesPerValue) / (load_fac * dataset.bytesPerValue)) *
+            max_bucket_size;
          const auto max_excess_buckets_size =
-            (static_cast<long double>(dataset_size - 2 * dataset.bytesPerValue) / (dataset.bytesPerValue)) * 32;
+            (static_cast<long double>(dataset_size - 2 * dataset.bytesPerValue) / (dataset.bytesPerValue)) *
+            max_bucket_size;
          //         const auto learned_index_size = (?)
 
          // Chained hashtable memory consumption upper estimate
@@ -168,19 +172,19 @@ int main(int argc, char* argv[]) {
 
             // Bucket size 1
             {
-               Hashtable::Chained<HASH_64, uint64_t, 1> chained_1(hashtable_size);
+               Hashtable::Chained<HASH_64, uint32_t, 1> chained_1(hashtable_size);
                measure(it.name(), dataset_ptr, chained_1, 1, load_factor, outfile, iomutex);
             }
 
             // Bucket size 2
             {
-               Hashtable::Chained<HASH_64, uint64_t, 2> chained_2(hashtable_size);
+               Hashtable::Chained<HASH_64, uint32_t, 2> chained_2(hashtable_size);
                measure(it.name(), dataset_ptr, chained_2, 2, load_factor, outfile, iomutex);
             }
 
             // Bucket size 4
             {
-               Hashtable::Chained<HASH_64, uint64_t, 4> chained_4(hashtable_size);
+               Hashtable::Chained<HASH_64, uint8_t, 4> chained_4(hashtable_size);
                measure(it.name(), dataset_ptr, chained_4, 4, load_factor, outfile, iomutex);
             }
          }

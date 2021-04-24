@@ -117,7 +117,7 @@ namespace Benchmark {
       uint64_t total_lookup_ns;
    };
 
-   template<typename Hash, typename Hashtable>
+   template<typename Hashtable, typename Hash>
    HashtableStats measure_hashtable(const std::vector<uint64_t>& dataset, Hashtable& ht, const Hash& hashfn) {
       // Ensure hashtable is empty when we begin
       ht.clear();
