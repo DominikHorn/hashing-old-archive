@@ -82,7 +82,7 @@ for compiler in compilers:
                 f"collisions on {dataset_name} using compiler {compiler}")
             fig.legend(
                 handles=[mpatches.Patch(color=colors.get(name), label=name) for name in models],
-                bbox_to_anchor=(0.3, 0), loc="lower left", ncol=3)
+                bbox_to_anchor=(0.3, -0.5), loc="lower left", ncol=3)
 
         plt.savefig(f"graphs/colliding_keys_percent_{dataset_name}_{compiler}.png", bbox_inches='tight', pad_inches=0.5)
         plt.savefig(f"graphs/colliding_keys_percent_{dataset_name}_{compiler}.pdf", bbox_inches='tight', pad_inches=0.5)
@@ -132,7 +132,7 @@ def plot_timing(key):
             fig.suptitle(f"{key.replace('_', ' ')} on {dataset_name} using {compiler}")
             fig.legend(
                 handles=[mpatches.Patch(color=colors.get(name), label=name) for name in models],
-                bbox_to_anchor=(0.05, -0.1), loc="lower left", ncol=3)
+                bbox_to_anchor=(0.05, -0.5), loc="lower left", ncol=3)
 
             plt.savefig(f"graphs/{key}_{dataset_name}_{compiler}.png", bbox_inches='tight', pad_inches=0.5)
             plt.savefig(f"graphs/{key}_{dataset_name}_{compiler}.pdf", bbox_inches='tight', pad_inches=0.5)
