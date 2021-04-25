@@ -42,18 +42,18 @@ def gen_plot(key):
         for fig, dataset_name in enumerate(dataset_names):
             dataset = csv[csv['dataset'] == dataset_name]
             load_factors = sorted(set(dataset['load_factor']))
-            sample_sizes = sorted(set(dataset['sample_size']))
+            bucket_sizes = sorted(set(dataset['bucket_size']))
 
-            # fig, subplts = plt.subplots(len(load_factors), len(sample_sizes), sharex=True, sharey=True, figsize=(15, 5))
-            fig, subplts = plt.subplots(2, 2, sharex=True, sharey=True, figsize=(15, 10))
+            fig, subplts = plt.subplots(len(bucket_sizes), len(load_factors), sharex=True, sharey=True,
+                                        figsize=(20, 10))
 
             for l, load_factor in enumerate(reversed(load_factors)):
-                for k, sample_size in enumerate(reversed(sample_sizes)):
-                    ds = dataset[dataset['sample_size'] == sample_size]
+                for k, bucket_size in enumerate(reversed(bucket_sizes)):
+                    ds = dataset[dataset['bucket_size'] == bucket_size]
                     ds = ds[ds['load_factor'] == load_factor]
                     reducers = sorted(list(set(ds['reducer'])))
 
-                    subplt = subplts[l % 2, math.floor(l / 2)]
+                    subplt = subplts[k, l]
 
                     # order preserving deduplication
                     for j, model_name in enumerate([m for m in models if m in set(ds['model'])]):
@@ -68,7 +68,7 @@ def gen_plot(key):
                                        color=colors.get(model_name) or "white")
 
                     subplt.grid(axis='y', linestyle='--', linewidth=0.5)
-                    subplt.set_title(f"sample_size {sample_size}, load_factor {load_factor}")
+                    subplt.set_title(f"bucket_size {bucket_size}, load_factor {load_factor} (1% sample)")
 
                     xticks = np.arange(len(reducers)) + 0.25
                     subplt.set_xticks(xticks, minor=False)
