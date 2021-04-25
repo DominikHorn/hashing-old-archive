@@ -2,6 +2,7 @@ import colorsys
 from collections import OrderedDict
 
 import math
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pandas
@@ -64,7 +65,6 @@ for compiler in compilers:
                     for i, reducer in enumerate(reducers):
                         # We only want to set label once as otherwise legend will contain duplicates
                         subplt.bar(i + j * width + j * 0.005, series[i], width,
-                                   label=model_name if i == 0 and l == 0 and k == 0 else None,
                                    color=colors.get(model_name) or "white")
 
                 subplt.grid(axis='y', linestyle='--', linewidth=0.5)
@@ -80,7 +80,9 @@ for compiler in compilers:
             fig.text(0.06, 0.5, 'colliding keys / total keys', ha='center', va='center', rotation='vertical')
             fig.suptitle(
                 f"collisions on {dataset_name} using compiler {compiler}")
-            fig.legend(bbox_to_anchor=(0.3, 0), loc="lower left", ncol=3)
+            fig.legend(
+                handles=[mpatches.Patch(color=colors.get(name), label=name) for name in models],
+                bbox_to_anchor=(0.3, 0), loc="lower left", ncol=3)
 
         plt.savefig(f"graphs/colliding_keys_percent_{dataset_name}_{compiler}.png", bbox_inches='tight', pad_inches=0.5)
         plt.savefig(f"graphs/colliding_keys_percent_{dataset_name}_{compiler}.pdf", bbox_inches='tight', pad_inches=0.5)
@@ -116,7 +118,6 @@ def plot_timing(key):
                     for i, reducer in enumerate(reducers):
                         # We only want to set label once as otherwise legend will contain duplicates
                         subplt.bar(i + j * width + j * 0.005, series[i], width,
-                                   label=model_name if i == 0 and l == 0 else None,
                                    color=colors.get(model_name) or "white")
 
                 subplt.grid(axis='y', linestyle='--', linewidth=0.5)
@@ -129,7 +130,9 @@ def plot_timing(key):
             fig.text(0.5, 0.04, 'reduction algorithm', ha='center', va='center')
             fig.text(0.06, 0.5, 'nanoseconds per key', ha='center', va='center', rotation='vertical')
             fig.suptitle(f"{key.replace('_', ' ')} on {dataset_name} using {compiler}")
-            fig.legend(bbox_to_anchor=(0.05, -0.1), loc="lower left", ncol=3)
+            fig.legend(
+                handles=[mpatches.Patch(color=colors.get(name), label=name) for name in models],
+                bbox_to_anchor=(0.05, -0.1), loc="lower left", ncol=3)
 
             plt.savefig(f"graphs/{key}_{dataset_name}_{compiler}.png", bbox_inches='tight', pad_inches=0.5)
             plt.savefig(f"graphs/{key}_{dataset_name}_{compiler}.pdf", bbox_inches='tight', pad_inches=0.5)

@@ -1,6 +1,7 @@
 import colorsys
 from collections import OrderedDict
 
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pandas
@@ -49,7 +50,7 @@ for compiler in compilers:
 
             for i, reducer in enumerate(reducers):
                 # We only want to set label once as otherwise legend will contain duplicates
-                plt.bar(i + j * width, series[i], width, label=hash_name if i == 0 else None,
+                plt.bar(i + j * width, series[i], width,
                         color=colors.get(hash_name) or "white")
 
         plt.grid(linestyle='--', linewidth=0.5)
@@ -58,7 +59,9 @@ for compiler in compilers:
         plt.yticks(list(plt.yticks()[0]) + [1, 2, 3, 4])
         plt.ylabel('ns per key')
         plt.xlabel('hash reduction method')
-        plt.legend(bbox_to_anchor=(0.5, -0.4), loc="lower center", ncol=7)
+        plt.legend(
+            handles=[mpatches.Patch(color=colors.get(name), label=name) for name in hash_methods],
+            bbox_to_anchor=(0.5, -0.4), loc="lower center", ncol=7)
 
         plt.savefig(f"graphs/throughput_hash-{compiler}_{dataset_name}.pdf", bbox_inches='tight', pad_inches=0.5)
         plt.savefig(f"graphs/throughput_hash-{compiler}_{dataset_name}.png", bbox_inches='tight', pad_inches=0.5)

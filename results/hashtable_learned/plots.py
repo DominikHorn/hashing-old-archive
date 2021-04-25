@@ -2,6 +2,7 @@ import colorsys
 from collections import OrderedDict
 
 import math
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pandas
@@ -64,7 +65,6 @@ def gen_plot(key):
                         for i, reducer in enumerate(reducers):
                             # We only want to set label once as otherwise legend will contain duplicates
                             subplt.bar(i + j * width + j * 0.005, series[i], width,
-                                       label=model_name if i == 0 and l == 0 and k == 0 else None,
                                        color=colors.get(model_name) or "white")
                             subplt.text(i + (j - 0.5) * width + (j - 0.5) * 0.01, series[i] + 5,
                                         str(math.ceil(series[i])),
@@ -83,7 +83,9 @@ def gen_plot(key):
                 fig.text(0.06, 0.5, 'nanoseconds per key', ha='center', va='center', rotation='vertical')
                 fig.suptitle(
                     f"hashtable {key} on {dataset_name} using compiler {compiler}")
-                fig.legend(bbox_to_anchor=(0.3, 0), loc="lower left", ncol=3)
+                fig.legend(
+                    handles=[mpatches.Patch(color=colors.get(name), label=name) for name in models],
+                    bbox_to_anchor=(0.3, 0), loc="lower left", ncol=3)
 
             plt.savefig(f"graphs/{key}_{dataset_name}_{compiler}.png", bbox_inches='tight', pad_inches=0.5)
             plt.savefig(f"graphs/{key}_{dataset_name}_{compiler}.pdf", bbox_inches='tight', pad_inches=0.5)

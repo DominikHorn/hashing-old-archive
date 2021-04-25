@@ -1,6 +1,7 @@
 import colorsys
 from collections import OrderedDict
 
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pandas
@@ -28,10 +29,10 @@ def gen_colors(max=40.0, s_sawtooth_min=0.7, s_sawtooth_max=0.9, s_sawtooth_step
 compilers = ["g++"]  # , "clang++", "g++-10"]
 _csv = pandas.read_csv(f"throughput_learned-{compilers[0]}.csv")
 dataset_names = sorted(set(_csv['dataset']))
-hash_methods = list(
+models = list(
     OrderedDict.fromkeys(list(_csv[_csv['reducer'] != 'do_nothing'].sort_values('total_nanoseconds_per_key')['model'])))
-_colors = list(gen_colors(len(hash_methods)))
-colors = {method: _colors[i] for i, method in enumerate(hash_methods)}
+_colors = list(gen_colors(len(models)))
+colors = {method: _colors[i] for i, method in enumerate(models)}
 
 for compiler in compilers:
     csv = pandas.read_csv(f"throughput_learned-{compiler}.csv")
@@ -52,15 +53,14 @@ for compiler in compilers:
                 subplt = subplts[l, k]
 
                 # order preserving deduplication
-                for j, model_name in enumerate([m for m in hash_methods if m in set(ds['model'])]):
+                for j, model_name in enumerate([m for m in models if m in set(ds['model'])]):
                     series = list(
                         ds[ds['model'] == model_name].sort_values('reducer')[plot_key])
-                    width = 0.95 / len(hash_methods)
+                    width = 0.95 / len(models)
 
                     for i, reducer in enumerate(reducers):
                         # We only want to set label once as otherwise legend will contain duplicates
                         subplt.bar(i + j * width, series[i], width,
-                                   label=model_name if i == 0 and k == 0 and l == 0 else None,
                                    color=colors.get(model_name) or "white")
 
                 subplt.grid(linestyle='--', linewidth=0.5)
@@ -73,7 +73,9 @@ for compiler in compilers:
         fig.text(0.5, 0.04, 'reduction algorithm', ha='center', va='center')
         fig.text(0.06, 0.5, 'nanoseconds per key', ha='center', va='center', rotation='vertical')
         fig.suptitle(f"throughput on {dataset_name} using {compiler}")
-        fig.legend(bbox_to_anchor=(0.5, -0.1), loc="lower center", ncol=7)
+        fig.legend(
+            handles=[mpatches.Patch(color=colors.get(name), label=name) for name in models],
+            bbox_to_anchor=(0.5, -0.1), loc="lower center", ncol=7)
 
         plt.savefig(f"graphs/throughput_learned-{compiler}_{dataset_name}.pdf", bbox_inches='tight', pad_inches=0.5)
         plt.savefig(f"graphs/throughput_learned-{compiler}_{dataset_name}.png", bbox_inches='tight', pad_inches=0.5)

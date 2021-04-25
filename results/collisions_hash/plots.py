@@ -2,6 +2,7 @@ import colorsys
 from collections import OrderedDict
 
 import math
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pandas
@@ -63,7 +64,6 @@ for compiler in compilers:
                 for i, reducer in enumerate(reducers):
                     # We only want to set label once as otherwise legend will contain duplicates
                     subplt.bar(i + j * width + j * 0.005, series[i], width,
-                               label=hash_name if i == 0 and k == 0 else None,
                                color=colors.get(hash_name) or "white")
 
             subplt.grid(axis='y', linestyle='--', linewidth=0.5)
@@ -78,7 +78,9 @@ for compiler in compilers:
         fig.text(0.5, 0.04, 'reduction algorithm', ha='center', va='center')
         fig.text(0.06, 0.5, 'colliding keys / total keys', ha='center', va='center', rotation='vertical')
         fig.suptitle(f"collisions on {dataset_name} using {compiler}")
-        fig.legend(bbox_to_anchor=(0.5, -0.1), loc="upper center", ncol=7)
+        fig.legend(
+            handles=[mpatches.Patch(color=colors.get(hash_name), label=hash_name) for hash_name in hash_methods],
+            bbox_to_anchor=(0.5, -0.1), loc="upper center", ncol=7)
 
         plt.savefig(f"graphs/colliding_keys_percent_{dataset_name}_{compiler}.png", bbox_inches='tight', pad_inches=0.5)
         plt.savefig(f"graphs/colliding_keys_percent_{dataset_name}_{compiler}.pdf", bbox_inches='tight', pad_inches=0.5)
@@ -113,7 +115,6 @@ for compiler in compilers:
                 for i, reducer in enumerate(reducers):
                     # We only want to set label once as otherwise legend will contain duplicates
                     subplt.bar(i + j * width + j * 0.005, series[i], width,
-                               label=hash_name if i == 0 and k == 0 else None,
                                color=colors.get(hash_name) or "white")
 
             subplt.grid(axis='y', linestyle='--', linewidth=0.5)
@@ -126,7 +127,9 @@ for compiler in compilers:
         fig.text(0.5, 0.04, 'reduction algorithm', ha='center', va='center')
         fig.text(0.06, 0.5, 'nanoseconds per key', ha='center', va='center', rotation='vertical')
         fig.suptitle(f"nanoseconds per key on {dataset_name} using {compiler}")
-        fig.legend(bbox_to_anchor=(0.5, -0.1), loc="upper center", ncol=7)
+        fig.legend(
+            handles=[mpatches.Patch(color=colors.get(hash_name), label=hash_name) for hash_name in hash_methods],
+            bbox_to_anchor=(0.5, -0.1), loc="upper center", ncol=7)
 
         plt.savefig(f"graphs/nanoseconds_per_key_{dataset_name}_{compiler}.png", bbox_inches='tight', pad_inches=0.5)
         plt.savefig(f"graphs/nanoseconds_per_key_{dataset_name}_{compiler}.pdf", bbox_inches='tight', pad_inches=0.5)
