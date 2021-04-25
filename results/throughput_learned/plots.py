@@ -1,11 +1,11 @@
 import colorsys
+import math
 from collections import OrderedDict
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pandas
-
 
 def gen_colors(max=40.0, s_sawtooth_min=0.7, s_sawtooth_max=0.9, s_sawtooth_step=0.1, v_sawtooth_min=0.5,
                v_sawtooth_max=1.0, v_sawtooth_step=0.15):
@@ -62,6 +62,11 @@ for compiler in compilers:
                         # We only want to set label once as otherwise legend will contain duplicates
                         subplt.bar(i + j * width, series[i], width,
                                    color=colors.get(model_name) or "white")
+
+                        subplt.text(i + (j - 0.5) * width + (j - 0.5) * 0.01, series[i] + 10,
+                                    str(math.ceil(series[i])),
+                                    color=colors.get(model_name),
+                                    fontsize='xx-small')
 
                 subplt.grid(linestyle='--', linewidth=0.5)
                 subplt.set_title(f"{plot_key.replace('_', ' ')} ({sample_size} sample)")
