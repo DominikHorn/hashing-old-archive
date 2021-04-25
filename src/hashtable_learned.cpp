@@ -183,7 +183,7 @@ int main(int argc, char* argv[]) {
 
             // Bucket size 4
             {
-               Hashtable::Chained<HASH_64, uint8_t, 4> chained_4(hashtable_size);
+               Hashtable::Chained<HASH_64, uint32_t, 4> chained_4(hashtable_size);
                measure(it.name(), dataset_ptr, chained_4, 4, load_factor, outfile, iomutex);
             }
          }
