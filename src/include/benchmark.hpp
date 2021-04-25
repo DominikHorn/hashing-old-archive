@@ -98,7 +98,7 @@ namespace Benchmark {
          for (const auto& key : dataset) {
             // Ensure the compiler does not simply remove this index
             // calculation during optimization.
-            CompilerHint::DoNotEliminate(reduce(hashfn(key), n));
+            Optimizer::DoNotEliminate(reduce(hashfn(key), n));
          }
          const auto end_time = std::chrono::steady_clock::now();
          const auto delta_ns =
@@ -117,7 +117,7 @@ namespace Benchmark {
       uint64_t total_lookup_ns;
    };
 
-   template<typename Hash, typename Hashtable>
+   template<typename Hashtable, typename Hash>
    HashtableStats measure_hashtable(const std::vector<uint64_t>& dataset, Hashtable& ht, const Hash& hashfn) {
       // Ensure hashtable is empty when we begin
       ht.clear();
@@ -135,8 +135,8 @@ namespace Benchmark {
       start_time = std::chrono::steady_clock::now();
       for (const auto& key : dataset) {
          auto payload = ht.lookup(key, hashfn);
-         CompilerHint::DoNotEliminate(payload);
-         assert(payload == key - 5);
+         Optimizer::DoNotEliminate(payload);
+         full_mem_barrier // emulate doing something with payload, i.e., wait for it!
       }
       end_time = std::chrono::steady_clock::now();
       uint64_t total_lookup_ns =

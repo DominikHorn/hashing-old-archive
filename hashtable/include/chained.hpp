@@ -6,7 +6,6 @@
 #include <vector>
 
 #include <convenience.hpp>
-#include <hashing.hpp>
 
 namespace Hashtable {
    template<typename Key, typename Payload, size_t BucketSize = 1>
@@ -29,10 +28,10 @@ namespace Hashtable {
             // Find suitable empty entry place. Note that deletions with holes will require
             // searching entire bucket to deal with duplicate keys!
             for (size_t i = 0; i < BucketSize; i++) {
-               if (slot->entries[i] == std::nullopt) {
-                  slot->entries[i] = {std::make_pair(key, payload)};
+               if (!slot->entries[i].has_value) {
+                  slot->entries[i].set(key, payload);
                   return true;
-               } else if (slot->entries[i]->first == key) {
+               } else if (slot->entries[i].key == key) {
                   // entry already exists
                   return false;
                }
@@ -41,7 +40,7 @@ namespace Hashtable {
 
          // Append a new bucket to the chain and add element there
          auto b = new Bucket();
-         b->entries[0] = {std::make_pair(key, payload)};
+         b->entries[0].set(key, payload);
          slot->next = b;
          return true;
       }
@@ -57,10 +56,10 @@ namespace Hashtable {
          while (slot != nullptr) {
             for (size_t i = 0; i < BucketSize; i++) {
                const auto entry = slot->entries[i];
-               if (entry == std::nullopt) {
+               if (!entry.has_value) {
                   return std::nullopt;
-               } else if (entry->first == key) {
-                  return {entry->second};
+               } else if (entry.key == key) {
+                  return {entry.key};
                }
             }
             slot = slot->next;
@@ -73,10 +72,14 @@ namespace Hashtable {
          return slots.size();
       }
 
+      static constexpr forceinline size_t bucket_size() {
+         return sizeof(Bucket);
+      }
+
       void clear() {
          for (auto& slot : slots) {
             for (size_t i = 0; i < BucketSize; i++) {
-               slot.entries[i] = std::nullopt;
+               slot.entries[i].clear();
             }
             auto current = slot.next;
             slot.next = nullptr;
@@ -102,9 +105,25 @@ namespace Hashtable {
 
      protected:
       struct Bucket {
-         std::array<std::optional<std::pair<Key, Payload>>, BucketSize> entries;
+         struct Entry {
+            Key key = 0x0;
+            Payload payload = 0x0;
+            bool has_value = false;
+
+            forceinline void set(const Key& key, const Payload& payload) {
+               this->key = key;
+               this->payload = payload;
+               this->has_value = true;
+            }
+
+            forceinline void clear() {
+               this->has_value = false;
+            }
+         } packed;
+
+         std::array<Entry, BucketSize> entries;
          Bucket* next = nullptr;
-      };
+      } packed;
 
       // First bucket is always inline in the slot
       std::vector<Bucket> slots;

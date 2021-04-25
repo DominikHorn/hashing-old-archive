@@ -5,7 +5,7 @@
 #include "pgm/include/pgm/pgm_index.hpp"
 
 namespace pgm {
-   template<typename K, size_t Epsilon = 64, typename Floating = float, size_t EpsilonRecursive = 4>
+   template<typename K, size_t Epsilon = 64, size_t EpsilonRecursive = 1, typename Floating = float>
    class PGMHash : public PGMIndex<K, Epsilon, EpsilonRecursive, Floating> {
      protected:
       const K first_key;

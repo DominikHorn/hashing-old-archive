@@ -6,8 +6,8 @@
 #include <string>
 
 #include <convenience.hpp>
-#include <hashing.hpp>
 #include <hashtable.hpp>
+#include <learned_models.hpp>
 #include <reduction.hpp>
 
 #include "include/args.hpp"
@@ -20,9 +20,11 @@ const std::vector<std::string> csv_columns = {
    "dataset",
    "numelements",
    "load_factor",
+   "sample_size",
    "bucket_size",
-   "hash",
+   "model",
    "reducer",
+   "sample_size",
    "insert_nanoseconds_total",
    "insert_nanoseconds_per_key",
    "lookup_nanoseconds_total",
@@ -31,23 +33,25 @@ const std::vector<std::string> csv_columns = {
 
 template<typename T>
 static void measure(const std::string& dataset_name, const std::shared_ptr<const std::vector<uint64_t>> dataset,
-                    T& hashtable, const size_t bucket_size, const double load_factor, CSV& outfile, std::mutex& iomutex,
-                    const HASH_64 (&small_tabulation_table)[0xFF],
-                    const HASH_64 (&large_tabulation_table)[sizeof(HASH_64)][0xFF]) {
-   // Theoretical slot count of a hashtable on which we want to measure collisions
-   const auto hashtable_size =
-      static_cast<uint64_t>(static_cast<double>(dataset->size()) / static_cast<double>(load_factor));
+                    T& hashtable, const size_t bucket_size, const double load_factor, CSV& outfile,
+                    std::mutex& iomutex) {
+   const auto measure_model = [&](const std::string& model_name, const auto& samplefn, const auto& sample_size,
+                                  const auto& preparefn, const auto& buildfn, const auto& modelfn,
+                                  const std::string& reducer_name, const auto& reducerfn) {
+      // Take a random sample
+      auto sample = samplefn();
+      preparefn(sample);
+      const auto model = buildfn(sample);
 
-   // lambda to measure a given hash function with a given reducer. Will be entirely inlined by default
-   const auto measure_hashfn_with_reducer = [&](const std::string& hash_name, const std::string& reducer_name,
-                                                const auto& hashfn) {
       // Measure
-      const auto stats = Benchmark::measure_hashtable(*dataset, hashtable, hashfn);
+      const auto stats = Benchmark::measure_hashtable(*dataset, hashtable, [&](const HASH_64& key, const size_t& N) {
+         return reducerfn(modelfn(model, N, key), N);
+      });
 
 #ifdef VERBOSE
       {
          std::unique_lock<std::mutex> lock(iomutex);
-         std::cout << std::setw(55) << std::right << reducer_name + "(" + hash_name + ") insert took "
+         std::cout << std::setw(55) << std::right << reducer_name + "(" + model_name + ") insert took "
                    << relative_to(stats.total_insert_ns, dataset->size()) << " ns/key ("
                    << nanoseconds_to_seconds(stats.total_insert_ns) << " s total), lookup took "
                    << relative_to(stats.total_lookup_ns, dataset->size()) << " ns/key ("
@@ -60,8 +64,9 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
          {"dataset", dataset_name},
          {"numelements", str(dataset->size())},
          {"load_factor", str(load_factor)},
+         {"sample_size", str(sample_size)},
          {"bucket_size", str(bucket_size)},
-         {"hash", hash_name},
+         {"model", model_name},
          {"reducer", reducer_name},
          {"insert_nanoseconds_total", str(stats.total_insert_ns)},
          {"insert_nanoseconds_per_key", str(relative_to(stats.total_insert_ns, dataset->size()))},
@@ -70,38 +75,47 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
       });
    };
 
-   // Build load factor specific auxiliary data
-   const auto magic_div = Reduction::make_magic_divider(static_cast<HASH_64>(hashtable_size));
+   /**
+    * ====================================
+    *        Learned Indices
+    * ====================================
+    */
+   const double sample_size = 0.01; // Fix this for now at 0.01
+   const auto sample_n = static_cast<size_t>(sample_size * static_cast<long double>(dataset->size()));
+   const auto pgm_sample_fn = [&]() {
+      std::vector<uint64_t> sample(sample_n, 0);
+      if (sample_n == 0)
+         return sample;
+      if (sample_n == dataset->size()) {
+         sample = *dataset;
+         return sample;
+      }
 
-   // measures a hash function using every reducer
-   const auto measure_hashfn = [&](const std::string& hash_name, const auto& hashfn) {
-      const auto hash_fastrange32 = [&](const HASH_64& key, const size_t& N) {
-         return Reduction::fastrange<HASH_32>(hashfn(key), N);
-      };
-      const auto hash_fastrange64 = [&](const HASH_64& key, const size_t& N) {
-         return Reduction::fastrange<HASH_64>(hashfn(key), N);
-      };
-      const auto hash_fast_modulo = [&](const HASH_64& key, const size_t& N) {
-         return Reduction::magic_modulo(hashfn(key), N, magic_div);
-      };
+      // Random constant to ensure reproducibility for debugging. TODO: make truely random for benchmark/use varying constants (?) -> also adjust fisher yates shuffle and other such constants
+      const uint64_t seed = 0x9E3779B9LU;
+      std::default_random_engine gen(seed);
+      std::uniform_int_distribution<uint64_t> dist(0, dataset->size() - 1);
+      for (size_t i = 0; i < sample_n; i++) {
+         const auto random_index = dist(gen);
+         sample[i] = dataset->at(random_index);
+      }
 
-      measure_hashfn_with_reducer(hash_name, "fastrange32", hash_fastrange32);
-      measure_hashfn_with_reducer(hash_name, "fastrange64", hash_fastrange64);
-      measure_hashfn_with_reducer(hash_name, "fast_modulo", hash_fast_modulo);
+      return sample;
    };
 
-   measure_hashfn("mult64", [](const HASH_64& key) { return MultHash::mult64_hash(key); });
-   measure_hashfn("multadd64", [](const HASH_64& key) { return MultAddHash::multadd64_hash(key); });
+   const auto sort_prepare = [](auto& sample) { std::sort(sample.begin(), sample.end()); };
 
-   // More significant bits supposedly are of higher quality for multiplicative methods -> compute
-   // how much we need to shift/rotate to throw away the least/make 'high quality bits' as prominent as possible
-   const auto p = (sizeof(hashtable_size) * 8) - __builtin_clz(hashtable_size - 1);
-   measure_hashfn("multadd64_shift" + std::to_string(p),
-                  [p](const HASH_64& key) { return MultAddHash::multadd64_hash(key, p); });
+   measure_model(
+      "pgm_hash_eps64", pgm_sample_fn, sample_size, sort_prepare,
+      [](const auto& sample) { return pgm::PGMHash<HASH_64, 64>(sample.begin(), sample.end()); }, //
+      [](const auto& pgm, const HASH_64& N, const HASH_64& key) { return pgm.hash(key, N); }, //
+      "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
 
-   measure_hashfn("murmur3_fin64", [](const HASH_64& key) { return MurmurHash3::finalize_64(key); });
-   //   measure_hashfn("meow64_low", [](const HASH_64& key) { return MeowHash::hash64(key); });
-   measure_hashfn("aqua_low", [](const HASH_64& key) { return AquaHash::hash64(key); });
+   measure_model(
+      "pgm_hash_eps8", pgm_sample_fn, sample_size, sort_prepare,
+      [](const auto& sample) { return pgm::PGMHash<HASH_64, 8>(sample.begin(), sample.end()); }, //
+      [](const auto& pgm, const HASH_64& N, const HASH_64& key) { return pgm.hash(key, N); }, //
+      "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
 }
 
 void print_max_resource_usage(const Args& args) {
@@ -112,7 +126,7 @@ void print_max_resource_usage(const Args& args) {
       const auto dataset_size = std::filesystem::file_size(path);
 
       for (const auto& load_fac : args.load_factors) {
-         const auto max_bucket_size = std::max(Hashtable::Chained<uint64_t, uint8_t, 4>::bucket_size(),
+         const auto max_bucket_size = std::max(Hashtable::Chained<uint64_t, uint32_t, 4>::bucket_size(),
                                                Hashtable::Chained<uint64_t, uint32_t, 2>::bucket_size());
          const auto base_ht_size =
             (static_cast<long double>(dataset_size - dataset.bytesPerValue) / (load_fac * dataset.bytesPerValue)) *
@@ -140,14 +154,10 @@ int main(int argc, char* argv[]) {
       print_max_resource_usage(args);
 #endif
 
-      std::mutex iomutex;
       CSV outfile(args.outfile, csv_columns);
 
-      // Precompute tabulation hash tables once (don't have to change per dataset)
-      HASH_64 small_tabulation_table[0xFF];
-      HASH_64 large_tabulation_table[sizeof(HASH_64)][0xFF];
-      TabulationHash::gen_column(small_tabulation_table);
-      TabulationHash::gen_table(large_tabulation_table);
+      // Worker pool for speeding up the benchmarking
+      std::mutex iomutex;
 
       for (const auto& it : args.datasets) {
          // TODO: once we have more RAM we maybe should load the dataset per thread (prevent cache conflicts)
@@ -162,22 +172,19 @@ int main(int argc, char* argv[]) {
             // Bucket size 1
             {
                Hashtable::Chained<HASH_64, uint32_t, 1> chained_1(hashtable_size);
-               measure(it.name(), dataset_ptr, chained_1, 1, load_factor, outfile, iomutex, small_tabulation_table,
-                       large_tabulation_table);
+               measure(it.name(), dataset_ptr, chained_1, 1, load_factor, outfile, iomutex);
             }
 
             // Bucket size 2
             {
                Hashtable::Chained<HASH_64, uint32_t, 2> chained_2(hashtable_size);
-               measure(it.name(), dataset_ptr, chained_2, 2, load_factor, outfile, iomutex, small_tabulation_table,
-                       large_tabulation_table);
+               measure(it.name(), dataset_ptr, chained_2, 2, load_factor, outfile, iomutex);
             }
 
             // Bucket size 4
             {
-               Hashtable::Chained<HASH_64, uint8_t, 4> chained_4(hashtable_size);
-               measure(it.name(), dataset_ptr, chained_4, 4, load_factor, outfile, iomutex, small_tabulation_table,
-                       large_tabulation_table);
+               Hashtable::Chained<HASH_64, uint32_t, 4> chained_4(hashtable_size);
+               measure(it.name(), dataset_ptr, chained_4, 4, load_factor, outfile, iomutex);
             }
          }
       }
