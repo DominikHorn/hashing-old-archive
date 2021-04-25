@@ -66,7 +66,7 @@ def gen_plot(key):
                             subplt.bar(i + j * width + j * 0.01, series[i], width,
                                        label=hash_name if i == 0 and l == 0 and k == 0 else None,
                                        color=colors.get(hash_name) or "white")
-                            subplt.text(i + (j - 0.5) * width + (j - 0.5) * 0.01, series[i] + 5,
+                            subplt.text(i + (j - 0.5) * width + (j - 0.5) * 0.01, series[i] + 10,
                                         str(math.ceil(series[i])),
                                         color=colors.get(hash_name),
                                         fontsize='xx-small')
