@@ -152,17 +152,35 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
          return sample;
       };
 
-      const auto pgm_hash = [&](const auto& pgm, const HASH_64& N, const HASH_64& key) {
-         // Otherwise pgm will EXC_BAD_ACCESS
-         if (unlikely(key == std::numeric_limits<HASH_64>::max())) {
-            return N;
-         }
+      measure_model(
+         "pgm_hash_eps256_epsrec4", pgm_sample_fn, sort_prepare,
+         [](const auto& sample) { return pgm::PGMHash<HASH_64, 256, 4>(sample.begin(), sample.end()); }, //
+         [](const auto& pgm, const HASH_64& N, const HASH_64& key) { return pgm.hash(key, N); }, //
+         "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
 
-         // Since we're training pgm on a sample, pos has to be scaled to fill the full [0, N]
-         const auto sample_pos = static_cast<long double>(pgm.search(key).pos);
-         const auto fac = static_cast<long double>(N) / static_cast<long double>(sample_n);
-         return static_cast<HASH_64>(sample_pos * fac);
-      };
+      measure_model(
+         "pgm_hash_eps64_epsrec4", pgm_sample_fn, sort_prepare,
+         [](const auto& sample) { return pgm::PGMHash<HASH_64, 64, 4>(sample.begin(), sample.end()); }, //
+         [](const auto& pgm, const HASH_64& N, const HASH_64& key) { return pgm.hash(key, N); }, //
+         "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
+
+      measure_model(
+         "pgm_hash_eps16_epsrec4", pgm_sample_fn, sort_prepare,
+         [](const auto& sample) { return pgm::PGMHash<HASH_64, 16, 4>(sample.begin(), sample.end()); }, //
+         [](const auto& pgm, const HASH_64& N, const HASH_64& key) { return pgm.hash(key, N); }, //
+         "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
+
+      measure_model(
+         "pgm_hash_eps4_epsrec4", pgm_sample_fn, sort_prepare,
+         [](const auto& sample) { return pgm::PGMHash<HASH_64, 4, 4>(sample.begin(), sample.end()); }, //
+         [](const auto& pgm, const HASH_64& N, const HASH_64& key) { return pgm.hash(key, N); }, //
+         "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
+
+      measure_model(
+         "pgm_hash_eps256_epsrec1", pgm_sample_fn, sort_prepare,
+         [](const auto& sample) { return pgm::PGMHash<HASH_64, 256, 1>(sample.begin(), sample.end()); }, //
+         [](const auto& pgm, const HASH_64& N, const HASH_64& key) { return pgm.hash(key, N); }, //
+         "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
 
       measure_model(
          "pgm_hash_eps64_epsrec1", pgm_sample_fn, sort_prepare,
@@ -177,8 +195,14 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
          "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
 
       measure_model(
-         "pgm_hash_eps8_epsrec1", pgm_sample_fn, sort_prepare,
-         [](const auto& sample) { return pgm::PGMHash<HASH_64, 8, 1>(sample.begin(), sample.end()); }, //
+         "pgm_hash_eps4_epsrec1", pgm_sample_fn, sort_prepare,
+         [](const auto& sample) { return pgm::PGMHash<HASH_64, 4, 1>(sample.begin(), sample.end()); }, //
+         [](const auto& pgm, const HASH_64& N, const HASH_64& key) { return pgm.hash(key, N); }, //
+         "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
+
+      measure_model(
+         "pgm_hash_eps256_epsrec0", pgm_sample_fn, sort_prepare,
+         [](const auto& sample) { return pgm::PGMHash<HASH_64, 256, 0>(sample.begin(), sample.end()); }, //
          [](const auto& pgm, const HASH_64& N, const HASH_64& key) { return pgm.hash(key, N); }, //
          "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
 
@@ -195,8 +219,8 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
          "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
 
       measure_model(
-         "pgm_hash_eps8_epsrec0", pgm_sample_fn, sort_prepare,
-         [](const auto& sample) { return pgm::PGMHash<HASH_64, 8, 0>(sample.begin(), sample.end()); }, //
+         "pgm_hash_eps4_epsrec0", pgm_sample_fn, sort_prepare,
+         [](const auto& sample) { return pgm::PGMHash<HASH_64, 4, 0>(sample.begin(), sample.end()); }, //
          [](const auto& pgm, const HASH_64& N, const HASH_64& key) { return pgm.hash(key, N); }, //
          "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
    }
