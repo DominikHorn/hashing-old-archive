@@ -30,7 +30,7 @@ compilers = ["g++"]  # , "clang++", "g++-10"]
 _csv = pandas.read_csv(f"throughput_learned-{compilers[0]}.csv")
 dataset_names = sorted(set(_csv['dataset']))
 models = list(
-    OrderedDict.fromkeys(list(_csv[_csv['reducer'] != 'do_nothing'].sort_values('total_nanoseconds_per_key')['model'])))
+    OrderedDict.fromkeys(list(_csv[_csv['reducer'] != 'do_nothing'].sort_values('model')['model'])))
 _colors = list(gen_colors(len(models)))
 colors = {method: _colors[i] for i, method in enumerate(models)}
 
