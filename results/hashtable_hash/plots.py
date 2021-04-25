@@ -2,6 +2,7 @@ import colorsys
 from collections import OrderedDict
 
 import math
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pandas
@@ -64,8 +65,8 @@ def gen_plot(key):
                         for i, reducer in enumerate(reducers):
                             # We only want to set label once as otherwise legend will contain duplicates
                             subplt.bar(i + j * width + j * 0.01, series[i], width,
-                                       label=hash_name if i == 0 and l == 0 and k == 0 else None,
                                        color=colors.get(hash_name) or "white")
+
                             subplt.text(i + (j - 0.5) * width + (j - 0.5) * 0.01, series[i] + 10,
                                         str(math.ceil(series[i])),
                                         color=colors.get(hash_name),
@@ -79,11 +80,14 @@ def gen_plot(key):
                     subplt.set_xticklabels(reducers, fontdict=None, minor=False)
                     subplt.axhline(1 - pow(math.e, -load_factor), color="blue", ls="-")
 
-                fig.text(0.5, 0.04, 'reduction algorithm', ha='center', va='center')
-                fig.text(0.06, 0.5, 'nanoseconds per key', ha='center', va='center', rotation='vertical')
-                fig.suptitle(
-                    f"hashtable {key} on {dataset_name} using compiler {compiler}")
-                fig.legend(bbox_to_anchor=(0.3, 0), loc="lower left", ncol=3)
+            fig.text(0.5, 0.04, 'reduction algorithm', ha='center', va='center')
+            fig.text(0.06, 0.5, 'nanoseconds per key', ha='center', va='center', rotation='vertical')
+            fig.suptitle(
+                f"hashtable {key} on {dataset_name} using compiler {compiler}")
+            fig.legend(
+                handles=[mpatches.Patch(color=colors.get(hash_name), label=hash_name) for hash_name in hash_functions],
+                bbox_to_anchor=(0.3, 0),
+                loc="lower left", ncol=3)
 
             plt.savefig(f"graphs/{key}_{dataset_name}_{compiler}.png", bbox_inches='tight', pad_inches=0.5)
             plt.savefig(f"graphs/{key}_{dataset_name}_{compiler}.pdf", bbox_inches='tight', pad_inches=0.5)
