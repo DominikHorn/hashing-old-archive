@@ -13,7 +13,8 @@ for key in dataset {
 
 // Lookup. Simulate working with payload through full memory fence
 for key in dataset {
-    payload = hashtable.lookup(key)
+    index = reduce(model.predict(key))
+    payload = hashtable.lookup(index, key)
     __sync_synchronize() // gcc full memory fence builtin
 }
 ```
@@ -56,9 +57,9 @@ for key in dataset {
 Time to lookup each payload, simulating working with the payload by using a memory fence:
 
 ```
-// Lookup. Simulate working with payload through full memory fence
 for key in dataset {
-    payload = hashtable.lookup(key)
+    index = reduce(model.predict(key))
+    payload = hashtable.lookup(index, key)
     __sync_synchronize() // gcc full memory fence builtin
 }
 ```
