@@ -19,6 +19,19 @@ for key in dataset {
 }
 ```
 
+**NOTE:** the chained hashtable implementation uses `__attribute__((packed))` buckets,
+which causes missaligned reads and writes. This was done to save a significant
+amount of main memory, i.e., to be able to run some experiments which would
+have otherwise thrown `std::bad_alloc` due to main memory constraints.
+As a matter of fact, results for load factor 0.25, bucket size 4 are missing
+since they could not be obtained event with this optimization.
+
+Experimenting with configurations that run even when buckets use padding
+revealed that there is only a very small difference for packed vs unpacked
+buckets in terms of both lookup and insert performance. Additionally, 
+missaligned reads/writes should not favor any of the tested methods and will
+therefore not influence the meaningfullness of these results.
+
 ## Insert
 
 Time to insert each key in a tight loop:
