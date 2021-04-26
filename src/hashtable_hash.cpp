@@ -41,6 +41,31 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
    // lambda to measure a given hash function with a given reducer. Will be entirely inlined by default
    const auto measure_hashfn_with_reducer = [&](const std::string& hash_name, const std::string& reducer_name,
                                                 const auto& hashfn) {
+      const auto str = [](auto s) { return std::to_string(s); };
+      std::map<std::string, std::string> datapoint({
+         {"dataset", dataset_name},
+         {"numelements", str(dataset->size())},
+         {"load_factor", str(load_factor)},
+         {"bucket_size", str(bucket_size)},
+         {"hash", hash_name},
+         {"reducer", reducer_name},
+      });
+
+      if (outfile.exists(datapoint)) {
+         std::unique_lock<std::mutex> lock(iomutex);
+         std::cout << "Skipping (";
+         auto iter = datapoint.begin();
+         while (iter != datapoint.end()) {
+            std::cout << iter->first << ": " << iter->second;
+
+            iter++;
+            if (iter != datapoint.end())
+               std::cout << ", ";
+         }
+         std::cout << ") since it already exist" << std::endl;
+         return;
+      }
+
       // Measure
       const auto stats = Benchmark::measure_hashtable(*dataset, hashtable, hashfn);
 
@@ -55,19 +80,13 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
       };
 #endif
 
-      const auto str = [](auto s) { return std::to_string(s); };
-      outfile.write({
-         {"dataset", dataset_name},
-         {"numelements", str(dataset->size())},
-         {"load_factor", str(load_factor)},
-         {"bucket_size", str(bucket_size)},
-         {"hash", hash_name},
-         {"reducer", reducer_name},
-         {"insert_nanoseconds_total", str(stats.total_insert_ns)},
-         {"insert_nanoseconds_per_key", str(relative_to(stats.total_insert_ns, dataset->size()))},
-         {"lookup_nanoseconds_total", str(stats.total_lookup_ns)},
-         {"lookup_nanoseconds_per_key", str(relative_to(stats.total_lookup_ns, dataset->size()))},
-      });
+      datapoint.emplace("insert_nanoseconds_total", str(stats.total_insert_ns));
+      datapoint.emplace("insert_nanoseconds_per_key", str(relative_to(stats.total_insert_ns, dataset->size())));
+      datapoint.emplace("lookup_nanoseconds_total", str(stats.total_lookup_ns));
+      datapoint.emplace("lookup_nanoseconds_per_key", str(relative_to(stats.total_lookup_ns, dataset->size())));
+
+      // Write to csv
+      outfile.write(datapoint);
    };
 
    // Build load factor specific auxiliary data

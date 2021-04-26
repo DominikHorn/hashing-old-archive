@@ -51,6 +51,30 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
    std::vector<uint32_t> collision_counter(hashtable_size);
    const auto measure_hashfn_with_reducer = [&](const std::string& hash_name, const auto& hashfn,
                                                 const std::string& reducer_name, const auto& reducerfn) {
+      const auto str = [](auto s) { return std::to_string(s); };
+      std::map<std::string, std::string> datapoint({
+         {"dataset", dataset_name},
+         {"numelements", str(dataset->size())},
+         {"load_factor", str(load_factor)},
+         {"hash", hash_name},
+         {"reducer", reducer_name},
+      });
+
+      if (outfile.exists(datapoint)) {
+         std::unique_lock<std::mutex> lock(iomutex);
+         std::cout << "Skipping (";
+         auto iter = datapoint.begin();
+         while (iter != datapoint.end()) {
+            std::cout << iter->first << ": " << iter->second;
+
+            iter++;
+            if (iter != datapoint.end())
+               std::cout << ", ";
+         }
+         std::cout << ") since it already exist" << std::endl;
+         return;
+      }
+
       // Measure
       const auto stats = Benchmark::measure_collisions(*dataset, collision_counter, hashfn, reducerfn);
 
@@ -63,25 +87,21 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
       };
 #endif
 
-      const auto str = [](auto s) { return std::to_string(s); };
-      outfile.write({
-         {"dataset", dataset_name},
-         {"numelements", str(dataset->size())},
-         {"load_factor", str(load_factor)},
-         {"hash", hash_name},
-         {"reducer", reducer_name},
-         {"min", str(stats.min)},
-         {"max", str(stats.max)},
-         {"std_dev", str(stats.std_dev)},
-         {"empty_slots", str(stats.empty_slots)},
-         {"empty_slots_percent", str(relative_to(stats.empty_slots, hashtable_size))},
-         {"colliding_slots", str(stats.colliding_slots)},
-         {"colliding_slots_percent", str(relative_to(stats.colliding_slots, hashtable_size))},
-         {"total_colliding_keys", str(stats.total_colliding_keys)},
-         {"total_colliding_keys_percent", str(relative_to(stats.total_colliding_keys, dataset->size()))},
-         {"nanoseconds_total", str(stats.inference_reduction_memaccess_total_ns)},
-         {"nanoseconds_per_key", str(relative_to(stats.inference_reduction_memaccess_total_ns, dataset->size()))},
-      });
+      datapoint.emplace("min", str(stats.min));
+      datapoint.emplace("max", str(stats.max));
+      datapoint.emplace("std_dev", str(stats.std_dev));
+      datapoint.emplace("empty_slots", str(stats.empty_slots));
+      datapoint.emplace("empty_slots_percent", str(relative_to(stats.empty_slots, hashtable_size)));
+      datapoint.emplace("colliding_slots", str(stats.colliding_slots));
+      datapoint.emplace("colliding_slots_percent", str(relative_to(stats.colliding_slots, hashtable_size)));
+      datapoint.emplace("total_colliding_keys", str(stats.total_colliding_keys));
+      datapoint.emplace("total_colliding_keys_percent", str(relative_to(stats.total_colliding_keys, dataset->size())));
+      datapoint.emplace("nanoseconds_total", str(stats.inference_reduction_memaccess_total_ns));
+      datapoint.emplace("nanoseconds_per_key",
+                        str(relative_to(stats.inference_reduction_memaccess_total_ns, dataset->size())));
+
+      // Write to csv
+      outfile.write(datapoint);
    };
 
    // measures a hash function using every reducer

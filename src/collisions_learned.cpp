@@ -60,6 +60,31 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
       uint64_t sample_ns = static_cast<uint64_t>(
          std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start_time).count());
 
+      const auto str = [](auto s) { return std::to_string(s); };
+      std::map<std::string, std::string> datapoint({
+         {"dataset", dataset_name},
+         {"numelements", str(dataset->size())},
+         {"load_factor", str(load_factor)},
+         {"model", model_name},
+         {"reducer", reducer_name},
+         {"sample_size", str(relative_to(sample.size(), dataset->size()))},
+      });
+
+      if (outfile.exists(datapoint)) {
+         std::unique_lock<std::mutex> lock(iomutex);
+         std::cout << "Skipping (";
+         auto iter = datapoint.begin();
+         while (iter != datapoint.end()) {
+            std::cout << iter->first << ": " << iter->second;
+
+            iter++;
+            if (iter != datapoint.end())
+               std::cout << ", ";
+         }
+         std::cout << ") since it already exist" << std::endl;
+         return;
+      }
+
       // Prepare the sample
       start_time = std::chrono::steady_clock::now();
       preparefn(sample);
@@ -89,35 +114,29 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
       };
 #endif
 
-      const auto str = [](auto s) { return std::to_string(s); };
-      outfile.write({
-         {"dataset", dataset_name},
-         {"numelements", str(dataset->size())},
-         {"load_factor", str(load_factor)},
-         {"model", model_name},
-         {"reducer", reducer_name},
-         {"sample_size", str(relative_to(sample.size(), dataset->size()))},
-         {"min", str(stats.min)},
-         {"max", str(stats.max)},
-         {"std_dev", str(stats.std_dev)},
-         {"empty_slots", str(stats.empty_slots)},
-         {"empty_slots_percent", str(relative_to(stats.empty_slots, hashtable_size))},
-         {"colliding_slots", str(stats.colliding_slots)},
-         {"colliding_slots_percent", str(relative_to(stats.colliding_slots, hashtable_size))},
-         {"total_colliding_keys", str(stats.total_colliding_keys)},
-         {"total_colliding_keys_percent", str(relative_to(stats.total_colliding_keys, dataset->size()))},
-         {"sample_nanoseconds_total", str(sample_ns)},
-         {"sample_nanoseconds_per_key", str(relative_to(sample_ns, dataset->size()))},
-         {"prepare_nanoseconds_total", str(prepare_ns)},
-         {"prepare_nanoseconds_per_key", str(relative_to(prepare_ns, dataset->size()))},
-         {"build_nanoseconds_total", str(build_ns)},
-         {"build_nanoseconds_per_key", str(relative_to(build_ns, dataset->size()))},
-         {"hashing_nanoseconds_total", str(stats.inference_reduction_memaccess_total_ns)},
-         {"hashing_nanoseconds_per_key",
-          str(relative_to(stats.inference_reduction_memaccess_total_ns, dataset->size()))},
-         {"total_nanoseconds", str(total_ns)},
-         {"total_nanoseconds_per_key", str(relative_to(total_ns, dataset->size()))},
-      });
+      datapoint.emplace("min", str(stats.min));
+      datapoint.emplace("max", str(stats.max));
+      datapoint.emplace("std_dev", str(stats.std_dev));
+      datapoint.emplace("empty_slots", str(stats.empty_slots));
+      datapoint.emplace("empty_slots_percent", str(relative_to(stats.empty_slots, hashtable_size)));
+      datapoint.emplace("colliding_slots", str(stats.colliding_slots));
+      datapoint.emplace("colliding_slots_percent", str(relative_to(stats.colliding_slots, hashtable_size)));
+      datapoint.emplace("total_colliding_keys", str(stats.total_colliding_keys));
+      datapoint.emplace("total_colliding_keys_percent", str(relative_to(stats.total_colliding_keys, dataset->size())));
+      datapoint.emplace("sample_nanoseconds_total", str(sample_ns));
+      datapoint.emplace("sample_nanoseconds_per_key", str(relative_to(sample_ns, dataset->size())));
+      datapoint.emplace("prepare_nanoseconds_total", str(prepare_ns));
+      datapoint.emplace("prepare_nanoseconds_per_key", str(relative_to(prepare_ns, dataset->size())));
+      datapoint.emplace("build_nanoseconds_total", str(build_ns));
+      datapoint.emplace("build_nanoseconds_per_key", str(relative_to(build_ns, dataset->size())));
+      datapoint.emplace("hashing_nanoseconds_total", str(stats.inference_reduction_memaccess_total_ns));
+      datapoint.emplace("hashing_nanoseconds_per_key",
+                        str(relative_to(stats.inference_reduction_memaccess_total_ns, dataset->size())));
+      datapoint.emplace("total_nanoseconds", str(total_ns));
+      datapoint.emplace("total_nanoseconds_per_key", str(relative_to(total_ns, dataset->size())));
+
+      // Write to csv
+      outfile.write(datapoint);
    };
 
    const auto sort_prepare = [](auto& sample) { std::sort(sample.begin(), sample.end()); };

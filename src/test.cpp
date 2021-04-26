@@ -1,25 +1,22 @@
-#include <functional>
+#include "include/csv.hpp"
 
-#include <convenience.hpp>
-#include <hashing.hpp>
-#include <hashtable.hpp>
+#include <iostream>
 
 int main(int argc, char* argv[]) {
-   const auto zero_hash = [](const HASH_64& val, const size_t& N) { return 0; };
+   CSV csv("../../debug.csv",
+           {"dataset", "numelements", "load_factor", "sample_size", "bucket_size", "model", "reducer", "sample_size",
+            "insert_nanoseconds_total", "insert_nanoseconds_per_key", "lookup_nanoseconds_total",
+            "lookup_nanoseconds_per_key"});
 
-   {
-      Hashtable::Chained<HASH_64, uint32_t, 4> chained(10);
+   const auto str = [](auto s) { return std::to_string(s); };
+   std::cout << csv.exists({{"dataset", "debug_64"}}) << std::endl;
+   std::cout << csv.exists({{"dataset", "debug_62"}}) << std::endl;
+   std::cout << csv.exists({{"load_factor", str(0.25)}, {"dataset", "debug_64"}}) << std::endl;
+   std::cout << csv.exists({{"model", "pgm_hash_eps64"}}) << std::endl;
+   std::cout << csv.exists({{"dataset", "debug_64"}, {"model", "pgm_hash_eps64"}, {"load_factor", str(0.25)}})
+             << std::endl;
+   std::cout << csv.exists({{"model", "pgm_hash_eps64"}, {"dataset", "debug_64"}}) << std::endl;
+   std::cout << csv.exists({{"model", "pgm_hash_eps64"}, {"dataset", "debug_64 "}}) << std::endl;
 
-      for (size_t r = 0; r < 10; r++) {
-         for (size_t i = 0; i < 10000; i++) {
-            auto key = rand();
-            chained.insert(key, 0xFF, zero_hash);
-            assert(chained.lookup(key, zero_hash) == 0xFF);
-         }
-
-         chained.clear();
-      }
-      std::cout << "Test: " << chained.size() << std::endl;
-   }
    return 0;
 }
