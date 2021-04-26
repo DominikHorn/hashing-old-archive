@@ -40,6 +40,10 @@ for key in dataset {
 
 ![books_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/hashtable_hash/graphs/insert_books_200M_uint64_g++.png)
 
+#### consecutive_200M_uint64
+
+![consecutive_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/hashtable_hash/graphs/insert_consecutive_200M_uint64_g++.png)
+
 #### fb_200M_uint64
 
 ![fb_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/hashtable_hash/graphs/insert_fb_200M_uint64_g++.png)
@@ -73,6 +77,10 @@ for key in dataset {
 #### books_200M_uint64
 
 ![books_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/hashtable_hash/graphs/lookup_books_200M_uint64_g++.png)
+
+#### consecutive_200M_uint64
+
+![consecutive_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/hashtable_hash/graphs/lookup_consecutive_200M_uint64_g++.png)
 
 #### fb_200M_uint64
 
