@@ -56,6 +56,29 @@ int main(int argc, char* argv[]) {
                                                          const auto& hashfn,
                                                          const std::string& reducer_name,
                                                          const auto& reducerfn) {
+               const auto str = [](auto s) { return std::to_string(s); };
+               std::map<std::string, std::string> datapoint({
+                  {"dataset", it.name()},
+                  {"numelements", str(dataset.size())},
+                  {"hash", hash_name},
+                  {"reducer", reducer_name},
+               });
+
+               if (outfile.exists(datapoint)) {
+                  std::unique_lock<std::mutex> lock(iomutex);
+                  std::cout << "Skipping (";
+                  auto iter = datapoint.begin();
+                  while (iter != datapoint.end()) {
+                     std::cout << iter->first << ": " << iter->second;
+
+                     iter++;
+                     if (iter != datapoint.end())
+                        std::cout << ", ";
+                  }
+                  std::cout << ") since it already exist" << std::endl;
+                  return;
+               }
+
                // Measure & log
                const auto stats = Benchmark::measure_throughput(dataset, hashfn, reducerfn);
 #ifdef VERBOSE
@@ -69,17 +92,13 @@ int main(int argc, char* argv[]) {
                };
 #endif
 
+               datapoint.emplace("nanoseconds_total", str(stats.average_total_inference_reduction_ns));
+               datapoint.emplace("nanoseconds_per_key",
+                                 str(relative_to(stats.average_total_inference_reduction_ns, dataset.size())));
+               datapoint.emplace("benchmark_repeat_cnt", str(stats.repeatCnt));
+
                // Write to csv
-               const auto str = [](auto s) { return std::to_string(s); };
-               outfile.write({
-                  {"dataset", it.name()},
-                  {"numelements", str(dataset.size())},
-                  {"hash", hash_name},
-                  {"reducer", reducer_name},
-                  {"nanoseconds_total", str(stats.average_total_inference_reduction_ns)},
-                  {"nanoseconds_per_key", str(relative_to(stats.average_total_inference_reduction_ns, dataset.size()))},
-                  {"benchmark_repeat_cnt", str(stats.repeatCnt)},
-               });
+               outfile.write(datapoint);
             };
 
             const auto measure_hashfn = [&](const std::string& hash_name, const auto& hashfn) {

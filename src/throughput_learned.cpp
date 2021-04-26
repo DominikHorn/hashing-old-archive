@@ -16,23 +16,22 @@
 
 using Args = BenchmarkArgs::LearnedThroughputArgs;
 
-const std::vector<std::string> csv_columns = {
-   "dataset",
-   "numelements",
-   "model",
-   "reducer",
-   "sample_size",
-   "sample_nanoseconds_total",
-   "sample_nanoseconds_per_key",
-   "prepare_nanoseconds_total",
-   "prepare_nanoseconds_per_key",
-   "build_nanoseconds_total",
-   "build_nanoseconds_per_key",
-   "hashing_nanoseconds_total",
-   "hashing_nanoseconds_per_key",
-   "total_nanoseconds",
-   "total_nanoseconds_per_key",
-};
+const std::vector<std::string> csv_columns = {"dataset",
+                                              "numelements",
+                                              "model",
+                                              "reducer",
+                                              "sample_size",
+                                              "sample_nanoseconds_total",
+                                              "sample_nanoseconds_per_key",
+                                              "prepare_nanoseconds_total",
+                                              "prepare_nanoseconds_per_key",
+                                              "build_nanoseconds_total",
+                                              "build_nanoseconds_per_key",
+                                              "hashing_nanoseconds_total",
+                                              "hashing_nanoseconds_per_key",
+                                              "total_nanoseconds",
+                                              "total_nanoseconds_per_key",
+                                              "benchmark_repeat_cnt"};
 
 static void measure(const std::string& dataset_name, const std::vector<uint64_t>& dataset, const Args& args,
                     CSV& outfile, std::mutex& iomutex) {
@@ -47,6 +46,28 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
       auto sample = samplefn();
       uint64_t sample_ns = static_cast<uint64_t>(
          std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start_time).count());
+
+      const auto str = [](auto s) { return std::to_string(s); };
+      std::map<std::string, std::string> datapoint({{"dataset", dataset_name},
+                                                    {"numelements", str(dataset.size())},
+                                                    {"model", model_name},
+                                                    {"reducer", reducer_name},
+                                                    {"sample_size", str(relative_to(sample.size(), dataset.size()))}});
+
+      if (outfile.exists(datapoint)) {
+         std::unique_lock<std::mutex> lock(iomutex);
+         std::cout << "Skipping (";
+         auto iter = datapoint.begin();
+         while (iter != datapoint.end()) {
+            std::cout << iter->first << ": " << iter->second;
+
+            iter++;
+            if (iter != datapoint.end())
+               std::cout << ", ";
+         }
+         std::cout << ") since it already exist" << std::endl;
+         return;
+      }
 
       // Prepare the sample
       start_time = std::chrono::steady_clock::now();
@@ -76,24 +97,21 @@ static void measure(const std::string& dataset_name, const std::vector<uint64_t>
       };
 #endif
 
-      const auto str = [](auto s) { return std::to_string(s); };
-      outfile.write({
-         {"dataset", dataset_name},
-         {"numelements", str(dataset.size())},
-         {"model", model_name},
-         {"reducer", reducer_name},
-         {"sample_size", str(relative_to(sample.size(), dataset.size()))},
-         {"sample_nanoseconds_total", str(sample_ns)},
-         {"sample_nanoseconds_per_key", str(relative_to(sample_ns, dataset.size()))},
-         {"prepare_nanoseconds_total", str(prepare_ns)},
-         {"prepare_nanoseconds_per_key", str(relative_to(prepare_ns, dataset.size()))},
-         {"build_nanoseconds_total", str(build_ns)},
-         {"build_nanoseconds_per_key", str(relative_to(build_ns, dataset.size()))},
-         {"hashing_nanoseconds_total", str(stats.average_total_inference_reduction_ns)},
-         {"hashing_nanoseconds_per_key", str(relative_to(stats.average_total_inference_reduction_ns, dataset.size()))},
-         {"total_nanoseconds", str(total_ns)},
-         {"total_nanoseconds_per_key", str(relative_to(total_ns, dataset.size()))},
-      });
+      datapoint.emplace("sample_nanoseconds_total", str(sample_ns));
+      datapoint.emplace("sample_nanoseconds_per_key", str(relative_to(sample_ns, dataset.size())));
+      datapoint.emplace("prepare_nanoseconds_total", str(prepare_ns));
+      datapoint.emplace("prepare_nanoseconds_per_key", str(relative_to(prepare_ns, dataset.size())));
+      datapoint.emplace("build_nanoseconds_total", str(build_ns));
+      datapoint.emplace("build_nanoseconds_per_key", str(relative_to(build_ns, dataset.size())));
+      datapoint.emplace("hashing_nanoseconds_total", str(stats.average_total_inference_reduction_ns));
+      datapoint.emplace("hashing_nanoseconds_per_key",
+                        str(relative_to(stats.average_total_inference_reduction_ns, dataset.size())));
+      datapoint.emplace("total_nanoseconds", str(total_ns));
+      datapoint.emplace("total_nanoseconds_per_key", str(relative_to(total_ns, dataset.size())));
+      datapoint.emplace("benchmark_repeat_cnt", str(stats.repeatCnt));
+
+      // Write to csv
+      outfile.write(datapoint);
    };
 
    const auto sort_prepare = [](auto& sample) { std::sort(sample.begin(), sample.end()); };
