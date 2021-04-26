@@ -73,7 +73,7 @@ def gen_plot(key):
                                         fontsize='xx-small')
 
                     subplt.grid(axis='y', linestyle='--', linewidth=0.5)
-                    subplt.set_title(f"bucket_size {bucket_size}, load_factor {load_factor} (1% sample)")
+                    subplt.set_title(f"bucket_size {bucket_size}, load_factor {load_factor}")
 
                     xticks = np.arange(len(reducers)) + 0.25
                     subplt.set_xticks(xticks, minor=False)
