@@ -63,7 +63,7 @@ for compiler in compilers:
                         subplt.bar(i + j * width, series[i], width,
                                    color=colors.get(model_name) or "white")
 
-                        subplt.text(i + (j - 0.5) * width + (j - 0.5) * 0.01, series[i] + 10,
+                        subplt.text(i + j * width, series[i] + 10,
                                     str(math.ceil(series[i])),
                                     color=colors.get(model_name),
                                     fontsize='xx-small')
@@ -80,7 +80,7 @@ for compiler in compilers:
         fig.suptitle(f"throughput on {dataset_name} using {compiler}")
         fig.legend(
             handles=[mpatches.Patch(color=colors.get(name), label=name) for name in models],
-            bbox_to_anchor=(0.5, -0.1), loc="lower center", ncol=7)
+            bbox_to_anchor=(0.5, -0.1), loc="lower center", ncol=3)
 
         plt.savefig(f"graphs/throughput_learned-{compiler}_{dataset_name}.pdf", bbox_inches='tight', pad_inches=0.5)
         plt.savefig(f"graphs/throughput_learned-{compiler}_{dataset_name}.png", bbox_inches='tight', pad_inches=0.5)
