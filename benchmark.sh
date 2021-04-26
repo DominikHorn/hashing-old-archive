@@ -1,10 +1,12 @@
 #!/bin/bash
 
 # SET THESE ACCORDING TO YOUR SYSTEM CONFIG
-MAX_THREADS=2
+MAX_THREADS=8
 LOAD_FACTORS=1.0,0.75,0.5,0.25
 SAMPLE_SIZES=0.001,0.01,0.1,1.0
-DATASETS="data/books_200M_uint32:4 data/books_200M_uint64:8 data/fb_200M_uint64:8 data/osm_cellids_200M_uint64:8 data/wiki_ts_200M_uint64:8"
+SOSD_DATASETS="data/books_200M_uint32:4 data/books_200M_uint64:8 data/fb_200M_uint64:8 data/osm_cellids_200M_uint64:8 data/wiki_ts_200M_uint64:8"
+SYNTH_DATASETS="data/consecutive_200M_uint64:8 data/gapped_1permill_200M_uint64:8 data/gapped_1percent_200M_uint64:8 data/gapped_10percent_200M_uint64:8"
+DATASETS="$SOSD_DATASETS $SYNTH_DATASETS"
 
 # Stop on error & cd to script directory
 set -e
@@ -17,7 +19,7 @@ cd "$(dirname "$0")"
 mkdir -p results/{throughput_hash,throughput_learned,collisions_hash,collisions_learned,hashtable_hash,hashtable_learned}
 
 # Build with various compilers. SET THIS ACCORDING TO YOUR SYSTEM CONFIG
-for c in clang,clang++ gcc-10,g++-10
+for c in clang,clang++ gcc,g++
 do
   _IFS=$IFS
   IFS=","
