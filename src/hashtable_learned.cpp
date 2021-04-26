@@ -125,14 +125,26 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
    const auto sort_prepare = [](auto& sample) { std::sort(sample.begin(), sample.end()); };
 
    measure_model(
-      "pgm_hash_eps64", pgm_sample_fn, sample_size, sort_prepare,
-      [](const auto& sample) { return pgm::PGMHash<HASH_64, 64>(sample.begin(), sample.end()); }, //
+      "pgm_hash_eps256_epsrec0", pgm_sample_fn, sample_size, sort_prepare,
+      [](const auto& sample) { return pgm::PGMHash<HASH_64, 256, 0>(sample.begin(), sample.end()); }, //
       [](const auto& pgm, const HASH_64& N, const HASH_64& key) { return pgm.hash(key, N); }, //
       "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
 
    measure_model(
-      "pgm_hash_eps8", pgm_sample_fn, sample_size, sort_prepare,
-      [](const auto& sample) { return pgm::PGMHash<HASH_64, 8>(sample.begin(), sample.end()); }, //
+      "pgm_hash_eps128_epsrec4", pgm_sample_fn, sample_size, sort_prepare,
+      [](const auto& sample) { return pgm::PGMHash<HASH_64, 128, 4>(sample.begin(), sample.end()); }, //
+      [](const auto& pgm, const HASH_64& N, const HASH_64& key) { return pgm.hash(key, N); }, //
+      "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
+
+   measure_model(
+      "pgm_hash_eps64_epsrec1", pgm_sample_fn, sample_size, sort_prepare,
+      [](const auto& sample) { return pgm::PGMHash<HASH_64, 64, 1>(sample.begin(), sample.end()); }, //
+      [](const auto& pgm, const HASH_64& N, const HASH_64& key) { return pgm.hash(key, N); }, //
+      "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
+
+   measure_model(
+      "pgm_hash_eps4_epsrec4", pgm_sample_fn, sample_size, sort_prepare,
+      [](const auto& sample) { return pgm::PGMHash<HASH_64, 4, 4>(sample.begin(), sample.end()); }, //
       [](const auto& pgm, const HASH_64& N, const HASH_64& key) { return pgm.hash(key, N); }, //
       "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
 }
