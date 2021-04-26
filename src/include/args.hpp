@@ -14,9 +14,9 @@
 namespace BenchmarkArgs {
    const std::string help_key = "help";
    const std::string outfile_key = "outfile";
-   const std::string max_threads_key = "max_threads";
-   const std::string load_factors_key = "load_factors";
-   const std::string sample_sizes_key = "sample_sizes";
+   const std::string max_threads_key = "max-threads";
+   const std::string load_factors_key = "load-factors";
+   const std::string sample_sizes_key = "sample-sizes";
    const std::string datasets_key = "datasets";
 
    struct HashCollisionArgs {
