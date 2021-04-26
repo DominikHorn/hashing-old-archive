@@ -26,15 +26,14 @@ do
   set -- $c
   IFS=$_IFS
 
-  benchmark/throughput_hash-${2} \
-    --outfile results/throughput_hash/throughput_hash-${2}.csv \
-    --max-threads=${MAX_THREADS} \
+  benchmark/hashtable_hash-${2} \
+    --load-factors=${LOAD_FACTORS} \
+    --outfile results/hashtable_hash/hashtable_hash-${2}.csv \
     $DATASETS
 
-  benchmark/throughput_learned-${2} \
-    --outfile results/throughput_learned/throughput_learned-${2}.csv \
-    --sample-sizes=${SAMPLE_SIZES} \
-    --max-threads=${MAX_THREADS} \
+  benchmark/hashtable_learned-${2} \
+    --load-factors=${LOAD_FACTORS} \
+    --outfile results/hashtable_learned/hashtable_learned-${2}.csv \
     $DATASETS
 
   benchmark/collisions_hash-${2} \
@@ -50,13 +49,14 @@ do
     --max-threads=${MAX_THREADS} \
     $DATASETS
 
-  benchmark/hashtable_hash-${2} \
-    --load-factors=${LOAD_FACTORS} \
-    --outfile results/hashtable_hash/hashtable_hash-${2}.csv \
+  benchmark/throughput_hash-${2} \
+    --outfile results/throughput_hash/throughput_hash-${2}.csv \
+    --max-threads=${MAX_THREADS} \
     $DATASETS
 
-  benchmark/hashtable_learned-${2} \
-    --load-factors=${LOAD_FACTORS} \
-    --outfile results/hashtable_learned/hashtable_learned-${2}.csv \
+  benchmark/throughput_learned-${2} \
+    --outfile results/throughput_learned/throughput_learned-${2}.csv \
+    --sample-sizes=${SAMPLE_SIZES} \
+    --max-threads=${MAX_THREADS} \
     $DATASETS
 done
