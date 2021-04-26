@@ -48,6 +48,26 @@ i.e., a single collision will result in 2 reported colliding keys.
 
 ![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/colliding_keys_percent_wiki_ts_200M_uint64_g++.png)
 
+#### consecutive_200M_uint64
+
+All continuous integers from 1000 - 200001000
+![consecutive_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/colliding_keys_percent_consecutive_200M_uint64_g++.png)
+
+#### gapped_10percent_200M_uint64
+
+All continuous integers, 10% of elements removed starting at 10000
+![gapped_10percent_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/colliding_keys_percent_gapped_10percent_200M_uint64_g++.png)
+
+#### gapped_1percent_200M_uint64
+
+All continuous integers, 1% of elements removed starting at 10000
+![gapped_1percent_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/colliding_keys_percent_gapped_1percent_200M_uint64_g++.png)
+
+#### gapped_1permill_200M_uint64
+
+All continuous integers, 0.1% of elements removed starting at 10000
+![gapped_1permill_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/colliding_keys_percent_gapped_1permill_200M_uint64_g++.png)
+
 ## Sample nanoseconds per key
 
 Amount of time creating the data sample took, relative to the total amount of keys in the keyset. Sampling is done by
@@ -84,6 +104,26 @@ Note that for `sample size == 1`, we dont uniformly random sample the dataset bu
 
 ![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/sample_nanoseconds_per_key_wiki_ts_200M_uint64_g++.png)
 
+#### consecutive_200M_uint64
+
+All continuous integers from 1000 - 200001000
+![consecutive_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/sample_nanoseconds_per_key_consecutive_200M_uint64_g++.png)
+
+#### gapped_10percent_200M_uint64
+
+All continuous integers, 10% of elements removed starting at 10000
+![gapped_10percent_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/sample_nanoseconds_per_key_gapped_10percent_200M_uint64_g++.png)
+
+#### gapped_1percent_200M_uint64
+
+All continuous integers, 1% of elements removed starting at 10000
+![gapped_1percent_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/sample_nanoseconds_per_key_gapped_1percent_200M_uint64_g++.png)
+
+#### gapped_1permill_200M_uint64
+
+All continuous integers, 0.1% of elements removed starting at 10000
+![gapped_1permill_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/sample_nanoseconds_per_key_gapped_1permill_200M_uint64_g++.png)
+
 ## Sample preparation nanoseconds per key
 
 Amount of time preparing the sample took, relative to the total amount of keys in the keyset. Preparation currently only
@@ -111,6 +151,26 @@ sample = sort(raw_sample)
 
 ![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/prepare_nanoseconds_per_key_wiki_ts_200M_uint64_g++.png)
 
+#### consecutive_200M_uint64
+
+All continuous integers from 1000 - 200001000
+![consecutive_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/prepare_nanoseconds_per_key_consecutive_200M_uint64_g++.png)
+
+#### gapped_10percent_200M_uint64
+
+All continuous integers, 10% of elements removed starting at 10000
+![gapped_10percent_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/prepare_nanoseconds_per_key_gapped_10percent_200M_uint64_g++.png)
+
+#### gapped_1percent_200M_uint64
+
+All continuous integers, 1% of elements removed starting at 10000
+![gapped_1percent_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/prepare_nanoseconds_per_key_gapped_1percent_200M_uint64_g++.png)
+
+#### gapped_1permill_200M_uint64
+
+All continuous integers, 0.1% of elements removed starting at 10000
+![gapped_1permill_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/prepare_nanoseconds_per_key_gapped_1permill_200M_uint64_g++.png)
+
 ## Build nanoseconds per key
 
 Amount of time building the learned hash function took, relative to the total amount of keys in the keyset. Sampling and
@@ -137,6 +197,26 @@ model = Model(sample)
 #### wiki_ts_200M_uint64
 
 ![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/build_nanoseconds_per_key_wiki_ts_200M_uint64_g++.png)
+
+#### consecutive_200M_uint64
+
+All continuous integers from 1000 - 200001000
+![consecutive_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/build_nanoseconds_per_key_consecutive_200M_uint64_g++.png)
+
+#### gapped_10percent_200M_uint64
+
+All continuous integers, 10% of elements removed starting at 10000
+![gapped_10percent_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/build_nanoseconds_per_key_gapped_10percent_200M_uint64_g++.png)
+
+#### gapped_1percent_200M_uint64
+
+All continuous integers, 1% of elements removed starting at 10000
+![gapped_1percent_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/build_nanoseconds_per_key_gapped_1percent_200M_uint64_g++.png)
+
+#### gapped_1permill_200M_uint64
+
+All continuous integers, 0.1% of elements removed starting at 10000
+![gapped_1permill_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/build_nanoseconds_per_key_gapped_1permill_200M_uint64_g++.png)
 
 ## Hashing nanoseconds per key
 
@@ -170,12 +250,32 @@ for key in keyset {
 
 ![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/hashing_nanoseconds_per_key_wiki_ts_200M_uint64_g++.png)
 
+#### consecutive_200M_uint64
+
+All continuous integers from 1000 - 200001000
+![consecutive_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/hashing_nanoseconds_per_key_consecutive_200M_uint64_g++.png)
+
+#### gapped_10percent_200M_uint64
+
+All continuous integers, 10% of elements removed starting at 10000
+![gapped_10percent_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/hashing_nanoseconds_per_key_gapped_10percent_200M_uint64_g++.png)
+
+#### gapped_1percent_200M_uint64
+
+All continuous integers, 1% of elements removed starting at 10000
+![gapped_1percent_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/hashing_nanoseconds_per_key_gapped_1percent_200M_uint64_g++.png)
+
+#### gapped_1permill_200M_uint64
+
+All continuous integers, 0.1% of elements removed starting at 10000
+![gapped_1permill_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/hashing_nanoseconds_per_key_gapped_1permill_200M_uint64_g++.png)
+
 ### Total nanoseconds per key
 
 Total amount of time, i.e., the sum of sample, prepare sample, build and hash, relative to the total amount of keys in
 the keyset.
 
-### Clang++
+### g++ (Ubuntu 9.3.0-23ubuntu1~16.04) 9.3.0 Intel(R) Core(TM) i9-9900K 16 Core @ 3.60GHz
 
 #### books_200M_uint32
 
@@ -192,3 +292,23 @@ the keyset.
 #### wiki_ts_200M_uint64
 
 ![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/total_nanoseconds_per_key_wiki_ts_200M_uint64_g++.png)
+
+#### consecutive_200M_uint64
+
+All continuous integers from 1000 - 200001000
+![consecutive_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/total_nanoseconds_per_key_consecutive_200M_uint64_g++.png)
+
+#### gapped_10percent_200M_uint64
+
+All continuous integers, 10% of elements removed starting at 10000
+![gapped_10percent_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/total_nanoseconds_per_key_gapped_10percent_200M_uint64_g++.png)
+
+#### gapped_1percent_200M_uint64
+
+All continuous integers, 1% of elements removed starting at 10000
+![gapped_1percent_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/total_nanoseconds_per_key_gapped_1percent_200M_uint64_g++.png)
+
+#### gapped_1permill_200M_uint64
+
+All continuous integers, 0.1% of elements removed starting at 10000
+![gapped_1permill_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/collisions_learned/graphs/total_nanoseconds_per_key_gapped_1permill_200M_uint64_g++.png)
