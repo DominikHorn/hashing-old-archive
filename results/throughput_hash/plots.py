@@ -63,5 +63,5 @@ for compiler in compilers:
             handles=[mpatches.Patch(color=colors.get(name), label=name) for name in hash_methods],
             bbox_to_anchor=(0.5, -0.4), loc="lower center", ncol=7)
 
-        plt.savefig(f"graphs/throughput_hash-{compiler}_{dataset_name}.pdf", bbox_inches='tight', pad_inches=0.5)
-        plt.savefig(f"graphs/throughput_hash-{compiler}_{dataset_name}.png", bbox_inches='tight', pad_inches=0.5)
+        plt.savefig(f"graphs/throughput_hash_{dataset_name}_{compiler}.pdf", bbox_inches='tight', pad_inches=0.5)
+        plt.savefig(f"graphs/throughput_hash_{dataset_name}_{compiler}.png", bbox_inches='tight', pad_inches=0.5)
