@@ -22,4 +22,4 @@ add_executable(hashtable_hash hashtable_hash.cpp)
 target_link_libraries(hashtable_hash convenience hashtable reduction hashing cxxopts)
 
 add_executable(hashtable_learned hashtable_learned.cpp)
-target_link_libraries(hashtable_learned convenience hashtable learned_models reduction cxxopts)
+target_link_libraries(hashtable_learned convenience hashtable reduction learned_models hashing cxxopts)

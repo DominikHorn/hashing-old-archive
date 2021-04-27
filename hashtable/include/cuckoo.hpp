@@ -20,9 +20,15 @@
 #include <convenience.hpp>
 
 namespace Hashtable {
-   template<typename Key, typename Payload, size_t BucketSize = 1, Key Sentinel = std::numeric_limits<Key>::max()>
+   template<typename Key, typename Payload, size_t BucketSize, typename HashFn1, typename HashFn2,
+            typename ReductionFn1, typename ReductionFn2, Key Sentinel = std::numeric_limits<Key>::max()>
    class Cuckoo {
      private:
+      const HashFn1 hashfn1;
+      const HashFn2 hashfn2;
+      const ReductionFn1 reductionfn1;
+      const ReductionFn2 reductionfn2;
+
       struct Bucket {
          Key keys[BucketSize] __attribute((aligned(32)));
          Payload values[BucketSize];
@@ -34,7 +40,10 @@ namespace Hashtable {
       std::mt19937 rand_; // RNG for moving items around
 
      public:
-      Cuckoo(size_t capacity) : size_(0), num_buckets_((capacity + BucketSize - 1) / BucketSize) {
+      Cuckoo(size_t capacity, ReductionFn1 reductionfn1 = ReductionFn1(), ReductionFn2 reductionfn2 = ReductionFn2(),
+             HashFn1 hashfn1 = HashFn1(), HashFn2 hashfn2 = HashFn2())
+         : hashfn1(hashfn1), hashfn2(hashfn2), reductionfn1(reductionfn1), reductionfn2(reductionfn2), size_(0),
+           num_buckets_((capacity + BucketSize - 1) / BucketSize) {
          int r = posix_memalign(reinterpret_cast<void**>(&buckets_), 32, num_buckets_ * sizeof(Bucket));
          if (r != 0)
             throw std::runtime_error("Could not memalign allocate for cuckoo hash map");
@@ -50,20 +59,19 @@ namespace Hashtable {
          free(buckets_);
       }
 
-      template<typename Hash1, typename Hash2, typename Reducer>
-      std::optional<Payload> lookup(const Key& key, const Hash1& hashfn1, const Hash2& hashfn2,
-                                    const Reducer& reducer) const {
+      std::optional<Payload> lookup(const Key& key) const {
          const auto h1 = hashfn1(key);
-         const auto i1 = reducer(h1, num_buckets_);
+         const auto i1 = reductionfn1(h1, num_buckets_);
 
          Bucket* b1 = &buckets_[i1];
          for (size_t i = 0; i < BucketSize; i++) {
             if (b1->keys[i] == key) {
-               return {b1->values[i]};
+               auto val = b1->values[i];
+               return std::make_optional(val);
             }
          }
 
-         auto i2 = reducer(hashfn2(key, h1), num_buckets_);
+         auto i2 = reductionfn2(hashfn2(key, h1), num_buckets_);
          if (i2 == i1) {
             i2 = (i1 == num_buckets_ - 1) ? 0 : i1 + 1;
          }
@@ -71,42 +79,55 @@ namespace Hashtable {
          Bucket* b2 = &buckets_[i2];
          for (size_t i = 0; i < BucketSize; i++) {
             if (b2->keys[i] == key) {
-               return {b2->values[i]};
+               auto val = b2->values[i];
+               return std::make_optional(val);
             }
          }
 
          return std::nullopt;
       }
 
-      template<typename Hash1, typename Hash2, typename Reducer>
-      void insert(const Key& key, const Payload& value, const Hash1& hashfn1, const Hash2& hashfn2,
-                  const Reducer& reducer) {
-         insert(key, value, hashfn1, hashfn2, reducer, false);
+      void insert(const Key& key, const Payload& value) {
+         insert(key, value, false);
       }
 
       forceinline size_t size() {
          return size_;
       }
 
-      static constexpr forceinline size_t bucket_size() {
+      static constexpr forceinline size_t bucket_byte_size() {
          return sizeof(Bucket);
       }
 
+      static forceinline std::string name() {
+         return "chained";
+      }
+
+      static forceinline std::string hash_name() {
+         return HashFn1::name() + " - " + HashFn2::name();
+      }
+
+      static forceinline std::string reducer_name() {
+         return ReductionFn1::name() + " - " + ReductionFn2::name();
+      }
+
+      static constexpr forceinline size_t bucket_size() {
+         return BucketSize;
+      }
+
       void clear() {
-         for (auto& bucket : buckets_) {
+         for (Bucket* ptr = buckets_; ptr < buckets_ + num_buckets_; ptr++) {
             for (size_t i = 0; i < BucketSize; i++) {
-               bucket.key[i] = Sentinel;
+               ptr->keys[i] = Sentinel;
             }
          }
       }
 
      private:
-      template<typename Hash1, typename Hash2, typename Reducer>
-      void insert(const Key& key, const Payload& value, const Hash1& hashfn1, const Hash2& hashfn2,
-                  const Reducer& reducer, bool is_reinsert) {
+      void insert(const Key& key, const Payload& value, bool is_reinsert) {
          const auto h1 = hashfn1(key);
-         const auto i1 = reducer(h1, num_buckets_);
-         auto i2 = reducer(hashfn2(key, h1), num_buckets_);
+         const auto i1 = reductionfn1(h1, num_buckets_);
+         auto i2 = reductionfn2(hashfn2(key, h1), num_buckets_);
 
          if (unlikely(i2 == i1)) {
             i2 = (i1 == num_buckets_ - 1) ? 0 : i1 + 1;
@@ -162,15 +183,21 @@ namespace Hashtable {
             Payload old_value = victim_bucket->values[victim_index];
             victim_bucket->keys[victim_index] = key;
             victim_bucket->values[victim_index] = value;
-            insert(old_key, old_value, hashfn1, hashfn2, reducer, true);
+            insert(old_key, old_value, true);
          }
       }
    };
 
-   template<typename Payload, uint32_t Sentinel>
-   class Cuckoo<uint32_t, Payload, 8, Sentinel> {
+   template<typename Payload, typename HashFn1, typename HashFn2, typename ReductionFn1, typename ReductionFn2,
+            uint32_t Sentinel>
+   class Cuckoo<uint32_t, Payload, 8, HashFn1, HashFn2, ReductionFn1, ReductionFn2, Sentinel> {
      private:
       static constexpr uint32_t BucketSize = 8;
+
+      const HashFn1 hashfn1;
+      const HashFn2 hashfn2;
+      const ReductionFn1 reductionfn1;
+      const ReductionFn2 reductionfn2;
 
       struct Bucket {
          uint32_t keys[BucketSize] __attribute((aligned(32)));
@@ -183,7 +210,10 @@ namespace Hashtable {
       std::mt19937 rand_; // RNG for moving items around
 
      public:
-      Cuckoo(size_t capacity) : size_(0), num_buckets_((capacity + 8 - 1) / 8) {
+      Cuckoo(size_t capacity, ReductionFn1 reductionfn1 = ReductionFn1(), ReductionFn2 = ReductionFn2(),
+             HashFn1 hashfn1 = HashFn1(), HashFn2 hashfn2 = HashFn2())
+         : hashfn1(hashfn1), hashfn2(hashfn2), reductionfn1(reductionfn1), reductionfn2(reductionfn2), size_(0),
+           num_buckets_((capacity + 8 - 1) / 8) {
          int r = posix_memalign(reinterpret_cast<void**>(&buckets_), 32, num_buckets_ * sizeof(Bucket));
          if (r != 0)
             throw std::runtime_error("Could not memalign allocate for cuckoo hash map");
@@ -199,11 +229,9 @@ namespace Hashtable {
          free(buckets_);
       }
 
-      template<typename Hash1, typename Hash2, typename Reducer>
-      std::optional<Payload> lookup(const uint32_t& key, const Hash1& hashfn1, const Hash2& hashfn2,
-                                    const Reducer& reducer) const {
+      std::optional<Payload> lookup(const uint32_t& key) const {
          const auto h1 = hashfn1(key);
-         const auto i1 = reducer(h1, num_buckets_);
+         const auto i1 = reductionfn1(h1, num_buckets_);
 
          Bucket* b1 = &buckets_[i1];
          __m256i vkey = _mm256_set1_epi32(key);
@@ -212,10 +240,11 @@ namespace Hashtable {
          int mask = _mm256_movemask_epi8(cmp);
          if (mask != 0) {
             int index = __builtin_ctz(mask) / 4;
-            return {b1->values[index]};
+            auto val = b1->values[index];
+            return std::make_optional(val);
          }
 
-         auto i2 = reducer(hashfn2(key, h1), num_buckets_);
+         auto i2 = reductionfn2(hashfn2(key, h1), num_buckets_);
          if (i2 == i1) {
             i2 = (i1 == num_buckets_ - 1) ? 0 : i1 + 1;
          }
@@ -225,41 +254,54 @@ namespace Hashtable {
          mask = _mm256_movemask_epi8(cmp);
          if (mask != 0) {
             int index = __builtin_ctz(mask) / 4;
-            return {b2->values[index]};
+            auto val = b2->values[index];
+            return std::make_optional(val);
          }
 
          return std::nullopt;
       }
 
-      template<typename Hash1, typename Hash2, typename Reducer>
-      void insert(const uint32_t& key, const Payload& value, const Hash1& hashfn1, const Hash2& hashfn2,
-                  const Reducer& reducer) {
-         insert(key, value, hashfn1, hashfn2, reducer, false);
+      void insert(const uint32_t& key, const Payload& value) {
+         insert(key, value, false);
       }
 
       forceinline size_t size() {
          return size_;
       }
 
-      static constexpr forceinline size_t bucket_size() {
+      static constexpr forceinline size_t bucket_byte_size() {
          return sizeof(Bucket);
       }
 
+      static forceinline std::string name() {
+         return "chained";
+      }
+
+      static forceinline std::string hash_name() {
+         return HashFn1::name() + " - " + HashFn2::name();
+      }
+
+      static forceinline std::string reducer_name() {
+         return ReductionFn1::name() + " - " + ReductionFn2::name();
+      }
+
+      static constexpr forceinline size_t bucket_size() {
+         return BucketSize;
+      }
+
       void clear() {
-         for (auto& bucket : buckets_) {
+         for (auto ptr = buckets_; ptr < buckets_ + num_buckets_; ptr++) {
             for (size_t i = 0; i < BucketSize; i++) {
-               bucket.key[i] = Sentinel;
+               ptr->keys[i] = Sentinel;
             }
          }
       }
 
      private:
-      template<typename Hash1, typename Hash2, typename Reducer>
-      void insert(const uint32_t& key, const Payload& value, const Hash1& hashfn1, const Hash2& hashfn2,
-                  const Reducer& reducer, bool is_reinsert) {
+      void insert(const uint32_t& key, const Payload& value, bool is_reinsert) {
          const auto h1 = hashfn1(key);
-         const auto i1 = reducer(h1, num_buckets_);
-         auto i2 = reducer(hashfn2(key, h1), num_buckets_);
+         const auto i1 = reductionfn1(h1, num_buckets_);
+         auto i2 = reductionfn2(hashfn2(key, h1), num_buckets_);
 
          if (unlikely(i2 == i1)) {
             i2 = (i1 == num_buckets_ - 1) ? 0 : i1 + 1;
@@ -323,7 +365,7 @@ namespace Hashtable {
             Payload old_value = victim_bucket->values[victim_index];
             victim_bucket->keys[victim_index] = key;
             victim_bucket->values[victim_index] = value;
-            insert(old_key, old_value, hashfn1, hashfn2, reducer, true);
+            insert(old_key, old_value, true);
          }
       }
    };

@@ -13,6 +13,8 @@
 #include "include/args.hpp"
 #include "include/benchmark.hpp"
 #include "include/csv.hpp"
+#include "include/functors.hpp"
+#include "include/learned_functors.hpp"
 
 using Args = BenchmarkArgs::HashCollisionArgs;
 
@@ -30,21 +32,20 @@ const std::vector<std::string> csv_columns = {
    "lookup_nanoseconds_per_key",
 };
 
-template<typename T>
-static void measure(const std::string& dataset_name, const std::shared_ptr<const std::vector<uint64_t>> dataset,
-                    T& hashtable, const size_t bucket_size, const double load_factor, CSV& outfile,
-                    std::mutex& iomutex) {
-   const auto measure_model = [&](const std::string& model_name, const auto& samplefn, const auto& sample_size,
-                                  const auto& preparefn, const auto& buildfn, const auto& modelfn,
-                                  const std::string& reducer_name, const auto& reducerfn) {
+static void benchmark(const std::string& dataset_name, const std::shared_ptr<const std::vector<uint64_t>> dataset_ptr,
+                      const double load_factor, CSV& outfile, std::mutex& iomutex) {
+   const auto measure = [&](auto hashtable, const auto& sample_size) {
+      const auto hash_name = hashtable.hash_name();
+      const auto reducer_name = hashtable.reducer_name();
+
       const auto str = [](auto s) { return std::to_string(s); };
       std::map<std::string, std::string> datapoint({
          {"dataset", dataset_name},
-         {"numelements", str(dataset->size())},
+         {"numelements", str(dataset_ptr->size())},
          {"load_factor", str(load_factor)},
          {"sample_size", str(sample_size)},
-         {"bucket_size", str(bucket_size)},
-         {"model", model_name},
+         {"bucket_size", str(hashtable.bucket_size())},
+         {"model", hash_name},
          {"reducer", reducer_name},
       });
 
@@ -63,31 +64,24 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
          return;
       }
 
-      // Take a random sample
-      auto sample = samplefn();
-      preparefn(sample);
-      const auto model = buildfn(sample);
-
       // Measure
-      const auto stats = Benchmark::measure_hashtable(*dataset, hashtable, [&](const HASH_64& key, const size_t& N) {
-         return reducerfn(modelfn(model, N, key), N);
-      });
+      const auto stats = Benchmark::measure_hashtable(*dataset_ptr, hashtable);
 
 #ifdef VERBOSE
       {
          std::unique_lock<std::mutex> lock(iomutex);
-         std::cout << std::setw(55) << std::right << reducer_name + "(" + model_name + ") insert took "
-                   << relative_to(stats.total_insert_ns, dataset->size()) << " ns/key ("
+         std::cout << std::setw(55) << std::right << reducer_name + "(" + hash_name + ") insert took "
+                   << relative_to(stats.total_insert_ns, dataset_ptr->size()) << " ns/key ("
                    << nanoseconds_to_seconds(stats.total_insert_ns) << " s total), lookup took "
-                   << relative_to(stats.total_lookup_ns, dataset->size()) << " ns/key ("
+                   << relative_to(stats.total_lookup_ns, dataset_ptr->size()) << " ns/key ("
                    << nanoseconds_to_seconds(stats.total_lookup_ns) << " s total)" << std::endl;
       };
 #endif
 
       datapoint.emplace("insert_nanoseconds_total", str(stats.total_insert_ns));
-      datapoint.emplace("insert_nanoseconds_per_key", str(relative_to(stats.total_insert_ns, dataset->size())));
+      datapoint.emplace("insert_nanoseconds_per_key", str(relative_to(stats.total_insert_ns, dataset_ptr->size())));
       datapoint.emplace("lookup_nanoseconds_total", str(stats.total_lookup_ns));
-      datapoint.emplace("lookup_nanoseconds_per_key", str(relative_to(stats.total_lookup_ns, dataset->size())));
+      datapoint.emplace("lookup_nanoseconds_per_key", str(relative_to(stats.total_lookup_ns, dataset_ptr->size())));
 
       // Write to csv
       outfile.write(datapoint);
@@ -98,24 +92,26 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
     *        Learned Indices
     * ====================================
     */
+
+   // Take a sample
    const double sample_size = 0.01; // Fix this for now at 0.01
-   const auto sample_n = static_cast<size_t>(sample_size * static_cast<long double>(dataset->size()));
+   const auto sample_n = static_cast<size_t>(sample_size * static_cast<long double>(dataset_ptr->size()));
    const auto pgm_sample_fn = [&]() {
       std::vector<uint64_t> sample(sample_n, 0);
       if (sample_n == 0)
          return sample;
-      if (sample_n == dataset->size()) {
-         sample = *dataset;
+      if (sample_n == dataset_ptr->size()) {
+         sample = *dataset_ptr;
          return sample;
       }
 
       // Random constant to ensure reproducibility for debugging. TODO: make truely random for benchmark/use varying constants (?) -> also adjust fisher yates shuffle and other such constants
       const uint64_t seed = 0x9E3779B9LU;
       std::default_random_engine gen(seed);
-      std::uniform_int_distribution<uint64_t> dist(0, dataset->size() - 1);
+      std::uniform_int_distribution<uint64_t> dist(0, dataset_ptr->size() - 1);
       for (size_t i = 0; i < sample_n; i++) {
          const auto random_index = dist(gen);
-         sample[i] = dataset->at(random_index);
+         sample[i] = dataset_ptr->at(random_index);
       }
 
       return sample;
@@ -123,64 +119,104 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
 
    const auto sort_prepare = [](auto& sample) { std::sort(sample.begin(), sample.end()); };
 
-   measure_model(
-      "pgm_hash_eps256_epsrec0", pgm_sample_fn, sample_size, sort_prepare,
-      [](const auto& sample) { return pgm::PGMHash<HASH_64, 256, 0>(sample.begin(), sample.end()); }, //
-      [](const auto& pgm, const HASH_64& N, const HASH_64& key) { return pgm.hash(key, N); }, //
-      "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
+   // Take a random sample
+   auto sample = pgm_sample_fn();
+   sort_prepare(sample);
 
-   measure_model(
-      "pgm_hash_eps128_epsrec4", pgm_sample_fn, sample_size, sort_prepare,
-      [](const auto& sample) { return pgm::PGMHash<HASH_64, 128, 4>(sample.begin(), sample.end()); }, //
-      [](const auto& pgm, const HASH_64& N, const HASH_64& key) { return pgm.hash(key, N); }, //
-      "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
+   const auto hashtable_size =
+      static_cast<uint64_t>(static_cast<double>(dataset_ptr->size()) / static_cast<double>(load_factor));
 
-   measure_model(
-      "pgm_hash_eps64_epsrec1", pgm_sample_fn, sample_size, sort_prepare,
-      [](const auto& sample) { return pgm::PGMHash<HASH_64, 64, 1>(sample.begin(), sample.end()); }, //
-      [](const auto& pgm, const HASH_64& N, const HASH_64& key) { return pgm.hash(key, N); }, //
-      "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
+   measure(Hashtable::Chained<uint64_t, uint32_t, 1, PGMHashFunc<HASH_64, 256, 0>, MinMaxCutoffFunc<HASH_64>>(
+              hashtable_size, MinMaxCutoffFunc<HASH_64>(),
+              PGMHashFunc<HASH_64, 256, 0>(sample.begin(), sample.end(), hashtable_size)),
+           sample_size);
+   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 4, PGMHashFunc<HASH_64, 256, 0>, Murmur3FinalizerCuckoo2Func,
+                             MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>>(
+              hashtable_size, MinMaxCutoffFunc<HASH_64>(), FastModuloFunc<HASH_64>(hashtable_size),
+              PGMHashFunc<HASH_64, 256, 0>(sample.begin(), sample.end(), hashtable_size)),
+           sample_size);
+   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 256, 0>, Murmur3FinalizerCuckoo2Func,
+                             MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>>(
+              hashtable_size, MinMaxCutoffFunc<HASH_64>(), FastModuloFunc<HASH_64>(hashtable_size),
+              PGMHashFunc<HASH_64, 256, 0>(sample.begin(), sample.end(), hashtable_size)),
+           sample_size);
 
-   measure_model(
-      "pgm_hash_eps4_epsrec4", pgm_sample_fn, sample_size, sort_prepare,
-      [](const auto& sample) { return pgm::PGMHash<HASH_64, 4, 4>(sample.begin(), sample.end()); }, //
-      [](const auto& pgm, const HASH_64& N, const HASH_64& key) { return pgm.hash(key, N); }, //
-      "min_max_cutoff", Reduction::min_max_cutoff<HASH_64>);
-}
+   measure(Hashtable::Chained<uint64_t, uint32_t, 1, PGMHashFunc<HASH_64, 128, 4>, MinMaxCutoffFunc<HASH_64>>(
+              hashtable_size, MinMaxCutoffFunc<HASH_64>(),
+              PGMHashFunc<HASH_64, 128, 4>(sample.begin(), sample.end(), hashtable_size)),
+           sample_size);
+   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 4, PGMHashFunc<HASH_64, 128, 4>, Murmur3FinalizerCuckoo2Func,
+                             MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>>(
+              hashtable_size, MinMaxCutoffFunc<HASH_64>(), FastModuloFunc<HASH_64>(hashtable_size),
+              PGMHashFunc<HASH_64, 128, 4>(sample.begin(), sample.end(), hashtable_size)),
+           sample_size);
+   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 128, 4>, Murmur3FinalizerCuckoo2Func,
+                             MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>>(
+              hashtable_size, MinMaxCutoffFunc<HASH_64>(), FastModuloFunc<HASH_64>(hashtable_size),
+              PGMHashFunc<HASH_64, 128, 4>(sample.begin(), sample.end(), hashtable_size)),
+           sample_size);
 
-void print_max_resource_usage(const Args& args) {
-   std::vector<size_t> exec_mem;
-   size_t max_bytes = 0;
-   for (const auto& dataset : args.datasets) {
-      const auto path = std::filesystem::current_path() / dataset.filepath;
-      const auto dataset_size = std::filesystem::file_size(path);
+   measure(Hashtable::Chained<uint64_t, uint32_t, 1, PGMHashFunc<HASH_64, 64, 1>, MinMaxCutoffFunc<HASH_64>>(
+              hashtable_size, MinMaxCutoffFunc<HASH_64>(),
+              PGMHashFunc<HASH_64, 64, 1>(sample.begin(), sample.end(), hashtable_size)),
+           sample_size);
+   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 4, PGMHashFunc<HASH_64, 64, 1>, Murmur3FinalizerCuckoo2Func,
+                             MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>>(
+              hashtable_size, MinMaxCutoffFunc<HASH_64>(), FastModuloFunc<HASH_64>(hashtable_size),
+              PGMHashFunc<HASH_64, 64, 1>(sample.begin(), sample.end(), hashtable_size)),
+           sample_size);
+   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 64, 1>, Murmur3FinalizerCuckoo2Func,
+                             MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>>(
+              hashtable_size, MinMaxCutoffFunc<HASH_64>(), FastModuloFunc<HASH_64>(hashtable_size),
+              PGMHashFunc<HASH_64, 64, 1>(sample.begin(), sample.end(), hashtable_size)),
+           sample_size);
 
-      for (const auto& load_fac : args.load_factors) {
-         const auto max_bucket_size = Hashtable::Chained<uint64_t, uint32_t, 4>::bucket_size();
-         const auto base_ht_size =
-            (static_cast<long double>(dataset_size - dataset.bytesPerValue) / (load_fac * dataset.bytesPerValue)) *
-            max_bucket_size;
-         const auto max_excess_buckets_size =
-            (static_cast<long double>(dataset_size - 2 * dataset.bytesPerValue) / (dataset.bytesPerValue)) *
-            max_bucket_size;
-         //         const auto learned_index_size = (?)
-
-         // Chained hashtable memory consumption upper estimate
-         exec_mem.emplace_back(dataset_size + base_ht_size + max_excess_buckets_size);
-      }
-   }
-
-   std::sort(exec_mem.rbegin(), exec_mem.rend());
-   max_bytes += exec_mem[0];
-
-   std::cout << "Will consume max <= " << max_bytes / (std::pow(1024, 3)) << " GB of ram" << std::endl;
+   measure(Hashtable::Chained<uint64_t, uint32_t, 1, PGMHashFunc<HASH_64, 4, 4>, MinMaxCutoffFunc<HASH_64>>(
+              hashtable_size, MinMaxCutoffFunc<HASH_64>(),
+              PGMHashFunc<HASH_64, 4, 4>(sample.begin(), sample.end(), hashtable_size)),
+           sample_size);
+   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 4, PGMHashFunc<HASH_64, 4, 4>, Murmur3FinalizerCuckoo2Func,
+                             MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>>(
+              hashtable_size, MinMaxCutoffFunc<HASH_64>(), FastModuloFunc<HASH_64>(hashtable_size),
+              PGMHashFunc<HASH_64, 4, 4>(sample.begin(), sample.end(), hashtable_size)),
+           sample_size);
+   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 4, 4>, Murmur3FinalizerCuckoo2Func,
+                             MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>>(
+              hashtable_size, MinMaxCutoffFunc<HASH_64>(), FastModuloFunc<HASH_64>(hashtable_size),
+              PGMHashFunc<HASH_64, 4, 4>(sample.begin(), sample.end(), hashtable_size)),
+           sample_size);
 }
 
 int main(int argc, char* argv[]) {
    try {
       auto args = Args(argc, argv);
 #ifdef VERBOSE
-      print_max_resource_usage(args);
+      std::vector<size_t> exec_mem;
+      size_t max_bytes = 0;
+      for (const auto& dataset : args.datasets) {
+         const auto path = std::filesystem::current_path() / dataset.filepath;
+         const auto dataset_size = std::filesystem::file_size(path);
+
+         for (const auto& load_fac : args.load_factors) {
+            const auto max_bucket_size =
+               Hashtable::Chained<uint64_t, uint32_t, 4, Mult64Func, FastrangeFunc<HASH_64>>::bucket_byte_size();
+            const auto base_ht_size =
+               (static_cast<long double>(dataset_size - dataset.bytesPerValue) / (load_fac * dataset.bytesPerValue)) *
+               max_bucket_size;
+            const auto max_excess_buckets_size =
+               (static_cast<long double>(dataset_size - 2 * dataset.bytesPerValue) / (dataset.bytesPerValue)) *
+               max_bucket_size;
+            //         const auto learned_index_size = (?)
+
+            // Chained hashtable memory consumption upper estimate
+            exec_mem.emplace_back(dataset_size + base_ht_size + max_excess_buckets_size);
+         }
+      }
+
+      std::sort(exec_mem.rbegin(), exec_mem.rend());
+      max_bytes += exec_mem[0];
+
+      std::cout << "Will consume max <= " << max_bytes / (std::pow(1024, 3)) << " GB of ram" << std::endl;
 #endif
 
       CSV outfile(args.outfile, csv_columns);
@@ -194,27 +230,7 @@ int main(int argc, char* argv[]) {
          const auto dataset_ptr = std::make_shared<const std::vector<uint64_t>>(it.load(iomutex));
 
          for (auto load_factor : args.load_factors) {
-            // Theoretical slot count of a hashtable on which we want to measure collisions
-            const auto hashtable_size =
-               static_cast<uint64_t>(static_cast<double>(dataset_ptr->size()) / static_cast<double>(load_factor));
-
-            // Bucket size 1
-            {
-               Hashtable::Chained<HASH_64, uint32_t, 1> chained_1(hashtable_size);
-               measure(it.name(), dataset_ptr, chained_1, 1, load_factor, outfile, iomutex);
-            }
-
-            // Bucket size 2
-            {
-               Hashtable::Chained<HASH_64, uint32_t, 2> chained_2(hashtable_size);
-               measure(it.name(), dataset_ptr, chained_2, 2, load_factor, outfile, iomutex);
-            }
-
-            // Bucket size 4
-            {
-               Hashtable::Chained<HASH_64, uint32_t, 4> chained_4(hashtable_size);
-               measure(it.name(), dataset_ptr, chained_4, 4, load_factor, outfile, iomutex);
-            }
+            benchmark(it.name(), dataset_ptr, load_factor, outfile, iomutex);
          }
       }
    } catch (const std::exception& ex) {

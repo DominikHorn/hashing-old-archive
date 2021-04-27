@@ -13,6 +13,7 @@
 #include "include/args.hpp"
 #include "include/benchmark.hpp"
 #include "include/csv.hpp"
+#include "include/functors.hpp"
 
 using Args = BenchmarkArgs::HashCollisionArgs;
 
@@ -29,24 +30,19 @@ const std::vector<std::string> csv_columns = {
    "lookup_nanoseconds_per_key",
 };
 
-template<typename T>
-static void measure(const std::string& dataset_name, const std::shared_ptr<const std::vector<uint64_t>> dataset,
-                    T& hashtable, const size_t bucket_size, const double load_factor, CSV& outfile, std::mutex& iomutex,
-                    const HASH_64 (&small_tabulation_table)[0xFF],
-                    const HASH_64 (&large_tabulation_table)[sizeof(HASH_64)][0xFF]) {
-   // Theoretical slot count of a hashtable on which we want to measure collisions
-   const auto hashtable_size =
-      static_cast<uint64_t>(static_cast<double>(dataset->size()) / static_cast<double>(load_factor));
-
+static void benchmark(const std::string& dataset_name, const std::shared_ptr<const std::vector<uint64_t>> dataset,
+                      const double load_factor, CSV& outfile, std::mutex& iomutex) {
    // lambda to measure a given hash function with a given reducer. Will be entirely inlined by default
-   const auto measure_hashfn_with_reducer = [&](const std::string& hash_name, const std::string& reducer_name,
-                                                const auto& hashfn) {
+   const auto measure = [&](auto hashtable) {
+      const auto hash_name = hashtable.hash_name();
+      const auto reducer_name = hashtable.reducer_name();
+
       const auto str = [](auto s) { return std::to_string(s); };
       std::map<std::string, std::string> datapoint({
          {"dataset", dataset_name},
          {"numelements", str(dataset->size())},
          {"load_factor", str(load_factor)},
-         {"bucket_size", str(bucket_size)},
+         {"bucket_size", str(hashtable.bucket_size())},
          {"hash", hash_name},
          {"reducer", reducer_name},
       });
@@ -67,7 +63,7 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
       }
 
       // Measure
-      const auto stats = Benchmark::measure_hashtable(*dataset, hashtable, hashfn);
+      const auto stats = Benchmark::measure_hashtable(*dataset, hashtable);
 
 #ifdef VERBOSE
       {
@@ -89,114 +85,135 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
       outfile.write(datapoint);
    };
 
-   // Build load factor specific auxiliary data
-   const auto magic_div = Reduction::make_magic_divider(static_cast<HASH_64>(hashtable_size));
+   // Theoretical slot count of a hashtable on which we want to measure collisions
+   const auto hashtable_size =
+      static_cast<uint64_t>(static_cast<double>(dataset->size()) / static_cast<double>(load_factor));
 
-   // measures a hash function using every reducer
-   const auto measure_hashfn = [&](const std::string& hash_name, const auto& hashfn) {
-      const auto hash_fastrange32 = [&](const HASH_64& key, const size_t& N) {
-         return Reduction::fastrange<HASH_32>(hashfn(key), N);
-      };
-      const auto hash_fastrange64 = [&](const HASH_64& key, const size_t& N) {
-         return Reduction::fastrange<HASH_64>(hashfn(key), N);
-      };
-      const auto hash_fast_modulo = [&](const HASH_64& key, const size_t& N) {
-         return Reduction::magic_modulo(hashfn(key), N, magic_div);
-      };
+   /// Chained mult
+   measure(Hashtable::Chained<uint64_t, uint32_t, 1, Mult64Func, FastrangeFunc<HASH_32>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 1, Mult64Func, FastrangeFunc<HASH_64>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 1, Mult64Func, FastModuloFunc<HASH_64>>(
+      hashtable_size, FastModuloFunc<HASH_64>(hashtable_size)));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 2, Mult64Func, FastrangeFunc<HASH_32>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 2, Mult64Func, FastrangeFunc<HASH_64>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 2, Mult64Func, FastModuloFunc<HASH_64>>(
+      hashtable_size, FastModuloFunc<HASH_64>(hashtable_size)));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 4, Mult64Func, FastrangeFunc<HASH_32>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 4, Mult64Func, FastrangeFunc<HASH_64>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 4, Mult64Func, FastModuloFunc<HASH_64>>(
+      hashtable_size, FastModuloFunc<HASH_64>(hashtable_size)));
 
-      measure_hashfn_with_reducer(hash_name, "fastrange32", hash_fastrange32);
-      measure_hashfn_with_reducer(hash_name, "fastrange64", hash_fastrange64);
-      measure_hashfn_with_reducer(hash_name, "fast_modulo", hash_fast_modulo);
-   };
+   /// Chained mult-add
+   measure(Hashtable::Chained<uint64_t, uint32_t, 1, MultAdd64Func, FastrangeFunc<HASH_32>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 1, MultAdd64Func, FastrangeFunc<HASH_64>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 1, MultAdd64Func, FastModuloFunc<HASH_64>>(
+      hashtable_size, FastModuloFunc<HASH_64>(hashtable_size)));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 2, MultAdd64Func, FastrangeFunc<HASH_32>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 2, MultAdd64Func, FastrangeFunc<HASH_64>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 2, MultAdd64Func, FastModuloFunc<HASH_64>>(
+      hashtable_size, FastModuloFunc<HASH_64>(hashtable_size)));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 4, MultAdd64Func, FastrangeFunc<HASH_32>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 4, MultAdd64Func, FastrangeFunc<HASH_64>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 4, MultAdd64Func, FastModuloFunc<HASH_64>>(
+      hashtable_size, FastModuloFunc<HASH_64>(hashtable_size)));
 
-   measure_hashfn("mult64", [](const HASH_64& key) { return MultHash::mult64_hash(key); });
-   measure_hashfn("multadd64", [](const HASH_64& key) { return MultAddHash::multadd64_hash(key); });
+   /// Chained murmur3
+   measure(Hashtable::Chained<uint64_t, uint32_t, 1, Murmur3FinalizerFunc, FastrangeFunc<HASH_32>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 1, Murmur3FinalizerFunc, FastrangeFunc<HASH_64>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 1, Murmur3FinalizerFunc, FastModuloFunc<HASH_64>>(
+      hashtable_size, FastModuloFunc<HASH_64>(hashtable_size)));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 2, Murmur3FinalizerFunc, FastrangeFunc<HASH_32>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 2, Murmur3FinalizerFunc, FastrangeFunc<HASH_64>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 2, Murmur3FinalizerFunc, FastModuloFunc<HASH_64>>(
+      hashtable_size, FastModuloFunc<HASH_64>(hashtable_size)));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, FastrangeFunc<HASH_32>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, FastrangeFunc<HASH_64>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, FastModuloFunc<HASH_64>>(
+      hashtable_size, FastModuloFunc<HASH_64>(hashtable_size)));
 
-   // More significant bits supposedly are of higher quality for multiplicative methods -> compute
-   // how much we need to shift/rotate to throw away the least/make 'high quality bits' as prominent as possible
-   const auto p = (sizeof(hashtable_size) * 8) - __builtin_clz(hashtable_size - 1);
-   measure_hashfn("multadd64_shift" + std::to_string(p),
-                  [p](const HASH_64& key) { return MultAddHash::multadd64_hash(key, p); });
+   /// Chained aquahash
+   measure(Hashtable::Chained<uint64_t, uint32_t, 1, AquaLowFunc, FastrangeFunc<HASH_32>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 1, AquaLowFunc, FastrangeFunc<HASH_64>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 1, AquaLowFunc, FastModuloFunc<HASH_64>>(
+      hashtable_size, FastModuloFunc<HASH_64>(hashtable_size)));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 2, AquaLowFunc, FastrangeFunc<HASH_32>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 2, AquaLowFunc, FastrangeFunc<HASH_64>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 2, AquaLowFunc, FastModuloFunc<HASH_64>>(
+      hashtable_size, FastModuloFunc<HASH_64>(hashtable_size)));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 4, AquaLowFunc, FastrangeFunc<HASH_32>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 4, AquaLowFunc, FastrangeFunc<HASH_64>>(hashtable_size));
+   measure(Hashtable::Chained<uint64_t, uint32_t, 4, AquaLowFunc, FastModuloFunc<HASH_64>>(
+      hashtable_size, FastModuloFunc<HASH_64>(hashtable_size)));
 
-   measure_hashfn("murmur3_fin64", [](const HASH_64& key) { return MurmurHash3::finalize_64(key); });
-   //   measure_hashfn("meow64_low", [](const HASH_64& key) { return MeowHash::hash64(key); });
-   measure_hashfn("aqua_low", [](const HASH_64& key) { return AquaHash::hash64(key); });
-}
+   /*
+    * ===============
+    *     Cuckoo
+    * ===============
+    */
 
-void print_max_resource_usage(const Args& args) {
-   std::vector<size_t> exec_mem;
-   size_t max_bytes = 0;
-   for (const auto& dataset : args.datasets) {
-      const auto path = std::filesystem::current_path() / dataset.filepath;
-      const auto dataset_size = std::filesystem::file_size(path);
+   /// Cuckoo murmur + murmur(xor) -> Stanford implementation
+   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
+                             FastrangeFunc<HASH_32>, FastrangeFunc<HASH_32>>(hashtable_size));
+   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
+                             FastrangeFunc<HASH_64>, FastrangeFunc<HASH_64>>(hashtable_size));
+   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
+                             FastModuloFunc<HASH_64>, FastModuloFunc<HASH_64>>(
+      hashtable_size, FastModuloFunc<HASH_64>(hashtable_size), FastModuloFunc<HASH_64>(hashtable_size)));
+   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 8, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
+                             FastrangeFunc<HASH_32>, FastrangeFunc<HASH_32>>(hashtable_size));
+   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 8, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
+                             FastrangeFunc<HASH_64>, FastrangeFunc<HASH_64>>(hashtable_size));
+   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 8, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
+                             FastModuloFunc<HASH_64>, FastModuloFunc<HASH_64>>(
+      hashtable_size, FastModuloFunc<HASH_64>(hashtable_size), FastModuloFunc<HASH_64>(hashtable_size)));
 
-      for (const auto& load_fac : args.load_factors) {
-         const auto max_bucket_size = Hashtable::Chained<uint64_t, uint32_t, 4>::bucket_size();
-         const auto base_ht_size =
-            (static_cast<long double>(dataset_size - dataset.bytesPerValue) / (load_fac * dataset.bytesPerValue)) *
-            max_bucket_size;
-         const auto max_excess_buckets_size =
-            (static_cast<long double>(dataset_size - 2 * dataset.bytesPerValue) / (dataset.bytesPerValue)) *
-            max_bucket_size;
-         //         const auto learned_index_size = (?)
-
-         // Chained hashtable memory consumption upper estimate
-         exec_mem.emplace_back(dataset_size + base_ht_size + max_excess_buckets_size);
-      }
-   }
-
-   std::sort(exec_mem.rbegin(), exec_mem.rend());
-   max_bytes += exec_mem[0];
-
-   std::cout << "Will consume max <= " << max_bytes / (std::pow(1024, 3)) << " GB of ram" << std::endl;
+   //   // More significant bits supposedly are of higher quality for multiplicative methods -> compute
+   //   // how much we need to shift/rotate to throw away the least/make 'high quality bits' as prominent as possible
+   //   const auto p = (sizeof(hashtable_size) * 8) - __builtin_clz(hashtable_size - 1);
+   //   measure_hashfn("multadd64_shift" + std::to_string(p),
+   //                  [p](const HASH_64& key) { return MultAddHash::multadd64_hash(key, p); });
 }
 
 int main(int argc, char* argv[]) {
    try {
       auto args = Args(argc, argv);
 #ifdef VERBOSE
-      print_max_resource_usage(args);
+      std::vector<size_t> exec_mem;
+      size_t max_bytes = 0;
+      for (const auto& dataset : args.datasets) {
+         const auto path = std::filesystem::current_path() / dataset.filepath;
+         const auto dataset_size = std::filesystem::file_size(path);
+
+         for (const auto& load_fac : args.load_factors) {
+            const auto max_bucket_size =
+               Hashtable::Chained<uint64_t, uint32_t, 4, Mult64Func, FastrangeFunc<HASH_64>>::bucket_byte_size();
+            const auto base_ht_size =
+               (static_cast<long double>(dataset_size - dataset.bytesPerValue) / (load_fac * dataset.bytesPerValue)) *
+               max_bucket_size;
+            const auto max_excess_buckets_size =
+               (static_cast<long double>(dataset_size - 2 * dataset.bytesPerValue) / (dataset.bytesPerValue)) *
+               max_bucket_size;
+            //         const auto learned_index_size = (?)
+
+            // Chained hashtable memory consumption upper estimate
+            exec_mem.emplace_back(dataset_size + base_ht_size + max_excess_buckets_size);
+         }
+      }
+
+      std::sort(exec_mem.rbegin(), exec_mem.rend());
+      max_bytes += exec_mem[0];
+
+      std::cout << "Will consume max <= " << max_bytes / (std::pow(1024, 3)) << " GB of ram" << std::endl;
 #endif
 
       std::mutex iomutex;
       CSV outfile(args.outfile, csv_columns);
 
-      // Precompute tabulation hash tables once (don't have to change per dataset)
-      HASH_64 small_tabulation_table[0xFF];
-      HASH_64 large_tabulation_table[sizeof(HASH_64)][0xFF];
-      TabulationHash::gen_column(small_tabulation_table);
-      TabulationHash::gen_table(large_tabulation_table);
-
       for (const auto& it : args.datasets) {
-         // TODO: once we have more RAM we maybe should load the dataset per thread (prevent cache conflicts)
-         //  and purely operate on thread local data. i.e. move this load into threads after aquire()
          const auto dataset_ptr = std::make_shared<const std::vector<uint64_t>>(it.load(iomutex));
 
          for (auto load_factor : args.load_factors) {
-            // Theoretical slot count of a hashtable on which we want to measure collisions
-            const auto hashtable_size =
-               static_cast<uint64_t>(static_cast<double>(dataset_ptr->size()) / static_cast<double>(load_factor));
-
-            // Bucket size 1
-            {
-               Hashtable::Chained<HASH_64, uint32_t, 1> chained_1(hashtable_size);
-               measure(it.name(), dataset_ptr, chained_1, 1, load_factor, outfile, iomutex, small_tabulation_table,
-                       large_tabulation_table);
-            }
-
-            // Bucket size 2
-            {
-               Hashtable::Chained<HASH_64, uint32_t, 2> chained_2(hashtable_size);
-               measure(it.name(), dataset_ptr, chained_2, 2, load_factor, outfile, iomutex, small_tabulation_table,
-                       large_tabulation_table);
-            }
-
-            // Bucket size 4
-            {
-               Hashtable::Chained<HASH_64, uint32_t, 4> chained_4(hashtable_size);
-               measure(it.name(), dataset_ptr, chained_4, 4, load_factor, outfile, iomutex, small_tabulation_table,
-                       large_tabulation_table);
-            }
+            benchmark(it.name(), dataset_ptr, load_factor, outfile, iomutex);
          }
       }
    } catch (const std::exception& ex) {

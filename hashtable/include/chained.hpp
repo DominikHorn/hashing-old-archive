@@ -8,15 +8,22 @@
 #include <convenience.hpp>
 
 namespace Hashtable {
-   template<typename Key, typename Payload, size_t BucketSize = 1>
+   template<class Key, class Payload, size_t BucketSize, class HashFn, class ReductionFn>
    struct Chained {
-      Chained(const size_t size) : slots(size){};
+     private:
+      const HashFn hashfn;
+      const ReductionFn reductionfn;
 
-      // TODO: insert is not properly inlined at callsite by clang (gcc untested)
-      template<typename Hash>
-      forceinline bool insert(const Key& key, const Payload payload, const Hash& hashfn) {
+     public:
+      explicit Chained(const size_t& size, const ReductionFn& reductionfn = ReductionFn(),
+                       const HashFn& hashfn = HashFn())
+         : hashfn(hashfn), reductionfn(reductionfn), slots(size){};
+
+      Chained(Chained&&) = default;
+
+      bool insert(const Key& key, const Payload payload) {
          // Using template functor should successfully inline actual hash computation
-         const auto slot_index = hashfn(key, this->size());
+         const auto slot_index = reductionfn(hashfn(key), this->size());
 
          Bucket* next_slot = &slots[slot_index];
          Bucket* slot = nullptr;
@@ -45,11 +52,9 @@ namespace Hashtable {
          return true;
       }
 
-      // TODO: lookup is not properly inlined at callsite by clang (gcc untested)
-      template<typename Hash>
-      forceinline std::optional<Payload> lookup(const Key& key, const Hash& hashfn) const {
+      std::optional<Payload> lookup(const Key& key) const {
          // Using template functor should successfully inline actual hash computation
-         const auto slot_index = hashfn(key, this->size());
+         const auto slot_index = reductionfn(hashfn(key), this->size());
 
          auto slot = &slots[slot_index];
 
@@ -72,8 +77,24 @@ namespace Hashtable {
          return slots.size();
       }
 
-      static constexpr forceinline size_t bucket_size() {
+      static constexpr forceinline size_t bucket_byte_size() {
          return sizeof(Bucket);
+      }
+
+      static forceinline std::string name() {
+         return "chained";
+      }
+
+      static forceinline std::string hash_name() {
+         return HashFn::name();
+      }
+
+      static forceinline std::string reducer_name() {
+         return ReductionFn::name();
+      }
+
+      static constexpr forceinline size_t bucket_size() {
+         return BucketSize;
       }
 
       void clear() {
@@ -128,5 +149,4 @@ namespace Hashtable {
       // First bucket is always inline in the slot
       std::vector<Bucket> slots;
    };
-
 } // namespace Hashtable
