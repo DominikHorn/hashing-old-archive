@@ -39,10 +39,12 @@ meant to answer the question "How do these hash methods hold up for a real world
 building the hashtable, is measured over a tight loop to get a "best case" baseline:
 
 ```
+begin = time()
 for key in dataset {
     index = hash(key)
     hashtable.insert(index, payload)
 }
+ns_per_key = (time() - begin) / keyset.size()
 ```
 
 Hashtable lookup aims to simulate a real usecase, i.e., obtaining and working with the key associated payload.
@@ -50,9 +52,11 @@ Therefore, a full memory barrier is inserted at the end of each loop to prevent 
 execution:
 
 ```
+begin = time()
 for key in dataset {
     index = hash(key)
     payload = hashtable.lookup(index, key)
     __sync_synchronize() // gcc full memory fence builtin
 }
+ns_per_key = (time() - begin) / keyset.size()
 ```
