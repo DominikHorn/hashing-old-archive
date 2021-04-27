@@ -107,6 +107,14 @@ namespace Hashtable {
          return sizeof(Bucket);
       }
 
+      void clear() {
+         for (auto& bucket : buckets_) {
+            for (size_t i = 0; i < BucketSize; i++) {
+               bucket.key[i] = Sentinel;
+            }
+         }
+      }
+
      private:
       template<typename Hash1, typename Hash2, typename Reducer>
       void insert(const Key& key, const Payload& value, const Hash1& hashfn1, const Hash2& hashfn2,
