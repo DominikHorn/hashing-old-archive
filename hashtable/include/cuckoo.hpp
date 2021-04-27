@@ -51,34 +51,44 @@ namespace Hashtable {
       }
 
       template<typename Hash1, typename Hash2, typename Reducer>
-      std::optional<Payload> lookup(const Key& key, const Hash1& hashfn1, Hash2& hashfn2,
+      std::optional<Payload> lookup(const Key& key, const Hash1& hashfn1, const Hash2& hashfn2,
                                     const Reducer& reducer) const {
          const auto h1 = hashfn1(key);
          const auto i1 = reducer(h1, num_buckets_);
 
          Bucket* b1 = &buckets_[i1];
-         __m256i vkey = _mm256_set1_epi32(key);
-         __m256i vbucket = _mm256_load_si256(static_cast<const __m256i*>(&b1->keys));
-         __m256i cmp = _mm256_cmpeq_epi32(vkey, vbucket);
-         int mask = _mm256_movemask_epi8(cmp);
-         if (mask != 0) {
-            int index = __builtin_ctz(mask) / 4;
-            return {b1->values[index]};
+         for (size_t i = 0; i < BucketSize; i++) {
+            if (b1->keys[i] == key) {
+               return {b1->values[i]};
+            }
          }
+         //         __m256i vkey = _mm256_set1_epi32(key);
+         //         __m256i vbucket = _mm256_load_si256(reinterpret_cast<const __m256i*>(&b1->keys));
+         //         __m256i cmp = _mm256_cmpeq_epi32(vkey, vbucket);
+         //         int mask = _mm256_movemask_epi8(cmp);
+         //         if (mask != 0) {
+         //            int index = __builtin_ctz(mask) / 4;
+         //            return {b1->values[index]};
+         //         }
 
-         const auto i2 = reducer(hashfn2(key, h1), num_buckets_);
+         auto i2 = reducer(hashfn2(key, h1), num_buckets_);
          if (i2 == i1) {
             i2 = (i1 == num_buckets_ - 1) ? 0 : i1 + 1;
          }
-         Bucket* b2 = &buckets_[i2];
 
-         vbucket = _mm256_load_si256(static_cast<const __m256i*>(&b2->keys));
-         cmp = _mm256_cmpeq_epi32(vkey, vbucket);
-         mask = _mm256_movemask_epi8(cmp);
-         if (mask != 0) {
-            int index = __builtin_ctz(mask) / 4;
-            return {b2->values[index]};
+         Bucket* b2 = &buckets_[i2];
+         for (size_t i = 0; i < BucketSize; i++) {
+            if (b2->keys[i] == key) {
+               return {b2->values[i]};
+            }
          }
+         //         vbucket = _mm256_load_si256(reinterpret_cast<const __m256i*>(&b2->keys));
+         //         cmp = _mm256_cmpeq_epi32(vkey, vbucket);
+         //         mask = _mm256_movemask_epi8(cmp);
+         //         if (mask != 0) {
+         //            int index = __builtin_ctz(mask) / 4;
+         //            return {b2->values[index]};
+         //         }
 
          return std::nullopt;
       }
@@ -113,24 +123,33 @@ namespace Hashtable {
          Bucket* b2 = &buckets_[i2];
 
          // Update old value if the key is already in the table
-         __m256i vkey = _mm256_set1_epi32(key);
-         __m256i vbucket = _mm256_load_si256(reinterpret_cast<const __m256i*>(&b1->keys));
-         __m256i cmp = _mm256_cmpeq_epi32(vkey, vbucket);
-         int mask = _mm256_movemask_epi8(cmp);
-         if (mask != 0) {
-            int index = __builtin_ctz(mask) / 4;
-            b1->values[index] = value;
-            return;
+         for (size_t i = 0; i < BucketSize; i++) {
+            if (key == b1->keys[i]) {
+               b1->values[i] = value;
+               return;
+            }
+            if (key == b2->keys[i]) {
+               b2->values[i] = value;
+               return;
+            }
          }
-
-         vbucket = _mm256_load_si256(reinterpret_cast<const __m256i*>(&b2->keys));
-         cmp = _mm256_cmpeq_epi32(vkey, vbucket);
-         mask = _mm256_movemask_epi8(cmp);
-         if (mask != 0) {
-            int index = __builtin_ctz(mask) / 4;
-            b2->values[index] = value;
-            return;
-         }
+         //         __m256i vkey = _mm256_set1_epi32(key);
+         //         __m256i vbucket = _mm256_load_si256(reinterpret_cast<const __m256i*>(&b1->keys));
+         //         __m256i cmp = _mm256_cmpeq_epi32(vkey, vbucket);
+         //         int mask = _mm256_movemask_epi8(cmp);
+         //         if (mask != 0) {
+         //            int index = __builtin_ctz(mask) / 4;
+         //            b1->values[index] = value;
+         //            return;
+         //         }
+         //         vbucket = _mm256_load_si256(reinterpret_cast<const __m256i*>(&b2->keys));
+         //         cmp = _mm256_cmpeq_epi32(vkey, vbucket);
+         //         mask = _mm256_movemask_epi8(cmp);
+         //         if (mask != 0) {
+         //            int index = __builtin_ctz(mask) / 4;
+         //            b2->values[index] = value;
+         //            return;
+         //         }
 
          if (!is_reinsert) {
             size_++;

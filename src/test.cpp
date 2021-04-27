@@ -1,22 +1,34 @@
-#include "include/csv.hpp"
-
 #include <iostream>
+#include <vector>
+
+#include <hashing.hpp>
+#include <hashtable.hpp>
+#include <reduction.hpp>
 
 int main(int argc, char* argv[]) {
-   CSV csv("../../debug.csv",
-           {"dataset", "numelements", "load_factor", "sample_size", "bucket_size", "model", "reducer", "sample_size",
-            "insert_nanoseconds_total", "insert_nanoseconds_per_key", "lookup_nanoseconds_total",
-            "lookup_nanoseconds_per_key"});
+   const size_t N = 10000;
+   const double load_fac = 0.99;
 
-   const auto str = [](auto s) { return std::to_string(s); };
-   std::cout << csv.exists({{"dataset", "debug_64"}}) << std::endl;
-   std::cout << csv.exists({{"dataset", "debug_62"}}) << std::endl;
-   std::cout << csv.exists({{"load_factor", str(0.25)}, {"dataset", "debug_64"}}) << std::endl;
-   std::cout << csv.exists({{"model", "pgm_hash_eps64"}}) << std::endl;
-   std::cout << csv.exists({{"dataset", "debug_64"}, {"model", "pgm_hash_eps64"}, {"load_factor", str(0.25)}})
-             << std::endl;
-   std::cout << csv.exists({{"model", "pgm_hash_eps64"}, {"dataset", "debug_64"}}) << std::endl;
-   std::cout << csv.exists({{"model", "pgm_hash_eps64"}, {"dataset", "debug_64 "}}) << std::endl;
+   Hashtable::Cuckoo<uint32_t, uint32_t, 4> ht(N);
+
+   for (uint32_t key = 1000; key < (N - 1000) * load_fac; key++) {
+      ht.insert(
+         key, key + 1, MurmurHash3::finalize_32,
+         [](const auto& key, const auto& h1) { return MurmurHash3::finalize_32(h1 ^ key); },
+         Reduction::fastrange<uint32_t>);
+   }
+
+   for (uint32_t key = 1000; key < (N - 1000) * load_fac; key++) {
+      const auto value = ht.lookup(
+         key,
+         MurmurHash3::finalize_32,
+         [](const auto& key, const auto& h1) { return MurmurHash3::finalize_32(h1 ^ key); },
+         Reduction::fastrange<uint32_t>);
+
+      if (!value.has_value() || key + 1 != value.value()) {
+         return 1;
+      }
+   }
 
    return 0;
 }
