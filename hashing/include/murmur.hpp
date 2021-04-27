@@ -27,7 +27,7 @@ struct MurmurHash3 {
     * @param value the value to finalize
     * @return 32 bit hash
     */
-   static constexpr forceinline HASH_32 finalize_32(HASH_32& value) {
+   static constexpr forceinline HASH_32 finalize_32(HASH_32 value) {
       value ^= value >> 16;
       value *= 0x85ebca6blu;
       value ^= value >> 13;
