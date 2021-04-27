@@ -24,7 +24,6 @@ const std::vector<std::string> csv_columns = {
    "bucket_size",
    "model",
    "reducer",
-   "sample_size",
    "insert_nanoseconds_total",
    "insert_nanoseconds_per_key",
    "lookup_nanoseconds_total",
