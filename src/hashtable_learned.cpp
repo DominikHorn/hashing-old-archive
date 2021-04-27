@@ -157,8 +157,7 @@ void print_max_resource_usage(const Args& args) {
       const auto dataset_size = std::filesystem::file_size(path);
 
       for (const auto& load_fac : args.load_factors) {
-         const auto max_bucket_size = std::max(Hashtable::Chained<uint64_t, uint32_t, 4>::bucket_size(),
-                                               Hashtable::Chained<uint64_t, uint32_t, 2>::bucket_size());
+         const auto max_bucket_size = Hashtable::Chained<uint64_t, uint32_t, 4>::bucket_size();
          const auto base_ht_size =
             (static_cast<long double>(dataset_size - dataset.bytesPerValue) / (load_fac * dataset.bytesPerValue)) *
             max_bucket_size;
