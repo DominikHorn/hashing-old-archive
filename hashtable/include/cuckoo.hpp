@@ -1,8 +1,8 @@
 #pragma once
 
-// This is a slightly modified version of
-// hashing.cc from SOSD repo, originally taken from the Stanford FutureData index baselines repo
-// Original copyright:  Copyright (c) 2017-present Peter Bailis, Kai Sheng Tai, Pratiksha Thaker, Matei Zaharia
+// This is a modified version of hashing.cc from SOSD repo (https://github.com/learnedsystems/SOSD),
+// originally taken from the Stanford FutureData index baselines repo. Original copyright:
+// Copyright (c) 2017-present Peter Bailis, Kai Sheng Tai, Pratiksha Thaker, Matei Zaharia
 // MIT License
 
 #include <algorithm>
