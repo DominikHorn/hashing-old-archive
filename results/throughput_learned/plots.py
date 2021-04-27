@@ -1,11 +1,12 @@
 import colorsys
-import math
 from collections import OrderedDict
 
+import math
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pandas
+
 
 def gen_colors(max=40.0, s_sawtooth_min=0.7, s_sawtooth_max=0.9, s_sawtooth_step=0.1, v_sawtooth_min=0.5,
                v_sawtooth_max=1.0, v_sawtooth_step=0.15):
@@ -82,6 +83,6 @@ for compiler in compilers:
             handles=[mpatches.Patch(color=colors.get(name), label=name) for name in models],
             bbox_to_anchor=(0.5, -0.1), loc="lower center", ncol=3)
 
-        plt.savefig(f"graphs/throughput_learned-{compiler}_{dataset_name}.pdf", bbox_inches='tight', pad_inches=0.5)
-        plt.savefig(f"graphs/throughput_learned-{compiler}_{dataset_name}.png", bbox_inches='tight', pad_inches=0.5)
+        plt.savefig(f"graphs/throughput_learned_{dataset_name}_{compiler}.pdf", bbox_inches='tight', pad_inches=0.5)
+        plt.savefig(f"graphs/throughput_learned_{dataset_name}_{compiler}.png", bbox_inches='tight', pad_inches=0.5)
         plt.close()

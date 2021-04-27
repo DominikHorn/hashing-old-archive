@@ -25,20 +25,40 @@ for more information.
 
 ### books_200M_uint32
 
-![books_200M_uint32](https://github.com/andreaskipf/hashing/blob/main/results/throughput_learned/graphs/throughput_learned-g++_books_200M_uint32.png)
+![books_200M_uint32](https://github.com/andreaskipf/hashing/blob/main/results/throughput_learned/graphs/throughput_learned_books_200M_uint32_g++.png)
 
 ### books_200M_uint64
 
-![books_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_learned/graphs/throughput_learned-g++_books_200M_uint64.png)
+![books_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_learned/graphs/throughput_learned_books_200M_uint64_g++.png)
 
 ### fb_200M_uint64
 
-![fb_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_learned/graphs/throughput_learned-g++_fb_200M_uint64.png)
+![fb_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_learned/graphs/throughput_learned_fb_200M_uint64_g++.png)
 
 ### osm_cellids_200M_uint64
 
-![osm_cellids_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_learned/graphs/throughput_learned-g++_osm_cellids_200M_uint64.png)
+![osm_cellids_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_learned/graphs/throughput_learned_osm_cellids_200M_uint64_g++.png)
 
 ### wiki_ts_200M_uint64
 
-![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_learned/graphs/throughput_learned-g++_wiki_ts_200M_uint64.png)
+![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_learned/graphs/throughput_learned_wiki_ts_200M_uint64_g++.png)
+
+#### consecutive_200M_uint64
+
+All continuous integers from 1000 - 200001000
+![consecutive_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_learned/graphs/throughput_learned_consecutive_200M_uint64_g++.png)
+
+#### gapped_10percent_200M_uint64
+
+All continuous integers, 10% of elements removed starting at 10000
+![gapped_10percent_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_learned/graphs/throughput_learned_gapped_10percent_200M_uint64_g++.png)
+
+#### gapped_1percent_200M_uint64
+
+All continuous integers, 1% of elements removed starting at 10000
+![gapped_1percent_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_learned/graphs/throughput_learned_gapped_1percent_200M_uint64_g++.png)
+
+#### gapped_1permill_200M_uint64
+
+All continuous integers, 0.1% of elements removed starting at 10000
+![gapped_1permill_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_learned/graphs/throughput_learned_gapped_1permill_200M_uint64_g++.png)
