@@ -1,4 +1,4 @@
-# Throughput for classical hash functions
+# Throughput for learned hash functions
 
 Results for the throughput experiment using learned hash functions. The experiment (in pseudocode) measures throughput
 as follows:
