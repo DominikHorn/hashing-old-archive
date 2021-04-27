@@ -61,20 +61,20 @@ All continuous integers, 0.1% of elements removed starting at 10000
 
 ### books_200M_uint32
 
-![books_200M_uint32](https://github.com/andreaskipf/hashing/blob/main/results/throughput_hash/graphs/throughput_hash-clang++_books_200M_uint32_g++.png)
+![books_200M_uint32](https://github.com/andreaskipf/hashing/blob/main/results/throughput_hash/graphs/throughput_hash_books_200M_uint32_clang++.png)
 
 ### books_200M_uint64
 
-![books_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_hash/graphs/throughput_hash-clang++_books_200M_uint64_g++.png)
+![books_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_hash/graphs/throughput_hash_books_200M_uint64_clang++.png)
 
 ### fb_200M_uint64
 
-![fb_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_hash/graphs/throughput_hash-clang++_fb_200M_uint64_g++.png)
+![fb_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_hash/graphs/throughput_hash_fb_200M_uint64_clang++.png)
 
 ### osm_cellids_200M_uint64
 
-![osm_cellids_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_hash/graphs/throughput_hash-clang++_osm_cellids_200M_uint64_g++.png)
+![osm_cellids_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_hash/graphs/throughput_hash_osm_cellids_200M_uint64_clang++.png)
 
 ### wiki_ts_200M_uint64
 
-![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_hash/graphs/throughput_hash-clang++_wiki_ts_200M_uint64_g++.png)
+![wiki_ts_200M_uint64](https://github.com/andreaskipf/hashing/blob/main/results/throughput_hash/graphs/throughput_hash_wiki_ts_200M_uint64_clang++.png)
