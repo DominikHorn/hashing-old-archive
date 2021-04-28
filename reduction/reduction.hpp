@@ -97,7 +97,12 @@ struct Reduction {
     */
    template<typename T>
    static constexpr forceinline T min_max_cutoff(const T& value, const size_t& N) {
-      return std::max(static_cast<T>(0), std::min(value, static_cast<T>(N - 1)));
+      if (unlikely(value < 0))
+         return 0;
+      if (unlikely(value >= N))
+         return N - 1;
+
+      return value;
    }
 
    /**
