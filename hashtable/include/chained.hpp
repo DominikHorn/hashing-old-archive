@@ -97,6 +97,10 @@ namespace Hashtable {
          return BucketSize;
       }
 
+      static constexpr forceinline size_t num_buckets(const size_t& capacity) {
+         return capacity;
+      }
+
       void clear() {
          for (auto& slot : slots) {
             for (size_t i = 0; i < BucketSize; i++) {

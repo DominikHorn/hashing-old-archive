@@ -51,6 +51,7 @@ struct Reduction {
 
       const auto div = value / fast_d; // Operator overloading ensures this is not an actual division
       const auto remainder = value - div * n;
+      assert(remainder < n);
       return remainder;
    }
 

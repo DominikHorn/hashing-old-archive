@@ -40,10 +40,11 @@ namespace Hashtable {
       std::mt19937 rand_; // RNG for moving items around
 
      public:
-      Cuckoo(size_t capacity, ReductionFn1 reductionfn1 = ReductionFn1(), ReductionFn2 reductionfn2 = ReductionFn2(),
-             HashFn1 hashfn1 = HashFn1(), HashFn2 hashfn2 = HashFn2())
+      Cuckoo(const size_t& num_buckets, const ReductionFn1& reductionfn1 = ReductionFn1(),
+             const ReductionFn2& reductionfn2 = ReductionFn2(), const HashFn1& hashfn1 = HashFn1(),
+             const HashFn2& hashfn2 = HashFn2())
          : hashfn1(hashfn1), hashfn2(hashfn2), reductionfn1(reductionfn1), reductionfn2(reductionfn2), size_(0),
-           num_buckets_((capacity + BucketSize - 1) / BucketSize) {
+           num_buckets_(num_buckets) {
          int r = posix_memalign(reinterpret_cast<void**>(&buckets_), 32, num_buckets_ * sizeof(Bucket));
          if (r != 0)
             throw std::runtime_error("Could not memalign allocate for cuckoo hash map");
@@ -93,6 +94,10 @@ namespace Hashtable {
 
       forceinline size_t size() {
          return size_;
+      }
+
+      static constexpr forceinline size_t num_buckets(const size_t& capacity) {
+         return (capacity + BucketSize - 1) / BucketSize;
       }
 
       static constexpr forceinline size_t bucket_byte_size() {
@@ -210,10 +215,11 @@ namespace Hashtable {
       std::mt19937 rand_; // RNG for moving items around
 
      public:
-      Cuckoo(size_t capacity, ReductionFn1 reductionfn1 = ReductionFn1(), ReductionFn2 = ReductionFn2(),
-             HashFn1 hashfn1 = HashFn1(), HashFn2 hashfn2 = HashFn2())
+      Cuckoo(const size_t& num_buckets, const ReductionFn1& reductionfn1 = ReductionFn1(),
+             const ReductionFn2& reductionfn2 = ReductionFn2(), const HashFn1& hashfn1 = HashFn1(),
+             const HashFn2& hashfn2 = HashFn2())
          : hashfn1(hashfn1), hashfn2(hashfn2), reductionfn1(reductionfn1), reductionfn2(reductionfn2), size_(0),
-           num_buckets_((capacity + 8 - 1) / 8) {
+           num_buckets_(num_buckets) {
          int r = posix_memalign(reinterpret_cast<void**>(&buckets_), 32, num_buckets_ * sizeof(Bucket));
          if (r != 0)
             throw std::runtime_error("Could not memalign allocate for cuckoo hash map");

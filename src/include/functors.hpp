@@ -5,7 +5,7 @@
 template<typename T>
 struct FastrangeFunc {
    static std::string name() {
-      return "fastrange" + std::to_string(sizeof(T) * sizeof(char));
+      return "fastrange" + std::to_string(sizeof(T) * 8);
    }
    forceinline HASH_64 operator()(const HASH_64& hash, const size_t& N) const {
       return Reduction::fastrange(hash, N);
@@ -16,10 +16,11 @@ template<typename T>
 struct FastModuloFunc {
   private:
    const libdivide::divider<T> magic_div;
+   const size_t n;
 
   public:
    FastModuloFunc(const size_t& hashtable_size)
-      : magic_div(Reduction::make_magic_divider(static_cast<HASH_64>(hashtable_size))) {}
+      : magic_div(Reduction::make_magic_divider(static_cast<HASH_64>(hashtable_size))), n(hashtable_size) {}
 
    static std::string name() {
       return "fast_modulo";
