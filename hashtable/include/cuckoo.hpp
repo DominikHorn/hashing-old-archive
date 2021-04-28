@@ -21,7 +21,8 @@
 
 namespace Hashtable {
    template<typename Key, typename Payload, size_t BucketSize, typename HashFn1, typename HashFn2,
-            typename ReductionFn1, typename ReductionFn2, Key Sentinel = std::numeric_limits<Key>::max()>
+            typename ReductionFn1, typename ReductionFn2, Key Sentinel = std::numeric_limits<Key>::max(),
+            size_t MaxKickCycleLength = 4096>
    class Cuckoo {
      private:
       const HashFn1 hashfn1;
@@ -89,7 +90,7 @@ namespace Hashtable {
       }
 
       void insert(const Key& key, const Payload& value) {
-         insert(key, value, false);
+         insert(key, value, false, 0);
       }
 
       forceinline size_t size() {
@@ -109,11 +110,11 @@ namespace Hashtable {
       }
 
       static forceinline std::string hash_name() {
-         return HashFn1::name() + " - " + HashFn2::name();
+         return HashFn1::name() + "-" + HashFn2::name();
       }
 
       static forceinline std::string reducer_name() {
-         return ReductionFn1::name() + " - " + ReductionFn2::name();
+         return ReductionFn1::name() + "-" + ReductionFn2::name();
       }
 
       static constexpr forceinline size_t bucket_size() {
@@ -129,7 +130,11 @@ namespace Hashtable {
       }
 
      private:
-      void insert(const Key& key, const Payload& value, bool is_reinsert) {
+      void insert(const Key& key, const Payload& value, bool is_reinsert, size_t kick_count) {
+         if (kick_count > MaxKickCycleLength) {
+            throw std::runtime_error("maximum kick cycle length (" + std::to_string(MaxKickCycleLength) + ") reached");
+         }
+
          const auto h1 = hashfn1(key);
          const auto i1 = reductionfn1(h1, num_buckets_);
          auto i2 = reductionfn2(hashfn2(key, h1), num_buckets_);
@@ -188,7 +193,7 @@ namespace Hashtable {
             Payload old_value = victim_bucket->values[victim_index];
             victim_bucket->keys[victim_index] = key;
             victim_bucket->values[victim_index] = value;
-            insert(old_key, old_value, true);
+            insert(old_key, old_value, true, kick_count + 1);
          }
       }
    };
@@ -198,6 +203,7 @@ namespace Hashtable {
    class Cuckoo<uint32_t, Payload, 8, HashFn1, HashFn2, ReductionFn1, ReductionFn2, Sentinel> {
      private:
       static constexpr uint32_t BucketSize = 8;
+      static constexpr size_t MaxKickCycleLength = 4096;
 
       const HashFn1 hashfn1;
       const HashFn2 hashfn2;
@@ -268,7 +274,7 @@ namespace Hashtable {
       }
 
       void insert(const uint32_t& key, const Payload& value) {
-         insert(key, value, false);
+         insert(key, value, false, 0);
       }
 
       forceinline size_t size() {
@@ -284,11 +290,11 @@ namespace Hashtable {
       }
 
       static forceinline std::string hash_name() {
-         return HashFn1::name() + " - " + HashFn2::name();
+         return HashFn1::name() + "-" + HashFn2::name();
       }
 
       static forceinline std::string reducer_name() {
-         return ReductionFn1::name() + " - " + ReductionFn2::name();
+         return ReductionFn1::name() + "-" + ReductionFn2::name();
       }
 
       static constexpr forceinline size_t bucket_size() {
@@ -304,7 +310,11 @@ namespace Hashtable {
       }
 
      private:
-      void insert(const uint32_t& key, const Payload& value, bool is_reinsert) {
+      void insert(const uint32_t& key, const Payload& value, bool is_reinsert, size_t kick_count) {
+         if (kick_count > MaxKickCycleLength) {
+            throw std::runtime_error("maximum kick cycle length (" + std::to_string(MaxKickCycleLength) + ") reached");
+         }
+
          const auto h1 = hashfn1(key);
          const auto i1 = reductionfn1(h1, num_buckets_);
          auto i2 = reductionfn2(hashfn2(key, h1), num_buckets_);
@@ -371,7 +381,7 @@ namespace Hashtable {
             Payload old_value = victim_bucket->values[victim_index];
             victim_bucket->keys[victim_index] = key;
             victim_bucket->values[victim_index] = value;
-            insert(old_key, old_value, true);
+            insert(old_key, old_value, true, kick_count + 1);
          }
       }
    };

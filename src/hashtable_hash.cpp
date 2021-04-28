@@ -62,27 +62,33 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
          return;
       }
 
-      // Measure
-      const auto stats = Benchmark::measure_hashtable(*dataset, hashtable);
+      try {
+         // Measure
+         const auto stats = Benchmark::measure_hashtable(*dataset, hashtable);
 
 #ifdef VERBOSE
-      {
-         std::unique_lock<std::mutex> lock(iomutex);
-         std::cout << std::setw(55) << std::right << reducer_name + "(" + hash_name + ") insert took "
-                   << relative_to(stats.total_insert_ns, dataset->size()) << " ns/key ("
-                   << nanoseconds_to_seconds(stats.total_insert_ns) << " s total), lookup took "
-                   << relative_to(stats.total_lookup_ns, dataset->size()) << " ns/key ("
-                   << nanoseconds_to_seconds(stats.total_lookup_ns) << " s total)" << std::endl;
-      };
+         {
+            std::unique_lock<std::mutex> lock(iomutex);
+            std::cout << std::setw(55) << std::right << reducer_name + "(" + hash_name + ") insert took "
+                      << relative_to(stats.total_insert_ns, dataset->size()) << " ns/key ("
+                      << nanoseconds_to_seconds(stats.total_insert_ns) << " s total), lookup took "
+                      << relative_to(stats.total_lookup_ns, dataset->size()) << " ns/key ("
+                      << nanoseconds_to_seconds(stats.total_lookup_ns) << " s total)" << std::endl;
+         };
 #endif
 
-      datapoint.emplace("insert_nanoseconds_total", str(stats.total_insert_ns));
-      datapoint.emplace("insert_nanoseconds_per_key", str(relative_to(stats.total_insert_ns, dataset->size())));
-      datapoint.emplace("lookup_nanoseconds_total", str(stats.total_lookup_ns));
-      datapoint.emplace("lookup_nanoseconds_per_key", str(relative_to(stats.total_lookup_ns, dataset->size())));
+         datapoint.emplace("insert_nanoseconds_total", str(stats.total_insert_ns));
+         datapoint.emplace("insert_nanoseconds_per_key", str(relative_to(stats.total_insert_ns, dataset->size())));
+         datapoint.emplace("lookup_nanoseconds_total", str(stats.total_lookup_ns));
+         datapoint.emplace("lookup_nanoseconds_per_key", str(relative_to(stats.total_lookup_ns, dataset->size())));
 
-      // Write to csv
-      outfile.write(datapoint);
+         // Write to csv
+         outfile.write(datapoint);
+      } catch (const std::exception& e) {
+         std::unique_lock<std::mutex> lock(iomutex);
+         std::cout << std::setw(55) << std::right << reducer_name + "(" + hash_name + ") failed: " << e.what()
+                   << std::endl;
+      }
    };
 
    // Theoretical slot count of a hashtable on which we want to measure collisions
