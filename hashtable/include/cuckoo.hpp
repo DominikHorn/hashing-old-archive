@@ -31,7 +31,7 @@ namespace Hashtable {
       const ReductionFn2 reductionfn2;
 
       struct Bucket {
-         Key keys[BucketSize] __attribute((aligned(32)));
+         Key keys[BucketSize] __attribute((aligned(sizeof(Key) * 8)));
          Payload values[BucketSize];
       } packed;
 
