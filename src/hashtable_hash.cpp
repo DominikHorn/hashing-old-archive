@@ -157,22 +157,22 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
     * ===============
     */
 
-   const auto cuckoo_4_num_buckets =
-      Hashtable::Cuckoo<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
-                        FastrangeFunc<HASH_32>, FastrangeFunc<HASH_32>>::num_buckets(hashtable_size);
+   //   const auto cuckoo_4_num_buckets =
+   //      Hashtable::Cuckoo<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
+   //                        FastrangeFunc<HASH_32>, FastrangeFunc<HASH_32>>::num_buckets(hashtable_size);
    const auto cuckoo_8_num_buckets =
       Hashtable::Cuckoo<uint64_t, uint32_t, 8, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
                         FastrangeFunc<HASH_32>, FastrangeFunc<HASH_32>>::num_buckets(hashtable_size);
 
    /// Cuckoo murmur + murmur(xor) -> Stanford implementation
-   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
-                             FastrangeFunc<HASH_32>, FastrangeFunc<HASH_32>>(cuckoo_4_num_buckets));
-   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
-                             FastrangeFunc<HASH_64>, FastrangeFunc<HASH_64>>(cuckoo_4_num_buckets));
-   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
-                             FastModuloFunc<HASH_64>, FastModuloFunc<HASH_64>>(
-      cuckoo_4_num_buckets, FastModuloFunc<HASH_64>(cuckoo_4_num_buckets),
-      FastModuloFunc<HASH_64>(cuckoo_4_num_buckets)));
+   //   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
+   //                             FastrangeFunc<HASH_32>, FastrangeFunc<HASH_32>>(cuckoo_4_num_buckets));
+   //   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
+   //                             FastrangeFunc<HASH_64>, FastrangeFunc<HASH_64>>(cuckoo_4_num_buckets));
+   //   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
+   //                             FastModuloFunc<HASH_64>, FastModuloFunc<HASH_64>>(
+   //      cuckoo_4_num_buckets, FastModuloFunc<HASH_64>(cuckoo_4_num_buckets),
+   //      FastModuloFunc<HASH_64>(cuckoo_4_num_buckets)));
    measure(Hashtable::Cuckoo<uint32_t, uint32_t, 8, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
                              FastrangeFunc<HASH_32>, FastrangeFunc<HASH_32>>(cuckoo_8_num_buckets));
    measure(Hashtable::Cuckoo<uint64_t, uint32_t, 8, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
