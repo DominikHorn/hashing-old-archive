@@ -51,6 +51,7 @@ struct Reduction {
 
       const auto div = value / fast_d; // Operator overloading ensures this is not an actual division
       const auto remainder = value - div * n;
+      assert(remainder < n);
       return remainder;
    }
 
@@ -95,8 +96,8 @@ struct Reduction {
     * @return
     */
    template<typename T>
-   static constexpr forceinline T min_max_cutoff(const T& value, const T& N) {
-      return std::max(static_cast<T>(0), std::min(value, N - 1));
+   static constexpr forceinline T min_max_cutoff(const T& value, const size_t& N) {
+      return std::max(static_cast<T>(0), std::min(value, static_cast<T>(N - 1)));
    }
 
    /**

@@ -117,15 +117,15 @@ namespace Benchmark {
       uint64_t total_lookup_ns;
    };
 
-   template<typename Hashtable, typename Hash>
-   HashtableStats measure_hashtable(const std::vector<uint64_t>& dataset, Hashtable& ht, const Hash& hashfn) {
+   template<typename Hashtable>
+   HashtableStats measure_hashtable(const std::vector<uint64_t>& dataset, Hashtable& ht) {
       // Ensure hashtable is empty when we begin
       ht.clear();
 
       // Insert every key
       auto start_time = std::chrono::steady_clock::now();
       for (const auto key : dataset) {
-         ht.insert(key, key - 5, hashfn);
+         ht.insert(key, key - 5);
       }
       auto end_time = std::chrono::steady_clock::now();
       uint64_t total_insert_ns =
@@ -134,7 +134,7 @@ namespace Benchmark {
       // Lookup every key
       start_time = std::chrono::steady_clock::now();
       for (const auto& key : dataset) {
-         auto payload = ht.lookup(key, hashfn);
+         auto payload = ht.lookup(key);
          Optimizer::DoNotEliminate(payload);
          full_mem_barrier // emulate doing something with payload, i.e., wait for it!
       }
