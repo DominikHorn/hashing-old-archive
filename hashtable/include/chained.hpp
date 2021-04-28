@@ -8,7 +8,8 @@
 #include <convenience.hpp>
 
 namespace Hashtable {
-   template<class Key, class Payload, size_t BucketSize, class HashFn, class ReductionFn>
+   template<class Key, class Payload, size_t BucketSize, class HashFn, class ReductionFn,
+            Key Sentinel = std::numeric_limits<Key>::max()>
    struct Chained {
      private:
       const HashFn hashfn;
@@ -25,29 +26,31 @@ namespace Hashtable {
          // Using template functor should successfully inline actual hash computation
          const auto slot_index = reductionfn(hashfn(key), this->size());
 
-         Bucket* next_slot = &slots[slot_index];
-         Bucket* slot = nullptr;
-
-         while (next_slot != nullptr) {
-            slot = next_slot;
-            next_slot = slot->next;
-
+         Bucket* slot = &slots[slot_index];
+         for (;;) {
             // Find suitable empty entry place. Note that deletions with holes will require
             // searching entire bucket to deal with duplicate keys!
             for (size_t i = 0; i < BucketSize; i++) {
-               if (!slot->entries[i].has_value) {
-                  slot->entries[i].set(key, payload);
+               if (slot->keys[i] == Sentinel) {
+                  slot->keys[i] = key;
+                  slot->payloads[i] = payload;
                   return true;
-               } else if (slot->entries[i].key == key) {
+               } else if (slot->keys[i] == key) {
                   // entry already exists
                   return false;
                }
             }
+
+            if (slot->next == nullptr)
+               break;
+
+            slot = slot->next;
          }
 
          // Append a new bucket to the chain and add element there
          auto b = new Bucket();
-         b->entries[0].set(key, payload);
+         b->keys[0] = key;
+         b->payloads[0] = payload;
          slot->next = b;
          return true;
       }
@@ -60,12 +63,11 @@ namespace Hashtable {
 
          while (slot != nullptr) {
             for (size_t i = 0; i < BucketSize; i++) {
-               const auto entry = slot->entries[i];
-               if (!entry.has_value) {
+               if (slot->keys[i] == key)
+                  return std::make_optional(slot->payloads[i]);
+
+               if (slot->keys[i] == Sentinel)
                   return std::nullopt;
-               } else if (entry.key == key) {
-                  return {entry.key};
-               }
             }
             slot = slot->next;
          }
@@ -104,7 +106,7 @@ namespace Hashtable {
       void clear() {
          for (auto& slot : slots) {
             for (size_t i = 0; i < BucketSize; i++) {
-               slot.entries[i].clear();
+               slot.keys[i] = Sentinel;
             }
             auto current = slot.next;
             slot.next = nullptr;
@@ -118,35 +120,13 @@ namespace Hashtable {
       }
 
       ~Chained() {
-         for (auto& slot : slots) {
-            auto current = slot.next;
-            while (current != nullptr) {
-               auto next = current->next;
-               delete current;
-               current = next;
-            }
-         }
+         clear();
       }
 
      protected:
       struct Bucket {
-         struct Entry {
-            Key key = 0x0;
-            Payload payload = 0x0;
-            bool has_value = false;
-
-            forceinline void set(const Key& key, const Payload& payload) {
-               this->key = key;
-               this->payload = payload;
-               this->has_value = true;
-            }
-
-            forceinline void clear() {
-               this->has_value = false;
-            }
-         } packed;
-
-         std::array<Entry, BucketSize> entries;
+         Key keys[BucketSize] __attribute((aligned(sizeof(Key) * 8)));
+         Payload payloads[BucketSize];
          Bucket* next = nullptr;
       } packed;
 
