@@ -6,9 +6,7 @@
 #include <string>
 
 #include <convenience.hpp>
-#include <hashing.hpp>
 #include <hashtable.hpp>
-#include <reduction.hpp>
 
 #include "include/args.hpp"
 #include "include/benchmark.hpp"
@@ -22,6 +20,7 @@ const std::vector<std::string> csv_columns = {
    "numelements",
    "load_factor",
    "bucket_size",
+   "hashtable",
    "hash",
    "reducer",
    "insert_nanoseconds_total",
@@ -43,6 +42,7 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
          {"numelements", str(dataset->size())},
          {"load_factor", str(load_factor)},
          {"bucket_size", str(hashtable.bucket_size())},
+         {"hashtable", hashtable.name()},
          {"hash", hash_name},
          {"reducer", reducer_name},
       });

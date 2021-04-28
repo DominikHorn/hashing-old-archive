@@ -106,7 +106,7 @@ namespace Hashtable {
       }
 
       static forceinline std::string name() {
-         return "chained";
+         return "cuckoo";
       }
 
       static forceinline std::string hash_name() {
@@ -286,7 +286,7 @@ namespace Hashtable {
       }
 
       static forceinline std::string name() {
-         return "chained";
+         return "cuckoo";
       }
 
       static forceinline std::string hash_name() {

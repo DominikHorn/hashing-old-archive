@@ -23,6 +23,7 @@ const std::vector<std::string> csv_columns = {
    "load_factor",
    "sample_size",
    "bucket_size",
+   "hashtable",
    "model",
    "reducer",
    "insert_nanoseconds_total",
@@ -44,6 +45,7 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
          {"load_factor", str(load_factor)},
          {"sample_size", str(sample_size)},
          {"bucket_size", str(hashtable.bucket_size())},
+         {"hashtable", hashtable.name()},
          {"model", hash_name},
          {"reducer", reducer_name},
       });
