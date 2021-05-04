@@ -96,9 +96,11 @@ namespace Benchmark {
          const auto start_time = std::chrono::steady_clock::now();
          // Hash each value and record entries per bucket
          for (const auto& key : dataset) {
-            // Ensure the compiler does not simply remove this index
+            const auto index = reduce(hashfn(key), n);
+
+            // Ensure the compiler does not simply remove the index
             // calculation during optimization.
-            Optimizer::DoNotEliminate(reduce(hashfn(key), n));
+            Optimizer::DoNotEliminate(index);
          }
          const auto end_time = std::chrono::steady_clock::now();
          const auto delta_ns =
@@ -134,7 +136,7 @@ namespace Benchmark {
       // Lookup every key
       start_time = std::chrono::steady_clock::now();
       for (const auto& key : dataset) {
-         auto payload = ht.lookup(key);
+         const auto payload = ht.lookup(key);
          Optimizer::DoNotEliminate(payload);
          full_mem_barrier // emulate doing something with payload, i.e., wait for it!
       }
