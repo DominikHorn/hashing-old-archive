@@ -36,7 +36,7 @@ namespace Hashtable {
        */
       bool insert(const Key& key, const Payload& payload) {
          if (unlikely(key == Sentinel)) {
-            assert(false, "This must never happen in practice");
+            assert(false); // This must never happen in practice
             return false;
          }
 
