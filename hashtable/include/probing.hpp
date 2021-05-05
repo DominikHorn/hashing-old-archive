@@ -57,8 +57,8 @@ namespace Hashtable {
       const ProbingFn probingfn;
 
      public:
-      explicit Probing(const size_t& capacity)
-         : hashfn(HashFn()), reductionfn(ReductionFn(directory_address_count(capacity))),
+      explicit Probing(const size_t& capacity, const HashFn hashfn = HashFn())
+         : hashfn(hashfn), reductionfn(ReductionFn(directory_address_count(capacity))),
            probingfn(ProbingFn(directory_address_count(capacity))), slots(directory_address_count(capacity)) {
          // Start with a well defined clean slate
          clear();

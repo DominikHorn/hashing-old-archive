@@ -205,6 +205,52 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
                  PGMHashFunc<HASH_64, 4, 4>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
               sample_size);
    }
+
+   /**
+    * ========================================================
+    *           Probing, 64-bit key, 32-bit value
+    * ========================================================
+    */
+
+   const auto directory_address_count =
+      Hashtable::Probing<uint64_t, uint32_t, PGMHashFunc<HASH_64, 256, 0>, MinMaxCutoffFunc<HASH_64>,
+                         Hashtable::LinearProbingFunc>::directory_address_count(ht_capacity);
+
+   /// Linear
+   measure(Hashtable::Probing<uint64_t, uint32_t, PGMHashFunc<HASH_64, 256, 0>, MinMaxCutoffFunc<HASH_64>,
+                              Hashtable::LinearProbingFunc>(
+              ht_capacity, PGMHashFunc<HASH_64, 256, 0>(sample.begin(), sample.end(), directory_address_count)),
+           sample_size);
+   measure(Hashtable::Probing<uint64_t, uint32_t, PGMHashFunc<HASH_64, 128, 4>, MinMaxCutoffFunc<HASH_64>,
+                              Hashtable::LinearProbingFunc>(
+              ht_capacity, PGMHashFunc<HASH_64, 128, 4>(sample.begin(), sample.end(), directory_address_count)),
+           sample_size);
+   measure(Hashtable::Probing<uint64_t, uint32_t, PGMHashFunc<HASH_64, 64, 1>, MinMaxCutoffFunc<HASH_64>,
+                              Hashtable::LinearProbingFunc>(
+              ht_capacity, PGMHashFunc<HASH_64, 64, 1>(sample.begin(), sample.end(), directory_address_count)),
+           sample_size);
+   measure(Hashtable::Probing<uint64_t, uint32_t, PGMHashFunc<HASH_64, 4, 4>, MinMaxCutoffFunc<HASH_64>,
+                              Hashtable::LinearProbingFunc>(
+              ht_capacity, PGMHashFunc<HASH_64, 4, 4>(sample.begin(), sample.end(), directory_address_count)),
+           sample_size);
+
+   /// Quadratic
+   measure(Hashtable::Probing<uint64_t, uint32_t, PGMHashFunc<HASH_64, 256, 0>, MinMaxCutoffFunc<HASH_64>,
+                              Hashtable::QuadraticProbingFunc>(
+              ht_capacity, PGMHashFunc<HASH_64, 256, 0>(sample.begin(), sample.end(), directory_address_count)),
+           sample_size);
+   measure(Hashtable::Probing<uint64_t, uint32_t, PGMHashFunc<HASH_64, 128, 4>, MinMaxCutoffFunc<HASH_64>,
+                              Hashtable::QuadraticProbingFunc>(
+              ht_capacity, PGMHashFunc<HASH_64, 128, 4>(sample.begin(), sample.end(), directory_address_count)),
+           sample_size);
+   measure(Hashtable::Probing<uint64_t, uint32_t, PGMHashFunc<HASH_64, 64, 1>, MinMaxCutoffFunc<HASH_64>,
+                              Hashtable::QuadraticProbingFunc>(
+              ht_capacity, PGMHashFunc<HASH_64, 64, 1>(sample.begin(), sample.end(), directory_address_count)),
+           sample_size);
+   measure(Hashtable::Probing<uint64_t, uint32_t, PGMHashFunc<HASH_64, 4, 4>, MinMaxCutoffFunc<HASH_64>,
+                              Hashtable::QuadraticProbingFunc>(
+              ht_capacity, PGMHashFunc<HASH_64, 4, 4>(sample.begin(), sample.end(), directory_address_count)),
+           sample_size);
 }
 
 int main(int argc, char* argv[]) {
@@ -227,7 +273,7 @@ int main(int argc, char* argv[]) {
                ((dataset_elem_count - 1) / Chained::bucket_size()) * Chained::bucket_byte_size();
 
             using Probing =
-               Hashtable::Probing<uint64_t, uint32_t, Mult64Func, FastrangeFunc<HASH_64>, LinearProbingFunc>;
+               Hashtable::Probing<uint64_t, uint32_t, Mult64Func, FastrangeFunc<HASH_64>, Hashtable::LinearProbingFunc>;
             const auto wc_probing = Probing::bucket_byte_size() * Probing::directory_address_count(ht_capacity);
 
             using Cuckoo = Hashtable::Cuckoo<uint64_t, uint32_t, 8, Mult64Func, Mult64Func, FastrangeFunc<HASH_64>,
