@@ -183,8 +183,8 @@ namespace Hashtable {
 
      protected:
       struct Bucket {
-         std::array<Key, BucketSize> keys __attribute((aligned(sizeof(Key) * 8))) = {};
-         std::array<Payload, BucketSize> payloads = {};
+         std::array<Key, BucketSize> keys /*__attribute((aligned(sizeof(Key) * 8)))*/;
+         std::array<Payload, BucketSize> payloads;
       } packed;
 
       std::vector<Bucket> slots;

@@ -31,7 +31,7 @@ namespace Hashtable {
       const ReductionFn2 reductionfn2;
 
       struct Bucket {
-         Key keys[BucketSize] __attribute((aligned(sizeof(Key) * 8)));
+         Key keys[BucketSize];
          Payload values[BucketSize];
       } packed;
 
@@ -43,7 +43,8 @@ namespace Hashtable {
      public:
       Cuckoo(const size_t& capacity, const HashFn1 hashfn1 = HashFn1(), const HashFn2 hashfn2 = HashFn2())
          : hashfn1(hashfn1), hashfn2(hashfn2), reductionfn1(ReductionFn1(directory_address_count(capacity))),
-           reductionfn2(ReductionFn2(directory_address_count(capacity))), num_buckets_(directory_address_count(capacity)) {
+           reductionfn2(ReductionFn2(directory_address_count(capacity))),
+           num_buckets_(directory_address_count(capacity)) {
          int r = posix_memalign(reinterpret_cast<void**>(&buckets_), 32, num_buckets_ * sizeof(Bucket));
          if (r != 0)
             throw std::runtime_error("Could not memalign allocate for cuckoo hash map");
@@ -213,7 +214,8 @@ namespace Hashtable {
      public:
       Cuckoo(const size_t& capacity)
          : hashfn1(HashFn1()), hashfn2(HashFn2()), reductionfn1(ReductionFn1(directory_address_count(capacity))),
-           reductionfn2(ReductionFn2(directory_address_count(capacity))), num_buckets_(directory_address_count(capacity)) {
+           reductionfn2(ReductionFn2(directory_address_count(capacity))),
+           num_buckets_(directory_address_count(capacity)) {
          int r = posix_memalign(reinterpret_cast<void**>(&buckets_), 32, num_buckets_ * sizeof(Bucket));
          if (r != 0)
             throw std::runtime_error("Could not memalign allocate for cuckoo hash map");
