@@ -26,11 +26,17 @@ struct PGMHashFunc {
 
 template<typename T>
 struct MinMaxCutoffFunc {
+  private:
+   const size_t N;
+
+  public:
+   MinMaxCutoffFunc(const size_t& num_buckets) : N(num_buckets) {}
+
    static std::string name() {
       return "min_max_cutoff";
    }
 
-   forceinline T operator()(const T& hash, const size_t& N) const {
+   forceinline T operator()(const T& hash) const {
       return Reduction::min_max_cutoff(hash, N);
    }
 };

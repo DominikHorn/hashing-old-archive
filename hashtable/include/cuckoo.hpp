@@ -41,8 +41,8 @@ namespace Hashtable {
       std::mt19937 rand_; // RNG for moving items around
 
      public:
-      Cuckoo(const size_t& capacity)
-         : hashfn1(HashFn1()), hashfn2(HashFn2()), reductionfn1(ReductionFn1(num_buckets(capacity))),
+      Cuckoo(const size_t& capacity, const HashFn1 hashfn1 = HashFn1(), const HashFn2 hashfn2 = HashFn2())
+         : hashfn1(hashfn1), hashfn2(hashfn2), reductionfn1(ReductionFn1(num_buckets(capacity))),
            reductionfn2(ReductionFn2(num_buckets(capacity))), num_buckets_(num_buckets(capacity)) {
          int r = posix_memalign(reinterpret_cast<void**>(&buckets_), 32, num_buckets_ * sizeof(Bucket));
          if (r != 0)
@@ -111,6 +111,10 @@ namespace Hashtable {
          return BucketSize;
       }
 
+      static constexpr forceinline size_t num_buckets(const size_t& capacity) {
+         return (capacity + BucketSize - 1) / BucketSize;
+      }
+
       void clear() {
          for (Bucket* ptr = buckets_; ptr < buckets_ + num_buckets_; ptr++) {
             for (size_t i = 0; i < BucketSize; i++) {
@@ -120,10 +124,6 @@ namespace Hashtable {
       }
 
      private:
-      static constexpr forceinline size_t num_buckets(const size_t& capacity) {
-         return (capacity + BucketSize - 1) / BucketSize;
-      }
-
       void insert(const Key& key, const Payload& value, size_t kick_count) {
          if (kick_count > MaxKickCycleLength) {
             throw std::runtime_error("maximum kick cycle length (" + std::to_string(MaxKickCycleLength) + ") reached");
@@ -285,6 +285,10 @@ namespace Hashtable {
          return BucketSize;
       }
 
+      static constexpr forceinline size_t num_buckets(const size_t& capacity) {
+         return (capacity + BucketSize - 1) / BucketSize;
+      }
+
       void clear() {
          for (auto ptr = buckets_; ptr < buckets_ + num_buckets_; ptr++) {
             for (size_t i = 0; i < BucketSize; i++) {
@@ -294,10 +298,6 @@ namespace Hashtable {
       }
 
      private:
-      static constexpr forceinline size_t num_buckets(const size_t& capacity) {
-         return (capacity + BucketSize - 1) / BucketSize;
-      }
-
       void insert(const uint32_t& key, const Payload& value, size_t kick_count) {
          if (kick_count > MaxKickCycleLength) {
             throw std::runtime_error("maximum kick cycle length (" + std::to_string(MaxKickCycleLength) + ") reached");

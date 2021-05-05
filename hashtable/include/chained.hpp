@@ -17,8 +17,8 @@ namespace Hashtable {
       const ReductionFn reductionfn;
 
      public:
-      explicit Chained(const size_t& capacity)
-         : hashfn(HashFn()), reductionfn(ReductionFn(num_buckets(capacity))), slots(num_buckets(capacity)) {
+      explicit Chained(const size_t& capacity, const HashFn hashfn = HashFn())
+         : hashfn(hashfn), reductionfn(ReductionFn(num_buckets(capacity))), slots(num_buckets(capacity)) {
          // Start with a well defined clean slate
          clear();
       };
@@ -122,6 +122,10 @@ namespace Hashtable {
          return BucketSize;
       }
 
+      static constexpr forceinline size_t num_buckets(const size_t& capacity) {
+         return capacity;
+      }
+
       /**
        * Clears all keys from the hashtable. Note that payloads are technically
        * still in memory (i.e., might leak if sensitive).
@@ -154,9 +158,5 @@ namespace Hashtable {
 
       // First bucket is always inline in the slot
       std::vector<Bucket> slots;
-
-      static constexpr forceinline size_t num_buckets(const size_t& capacity) {
-         return capacity;
-      }
    };
 } // namespace Hashtable

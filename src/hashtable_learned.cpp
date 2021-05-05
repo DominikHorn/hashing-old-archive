@@ -131,75 +131,72 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
    auto sample = pgm_sample_fn();
    sort_prepare(sample);
 
-   const auto hashtable_size =
+   const auto ht_capacity =
       static_cast<uint64_t>(static_cast<double>(dataset_ptr->size()) / static_cast<double>(load_factor));
 
-   //   const auto cuckoo_4_num_buckets =
-   //      Hashtable::Cuckoo<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
-   //                        FastrangeFunc<HASH_32>, FastrangeFunc<HASH_32>>::num_buckets(hashtable_size);
-   const auto cuckoo_8_num_buckets =
-      Hashtable::Cuckoo<uint64_t, uint32_t, 8, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
-                        FastrangeFunc<HASH_32>, FastrangeFunc<HASH_32>>::num_buckets(hashtable_size);
+   /**
+    * ========================================================
+    *  Chained, 64-bit key, 32-bit payload, 1 slots per bucket
+    * ========================================================
+    */
+   {
+      // pgm_hash_eps256_epsrec0
+      using HT = Hashtable::Chained<uint64_t, uint32_t, 1, PGMHashFunc<HASH_64, 256, 0>, MinMaxCutoffFunc<HASH_64>>;
+      measure(HT(ht_capacity, PGMHashFunc<HASH_64, 256, 0>(sample.begin(), sample.end(), HT::num_buckets(ht_capacity))),
+              sample_size);
+   }
+   {
+      // pgm_hash_eps128_epsrec4
+      using HT = Hashtable::Chained<uint64_t, uint32_t, 1, PGMHashFunc<HASH_64, 128, 4>, MinMaxCutoffFunc<HASH_64>>;
+      measure(HT(ht_capacity, PGMHashFunc<HASH_64, 128, 4>(sample.begin(), sample.end(), HT::num_buckets(ht_capacity))),
+              sample_size);
+   }
+   {
+      // pgm_hash_eps64_epsrec1
+      using HT = Hashtable::Chained<uint64_t, uint32_t, 1, PGMHashFunc<HASH_64, 64, 1>, MinMaxCutoffFunc<HASH_64>>;
+      measure(HT(ht_capacity, PGMHashFunc<HASH_64, 64, 1>(sample.begin(), sample.end(), HT::num_buckets(ht_capacity))),
+              sample_size);
+   }
+   {
+      // pgm_hash_eps4_epsrec4
+      using HT = Hashtable::Chained<uint64_t, uint32_t, 1, PGMHashFunc<HASH_64, 4, 4>, MinMaxCutoffFunc<HASH_64>>;
+      measure(HT(ht_capacity, PGMHashFunc<HASH_64, 4, 4>(sample.begin(), sample.end(), HT::num_buckets(ht_capacity))),
+              sample_size);
+   }
 
-   measure(Hashtable::Chained<uint64_t, uint32_t, 1, PGMHashFunc<HASH_64, 256, 0>, MinMaxCutoffFunc<HASH_64>>(
-              hashtable_size, MinMaxCutoffFunc<HASH_64>(),
-              PGMHashFunc<HASH_64, 256, 0>(sample.begin(), sample.end(), hashtable_size)),
-           sample_size);
-   //   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 4, PGMHashFunc<HASH_64, 256, 0>, Murmur3FinalizerCuckoo2Func,
-   //                             MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>>(
-   //              cuckoo_4_num_buckets, MinMaxCutoffFunc<HASH_64>(), FastModuloFunc<HASH_64>(cuckoo_4_num_buckets),
-   //              PGMHashFunc<HASH_64, 256, 0>(sample.begin(), sample.end(), hashtable_size)),
-   //           sample_size);
-   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 256, 0>, Murmur3FinalizerCuckoo2Func,
-                             MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>>(
-              cuckoo_8_num_buckets, MinMaxCutoffFunc<HASH_64>(), FastModuloFunc<HASH_64>(cuckoo_8_num_buckets),
-              PGMHashFunc<HASH_64, 256, 0>(sample.begin(), sample.end(), cuckoo_8_num_buckets)),
-           sample_size);
-
-   measure(Hashtable::Chained<uint64_t, uint32_t, 1, PGMHashFunc<HASH_64, 128, 4>, MinMaxCutoffFunc<HASH_64>>(
-              hashtable_size, MinMaxCutoffFunc<HASH_64>(),
-              PGMHashFunc<HASH_64, 128, 4>(sample.begin(), sample.end(), hashtable_size)),
-           sample_size);
-   //   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 4, PGMHashFunc<HASH_64, 128, 4>, Murmur3FinalizerCuckoo2Func,
-   //                             MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>>(
-   //              cuckoo_4_num_buckets, MinMaxCutoffFunc<HASH_64>(), FastModuloFunc<HASH_64>(cuckoo_4_num_buckets),
-   //              PGMHashFunc<HASH_64, 128, 4>(sample.begin(), sample.end(), hashtable_size)),
-   //           sample_size);
-   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 128, 4>, Murmur3FinalizerCuckoo2Func,
-                             MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>>(
-              cuckoo_8_num_buckets, MinMaxCutoffFunc<HASH_64>(), FastModuloFunc<HASH_64>(cuckoo_8_num_buckets),
-              PGMHashFunc<HASH_64, 128, 4>(sample.begin(), sample.end(), cuckoo_8_num_buckets)),
-           sample_size);
-
-   measure(Hashtable::Chained<uint64_t, uint32_t, 1, PGMHashFunc<HASH_64, 64, 1>, MinMaxCutoffFunc<HASH_64>>(
-              hashtable_size, MinMaxCutoffFunc<HASH_64>(),
-              PGMHashFunc<HASH_64, 64, 1>(sample.begin(), sample.end(), hashtable_size)),
-           sample_size);
-   //   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 4, PGMHashFunc<HASH_64, 64, 1>, Murmur3FinalizerCuckoo2Func,
-   //                             MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>>(
-   //              cuckoo_4_num_buckets, MinMaxCutoffFunc<HASH_64>(), FastModuloFunc<HASH_64>(cuckoo_4_num_buckets),
-   //              PGMHashFunc<HASH_64, 64, 1>(sample.begin(), sample.end(), hashtable_size)),
-   //           sample_size);
-   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 64, 1>, Murmur3FinalizerCuckoo2Func,
-                             MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>>(
-              cuckoo_8_num_buckets, MinMaxCutoffFunc<HASH_64>(), FastModuloFunc<HASH_64>(cuckoo_8_num_buckets),
-              PGMHashFunc<HASH_64, 64, 1>(sample.begin(), sample.end(), cuckoo_8_num_buckets)),
-           sample_size);
-
-   measure(Hashtable::Chained<uint64_t, uint32_t, 1, PGMHashFunc<HASH_64, 4, 4>, MinMaxCutoffFunc<HASH_64>>(
-              hashtable_size, MinMaxCutoffFunc<HASH_64>(),
-              PGMHashFunc<HASH_64, 4, 4>(sample.begin(), sample.end(), hashtable_size)),
-           sample_size);
-   //   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 4, PGMHashFunc<HASH_64, 4, 4>, Murmur3FinalizerCuckoo2Func,
-   //                             MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>>(
-   //              cuckoo_4_num_buckets, MinMaxCutoffFunc<HASH_64>(), FastModuloFunc<HASH_64>(cuckoo_4_num_buckets),
-   //              PGMHashFunc<HASH_64, 4, 4>(sample.begin(), sample.end(), cuckoo_4_num_buckets)),
-   //           sample_size);
-   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 4, 4>, Murmur3FinalizerCuckoo2Func,
-                             MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>>(
-              cuckoo_8_num_buckets, MinMaxCutoffFunc<HASH_64>(), FastModuloFunc<HASH_64>(cuckoo_8_num_buckets),
-              PGMHashFunc<HASH_64, 4, 4>(sample.begin(), sample.end(), cuckoo_8_num_buckets)),
-           sample_size);
+   /**
+    * ========================================================
+    *  Cuckoo, 64-bit key, 32-bit payload, 8 slots per bucket
+    * ========================================================
+    */
+   {
+      // pgm_hash_eps256_epsrec0
+      using HT = Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 256, 0>, Murmur3FinalizerCuckoo2Func,
+                                   MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>>;
+      measure(HT(ht_capacity, PGMHashFunc<HASH_64, 256, 0>(sample.begin(), sample.end(), HT::num_buckets(ht_capacity))),
+              sample_size);
+   }
+   {
+      // pgm_hash_eps128_epsrec4
+      using HT = Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 128, 4>, Murmur3FinalizerCuckoo2Func,
+                                   MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>>;
+      measure(HT(ht_capacity, PGMHashFunc<HASH_64, 128, 4>(sample.begin(), sample.end(), HT::num_buckets(ht_capacity))),
+              sample_size);
+   }
+   {
+      // pgm_hash_eps64_epsrec1
+      using HT = Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 64, 1>, Murmur3FinalizerCuckoo2Func,
+                                   MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>>;
+      measure(HT(ht_capacity, PGMHashFunc<HASH_64, 64, 1>(sample.begin(), sample.end(), HT::num_buckets(ht_capacity))),
+              sample_size);
+   }
+   {
+      // pgm_hash_eps4_epsrec4
+      using HT = Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 4, 4>, Murmur3FinalizerCuckoo2Func,
+                                   MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>>;
+      measure(HT(ht_capacity, PGMHashFunc<HASH_64, 4, 4>(sample.begin(), sample.end(), HT::num_buckets(ht_capacity))),
+              sample_size);
+   }
 }
 
 int main(int argc, char* argv[]) {
