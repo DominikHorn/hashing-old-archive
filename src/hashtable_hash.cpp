@@ -97,7 +97,13 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
    const auto ht_capacity =
       static_cast<uint64_t>(static_cast<double>(dataset->size()) / static_cast<double>(load_factor));
 
-   /// Chained mult
+   /**
+    * ===============
+    *    Chained
+    * ===============
+    */
+
+   /// mult
    measure(Hashtable::Chained<uint64_t, uint32_t, 1, Mult64Func, FastrangeFunc<HASH_32>>(ht_capacity));
    measure(Hashtable::Chained<uint64_t, uint32_t, 1, Mult64Func, FastrangeFunc<HASH_64>>(ht_capacity));
    measure(Hashtable::Chained<uint64_t, uint32_t, 1, Mult64Func, FastModuloFunc<HASH_64>>(ht_capacity));
@@ -108,7 +114,7 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
    measure(Hashtable::Chained<uint64_t, uint32_t, 4, Mult64Func, FastrangeFunc<HASH_64>>(ht_capacity));
    measure(Hashtable::Chained<uint64_t, uint32_t, 4, Mult64Func, FastModuloFunc<HASH_64>>(ht_capacity));
 
-   /// Chained mult-add
+   /// mult-add
    measure(Hashtable::Chained<uint64_t, uint32_t, 1, MultAdd64Func, FastrangeFunc<HASH_32>>(ht_capacity));
    measure(Hashtable::Chained<uint64_t, uint32_t, 1, MultAdd64Func, FastrangeFunc<HASH_64>>(ht_capacity));
    measure(Hashtable::Chained<uint64_t, uint32_t, 1, MultAdd64Func, FastModuloFunc<HASH_64>>(ht_capacity));
@@ -119,7 +125,7 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
    measure(Hashtable::Chained<uint64_t, uint32_t, 4, MultAdd64Func, FastrangeFunc<HASH_64>>(ht_capacity));
    measure(Hashtable::Chained<uint64_t, uint32_t, 4, MultAdd64Func, FastModuloFunc<HASH_64>>(ht_capacity));
 
-   /// Chained murmur3
+   /// murmur3 finalizer
    measure(Hashtable::Chained<uint64_t, uint32_t, 1, Murmur3FinalizerFunc, FastrangeFunc<HASH_32>>(ht_capacity));
    measure(Hashtable::Chained<uint64_t, uint32_t, 1, Murmur3FinalizerFunc, FastrangeFunc<HASH_64>>(ht_capacity));
    measure(Hashtable::Chained<uint64_t, uint32_t, 1, Murmur3FinalizerFunc, FastModuloFunc<HASH_64>>(ht_capacity));
@@ -130,7 +136,7 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
    measure(Hashtable::Chained<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, FastrangeFunc<HASH_64>>(ht_capacity));
    measure(Hashtable::Chained<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, FastModuloFunc<HASH_64>>(ht_capacity));
 
-   /// Chained aquahash
+   /// aquahash
    measure(Hashtable::Chained<uint64_t, uint32_t, 1, AquaLowFunc, FastrangeFunc<HASH_32>>(ht_capacity));
    measure(Hashtable::Chained<uint64_t, uint32_t, 1, AquaLowFunc, FastrangeFunc<HASH_64>>(ht_capacity));
    measure(Hashtable::Chained<uint64_t, uint32_t, 1, AquaLowFunc, FastModuloFunc<HASH_64>>(ht_capacity));
@@ -141,16 +147,33 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
    measure(Hashtable::Chained<uint64_t, uint32_t, 4, AquaLowFunc, FastrangeFunc<HASH_64>>(ht_capacity));
    measure(Hashtable::Chained<uint64_t, uint32_t, 4, AquaLowFunc, FastModuloFunc<HASH_64>>(ht_capacity));
 
-   /*
+   /**
     * ===============
     *    Probing
     * ===============
     */
 
-   //   measure(Hashtable::Probing<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, FastrangeFunc<HASH_64>, LinearProbingFunc>(
-   //      ht_capacity));
+   /// Murmur
+   measure(Hashtable::Probing<uint64_t, uint32_t, 1, Murmur3FinalizerFunc, FastrangeFunc<HASH_32>, LinearProbingFunc>(
+      ht_capacity));
+   measure(Hashtable::Probing<uint64_t, uint32_t, 1, Murmur3FinalizerFunc, FastrangeFunc<HASH_64>, LinearProbingFunc>(
+      ht_capacity));
+   measure(Hashtable::Probing<uint64_t, uint32_t, 1, Murmur3FinalizerFunc, FastModuloFunc<HASH_64>, LinearProbingFunc>(
+      ht_capacity));
+   measure(Hashtable::Probing<uint64_t, uint32_t, 2, Murmur3FinalizerFunc, FastrangeFunc<HASH_32>, LinearProbingFunc>(
+      ht_capacity));
+   measure(Hashtable::Probing<uint64_t, uint32_t, 2, Murmur3FinalizerFunc, FastrangeFunc<HASH_64>, LinearProbingFunc>(
+      ht_capacity));
+   measure(Hashtable::Probing<uint64_t, uint32_t, 2, Murmur3FinalizerFunc, FastModuloFunc<HASH_64>, LinearProbingFunc>(
+      ht_capacity));
+   measure(Hashtable::Probing<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, FastrangeFunc<HASH_32>, LinearProbingFunc>(
+      ht_capacity));
+   measure(Hashtable::Probing<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, FastrangeFunc<HASH_64>, LinearProbingFunc>(
+      ht_capacity));
+   measure(Hashtable::Probing<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, FastModuloFunc<HASH_64>, LinearProbingFunc>(
+      ht_capacity));
 
-   /*
+   /**
     * ===============
     *     Cuckoo
     * ===============

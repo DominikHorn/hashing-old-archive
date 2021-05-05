@@ -44,7 +44,7 @@ namespace Hashtable {
          }
 
          // Using template functor should successfully inline actual hash computation
-         const auto orig_slot_index = reductionfn(hashfn(key), this->directory_size());
+         const auto orig_slot_index = reductionfn(hashfn(key));
          auto slot_index = orig_slot_index;
 
          for (;;) {
@@ -81,7 +81,7 @@ namespace Hashtable {
          }
 
          // Using template functor should successfully inline actual hash computation
-         const auto orig_slot_index = reductionfn(hashfn(key), this->directory_size());
+         const auto orig_slot_index = reductionfn(hashfn(key));
          auto slot_index = orig_slot_index;
 
          for (;;) {
