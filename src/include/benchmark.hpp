@@ -5,6 +5,50 @@
 #include <vector>
 
 namespace Benchmark {
+
+   struct ThroughputStats {
+      uint64_t average_total_inference_reduction_ns;
+      unsigned int repeatCnt;
+   };
+
+   /**
+    * measures throughput when hashing into a dataset.size() * over_alloc sized hashtable
+    * using HashFunction to obtain a hash value and Reducer to reduce the hash value to an index into
+    * the hashtable.
+    *
+    * Does not actually perform hashtable insert/lookup!
+    *
+    * @tparam HashFunction
+    * @tparam Reducer
+    */
+   template<unsigned int repeatCnt = 10, typename HashFunction, typename Reducer>
+   ThroughputStats measure_throughput(const std::vector<uint64_t>& dataset, const HashFunction& hashfn,
+                                      const Reducer& reduce) {
+      const auto n = static_cast<uint64_t>(dataset.size());
+      uint64_t avg = 0;
+
+      for (unsigned int repetiton = 0; repetiton < repeatCnt; repetiton++) {
+         const auto start_time = std::chrono::steady_clock::now();
+         // Hash each value and record entries per bucket
+         for (const auto& key : dataset) {
+            const auto index = reduce(hashfn(key), n);
+
+            // Ensure the compiler does not simply remove the index
+            // calculation during optimization.
+            Optimizer::DoNotEliminate(index);
+         }
+         const auto end_time = std::chrono::steady_clock::now();
+         const auto delta_ns =
+            static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
+
+         // we will lose at most one nanosecond precision each time which should
+         // not make a difference in practice
+         avg += delta_ns / repeatCnt;
+      }
+
+      return {avg, repeatCnt};
+   }
+
    // These are probably to large but these few additional bytes don't hurt
    template<typename Counter, typename PreciseMath>
    struct CollisionStats {
@@ -69,49 +113,6 @@ namespace Benchmark {
       stats.std_dev = std::sqrt(std_dev_square_sum / static_cast<double>(dataset.size()));
 
       return stats;
-   }
-
-   struct ThroughputStats {
-      uint64_t average_total_inference_reduction_ns;
-      unsigned int repeatCnt;
-   };
-
-   /**
-    * measures throughput when hashing into a dataset.size() * over_alloc sized hashtable
-    * using HashFunction to obtain a hash value and Reducer to reduce the hash value to an index into
-    * the hashtable.
-    *
-    * Does not actually perform hashtable insert/lookup!
-    *
-    * @tparam HashFunction
-    * @tparam Reducer
-    */
-   template<unsigned int repeatCnt = 10, typename HashFunction, typename Reducer>
-   ThroughputStats measure_throughput(const std::vector<uint64_t>& dataset, const HashFunction& hashfn,
-                                      const Reducer& reduce) {
-      const auto n = static_cast<uint64_t>(dataset.size());
-      uint64_t avg = 0;
-
-      for (unsigned int repetiton = 0; repetiton < repeatCnt; repetiton++) {
-         const auto start_time = std::chrono::steady_clock::now();
-         // Hash each value and record entries per bucket
-         for (const auto& key : dataset) {
-            const auto index = reduce(hashfn(key), n);
-
-            // Ensure the compiler does not simply remove the index
-            // calculation during optimization.
-            Optimizer::DoNotEliminate(index);
-         }
-         const auto end_time = std::chrono::steady_clock::now();
-         const auto delta_ns =
-            static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
-
-         // we will lose at most one nanosecond precision each time which should
-         // not make a difference in practice
-         avg += delta_ns / repeatCnt;
-      }
-
-      return {avg, repeatCnt};
    }
 
    struct HashtableStats {
