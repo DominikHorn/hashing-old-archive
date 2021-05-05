@@ -5,10 +5,10 @@
 namespace Hashtable {
    template<class Key,
             class Payload,
-            size_t BucketSize,
             class HashFn,
             class ReductionFn,
             class ProbingFn,
+            size_t BucketSize = 1,
             Key Sentinel = std::numeric_limits<Key>::max()>
    struct Probing {
      private:

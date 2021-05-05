@@ -228,7 +228,7 @@ int main(int argc, char* argv[]) {
                ((dataset_elem_count - 1) / Chained::bucket_size()) * Chained::bucket_byte_size();
 
             using Probing =
-               Hashtable::Probing<uint64_t, uint32_t, 1, Mult64Func, FastrangeFunc<HASH_64>, LinearProbingFunc>;
+               Hashtable::Probing<uint64_t, uint32_t, Mult64Func, FastrangeFunc<HASH_64>, LinearProbingFunc>;
             const auto wc_probing = Probing::bucket_byte_size() * Probing::directory_address_count(ht_capacity);
 
             using Cuckoo = Hashtable::Cuckoo<uint64_t, uint32_t, 8, Mult64Func, Mult64Func, FastrangeFunc<HASH_64>,
