@@ -153,7 +153,7 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
     * ===============
     */
 
-   /// Murmur
+   /// Linear Murmur finalizer
    measure(Hashtable::Probing<uint64_t, uint32_t, 1, Murmur3FinalizerFunc, FastrangeFunc<HASH_32>, LinearProbingFunc>(
       ht_capacity));
    measure(Hashtable::Probing<uint64_t, uint32_t, 1, Murmur3FinalizerFunc, FastrangeFunc<HASH_64>, LinearProbingFunc>(
@@ -172,6 +172,35 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
       ht_capacity));
    measure(Hashtable::Probing<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, FastModuloFunc<HASH_64>, LinearProbingFunc>(
       ht_capacity));
+
+   /// Quadratic Murmur finalizer
+   measure(
+      Hashtable::Probing<uint64_t, uint32_t, 1, Murmur3FinalizerFunc, FastrangeFunc<HASH_32>, QuadraticProbingFunc>(
+         ht_capacity));
+   measure(
+      Hashtable::Probing<uint64_t, uint32_t, 1, Murmur3FinalizerFunc, FastrangeFunc<HASH_64>, QuadraticProbingFunc>(
+         ht_capacity));
+   measure(
+      Hashtable::Probing<uint64_t, uint32_t, 1, Murmur3FinalizerFunc, FastModuloFunc<HASH_64>, QuadraticProbingFunc>(
+         ht_capacity));
+   measure(
+      Hashtable::Probing<uint64_t, uint32_t, 2, Murmur3FinalizerFunc, FastrangeFunc<HASH_32>, QuadraticProbingFunc>(
+         ht_capacity));
+   measure(
+      Hashtable::Probing<uint64_t, uint32_t, 2, Murmur3FinalizerFunc, FastrangeFunc<HASH_64>, QuadraticProbingFunc>(
+         ht_capacity));
+   measure(
+      Hashtable::Probing<uint64_t, uint32_t, 2, Murmur3FinalizerFunc, FastModuloFunc<HASH_64>, QuadraticProbingFunc>(
+         ht_capacity));
+   measure(
+      Hashtable::Probing<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, FastrangeFunc<HASH_32>, QuadraticProbingFunc>(
+         ht_capacity));
+   measure(
+      Hashtable::Probing<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, FastrangeFunc<HASH_64>, QuadraticProbingFunc>(
+         ht_capacity));
+   measure(
+      Hashtable::Probing<uint64_t, uint32_t, 4, Murmur3FinalizerFunc, FastModuloFunc<HASH_64>, QuadraticProbingFunc>(
+         ht_capacity));
 
    /**
     * ===============

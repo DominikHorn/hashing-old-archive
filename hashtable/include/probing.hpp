@@ -46,6 +46,7 @@ namespace Hashtable {
          // Using template functor should successfully inline actual hash computation
          const auto orig_slot_index = reductionfn(hashfn(key));
          auto slot_index = orig_slot_index;
+         size_t probing_step = 0;
 
          for (;;) {
             auto& slot = slots[slot_index];
@@ -61,7 +62,7 @@ namespace Hashtable {
             }
 
             // Slot is full, choose a new slot index based on probing function
-            slot_index = probingfn(slot_index, this->directory_size());
+            slot_index = probingfn(orig_slot_index, ++probing_step, this->directory_size());
             if (unlikely(slot_index == orig_slot_index))
                throw std::runtime_error("Building " + this->name() +
                                         " failed: detected cycle during probing, all buckets along the way are full");
@@ -83,6 +84,7 @@ namespace Hashtable {
          // Using template functor should successfully inline actual hash computation
          const auto orig_slot_index = reductionfn(hashfn(key));
          auto slot_index = orig_slot_index;
+         size_t probing_step = 0;
 
          for (;;) {
             auto& slot = slots[slot_index];
@@ -95,7 +97,7 @@ namespace Hashtable {
             }
 
             // Slot is full, choose a new slot index based on probing function
-            slot_index = probingfn(slot_index, this->directory_size());
+            slot_index = probingfn(orig_slot_index, ++probing_step, this->directory_size());
             if (unlikely(slot_index == orig_slot_index))
                return std::nullopt;
          }
