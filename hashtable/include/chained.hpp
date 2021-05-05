@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cmath>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -16,9 +17,8 @@ namespace Hashtable {
       const ReductionFn reductionfn;
 
      public:
-      explicit Chained(const size_t& size, const ReductionFn& reductionfn = ReductionFn(),
-                       const HashFn& hashfn = HashFn())
-         : hashfn(hashfn), reductionfn(reductionfn), slots(size) {
+      explicit Chained(const size_t& capacity)
+         : hashfn(HashFn()), reductionfn(ReductionFn(num_buckets(capacity))), slots(num_buckets(capacity)) {
          // Start with a well defined clean slate
          clear();
       };
@@ -40,7 +40,7 @@ namespace Hashtable {
          }
 
          // Using template functor should successfully inline actual hash computation
-         const auto slot_index = reductionfn(hashfn(key), this->directory_size());
+         const auto slot_index = reductionfn(hashfn(key));
 
          Bucket* slot = &slots[slot_index];
          for (;;) {
@@ -84,7 +84,7 @@ namespace Hashtable {
          }
 
          // Using template functor should successfully inline actual hash computation
-         const auto slot_index = reductionfn(hashfn(key), this->directory_size());
+         const auto slot_index = reductionfn(hashfn(key));
 
          auto slot = &slots[slot_index];
 
@@ -155,8 +155,8 @@ namespace Hashtable {
       // First bucket is always inline in the slot
       std::vector<Bucket> slots;
 
-      forceinline size_t directory_size() const {
-         return slots.size();
+      static constexpr forceinline size_t num_buckets(const size_t& capacity) {
+         return capacity;
       }
    };
 } // namespace Hashtable

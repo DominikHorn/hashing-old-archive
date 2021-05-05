@@ -3,8 +3,13 @@
 #include <convenience.hpp>
 
 namespace Hashtable {
-   template<class Key, class Payload, size_t BucketSize, class HashFn, class ReductionFn, class ProbingFn,
-            Key sentinel = std::numeric_limits<Key>::max()>
+   template<class Key,
+            class Payload,
+            size_t BucketSize,
+            class HashFn,
+            class ReductionFn,
+            class ProbingFn,
+            Key Sentinel = std::numeric_limits<Key>::max()>
    struct Probing {
      private:
       const HashFn hashfn;
@@ -12,9 +17,9 @@ namespace Hashtable {
       const ProbingFn probingfn;
 
      public:
-      Probing(const size_t& size, const ReductionFn reductionfn = ReductionFn(), const ProbingFn probingfn,
-              const HashFn hashfn = HashFn())
-         : hashfn(hasfn), reductionfn(reductionfn), probingfn(probingfn), slots(size) {
+      explicit Probing(const size_t& capacity)
+         : hashfn(HashFn()), reductionfn(ReductionFn(num_buckets(capacity))), probingfn(ProbingFn()),
+           slots(num_buckets(capacity)) {
          // Start with a well defined clean slate
          clear();
       };
@@ -137,6 +142,10 @@ namespace Hashtable {
       } packed;
 
       std::vector<Bucket> slots;
+
+      static constexpr forceinline size_t num_buckets(const size_t& capacity) {
+         return capacity;
+      }
 
       forceinline size_t directory_size() const {
          return slots.size();

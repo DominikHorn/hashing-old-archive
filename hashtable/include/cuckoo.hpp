@@ -36,16 +36,14 @@ namespace Hashtable {
       } packed;
 
       Bucket* buckets_;
-      size_t size_; // Number of entries filled
       size_t num_buckets_; // Total number of buckets
+
       std::mt19937 rand_; // RNG for moving items around
 
      public:
-      Cuckoo(const size_t& num_buckets, const ReductionFn1& reductionfn1 = ReductionFn1(),
-             const ReductionFn2& reductionfn2 = ReductionFn2(), const HashFn1& hashfn1 = HashFn1(),
-             const HashFn2& hashfn2 = HashFn2())
-         : hashfn1(hashfn1), hashfn2(hashfn2), reductionfn1(reductionfn1), reductionfn2(reductionfn2), size_(0),
-           num_buckets_(num_buckets) {
+      Cuckoo(const size_t& capacity)
+         : hashfn1(HashFn1()), hashfn2(HashFn2()), reductionfn1(ReductionFn1(num_buckets(capacity))),
+           reductionfn2(ReductionFn2(num_buckets(capacity))), num_buckets_(num_buckets(capacity)) {
          int r = posix_memalign(reinterpret_cast<void**>(&buckets_), 32, num_buckets_ * sizeof(Bucket));
          if (r != 0)
             throw std::runtime_error("Could not memalign allocate for cuckoo hash map");
@@ -63,7 +61,7 @@ namespace Hashtable {
 
       std::optional<Payload> lookup(const Key& key) const {
          const auto h1 = hashfn1(key);
-         const auto i1 = reductionfn1(h1, num_buckets_);
+         const auto i1 = reductionfn1(h1);
 
          Bucket* b1 = &buckets_[i1];
          for (size_t i = 0; i < BucketSize; i++) {
@@ -73,7 +71,7 @@ namespace Hashtable {
             }
          }
 
-         auto i2 = reductionfn2(hashfn2(key, h1), num_buckets_);
+         auto i2 = reductionfn2(hashfn2(key, h1));
          if (i2 == i1) {
             i2 = (i1 == num_buckets_ - 1) ? 0 : i1 + 1;
          }
@@ -90,15 +88,7 @@ namespace Hashtable {
       }
 
       void insert(const Key& key, const Payload& value) {
-         insert(key, value, false, 0);
-      }
-
-      forceinline size_t size() {
-         return size_;
-      }
-
-      static constexpr forceinline size_t num_buckets(const size_t& capacity) {
-         return (capacity + BucketSize - 1) / BucketSize;
+         insert(key, value, 0);
       }
 
       static constexpr forceinline size_t bucket_byte_size() {
@@ -130,14 +120,18 @@ namespace Hashtable {
       }
 
      private:
-      void insert(const Key& key, const Payload& value, bool is_reinsert, size_t kick_count) {
+      static constexpr forceinline size_t num_buckets(const size_t& capacity) {
+         return (capacity + BucketSize - 1) / BucketSize;
+      }
+
+      void insert(const Key& key, const Payload& value, size_t kick_count) {
          if (kick_count > MaxKickCycleLength) {
             throw std::runtime_error("maximum kick cycle length (" + std::to_string(MaxKickCycleLength) + ") reached");
          }
 
          const auto h1 = hashfn1(key);
-         const auto i1 = reductionfn1(h1, num_buckets_);
-         auto i2 = reductionfn2(hashfn2(key, h1), num_buckets_);
+         const auto i1 = reductionfn1(h1);
+         auto i2 = reductionfn2(hashfn2(key, h1));
 
          if (unlikely(i2 == i1)) {
             i2 = (i1 == num_buckets_ - 1) ? 0 : i1 + 1;
@@ -156,10 +150,6 @@ namespace Hashtable {
                b2->values[i] = value;
                return;
             }
-         }
-
-         if (!is_reinsert) {
-            size_++;
          }
 
          size_t count1 = 0;
@@ -193,7 +183,7 @@ namespace Hashtable {
             Payload old_value = victim_bucket->values[victim_index];
             victim_bucket->keys[victim_index] = key;
             victim_bucket->values[victim_index] = value;
-            insert(old_key, old_value, true, kick_count + 1);
+            insert(old_key, old_value, kick_count + 1);
          }
       }
    };
@@ -216,16 +206,14 @@ namespace Hashtable {
       } packed;
 
       Bucket* buckets_;
-      size_t size_; // Number of entries filled
       size_t num_buckets_; // Total number of buckets
+
       std::mt19937 rand_; // RNG for moving items around
 
      public:
-      Cuckoo(const size_t& num_buckets, const ReductionFn1& reductionfn1 = ReductionFn1(),
-             const ReductionFn2& reductionfn2 = ReductionFn2(), const HashFn1& hashfn1 = HashFn1(),
-             const HashFn2& hashfn2 = HashFn2())
-         : hashfn1(hashfn1), hashfn2(hashfn2), reductionfn1(reductionfn1), reductionfn2(reductionfn2), size_(0),
-           num_buckets_(num_buckets) {
+      Cuckoo(const size_t& capacity)
+         : hashfn1(HashFn1()), hashfn2(HashFn2()), reductionfn1(ReductionFn1(num_buckets(capacity))),
+           reductionfn2(ReductionFn2(num_buckets(capacity))), num_buckets_(num_buckets(capacity)) {
          int r = posix_memalign(reinterpret_cast<void**>(&buckets_), 32, num_buckets_ * sizeof(Bucket));
          if (r != 0)
             throw std::runtime_error("Could not memalign allocate for cuckoo hash map");
@@ -243,7 +231,7 @@ namespace Hashtable {
 
       std::optional<Payload> lookup(const uint32_t& key) const {
          const auto h1 = hashfn1(key);
-         const auto i1 = reductionfn1(h1, num_buckets_);
+         const auto i1 = reductionfn1(h1);
 
          Bucket* b1 = &buckets_[i1];
          __m256i vkey = _mm256_set1_epi32(key);
@@ -256,7 +244,7 @@ namespace Hashtable {
             return std::make_optional(val);
          }
 
-         auto i2 = reductionfn2(hashfn2(key, h1), num_buckets_);
+         auto i2 = reductionfn2(hashfn2(key, h1));
          if (i2 == i1) {
             i2 = (i1 == num_buckets_ - 1) ? 0 : i1 + 1;
          }
@@ -274,11 +262,7 @@ namespace Hashtable {
       }
 
       void insert(const uint32_t& key, const Payload& value) {
-         insert(key, value, false, 0);
-      }
-
-      forceinline size_t size() {
-         return size_;
+         insert(key, value, 0);
       }
 
       static constexpr forceinline size_t bucket_byte_size() {
@@ -310,14 +294,18 @@ namespace Hashtable {
       }
 
      private:
-      void insert(const uint32_t& key, const Payload& value, bool is_reinsert, size_t kick_count) {
+      static constexpr forceinline size_t num_buckets(const size_t& capacity) {
+         return (capacity + BucketSize - 1) / BucketSize;
+      }
+
+      void insert(const uint32_t& key, const Payload& value, size_t kick_count) {
          if (kick_count > MaxKickCycleLength) {
             throw std::runtime_error("maximum kick cycle length (" + std::to_string(MaxKickCycleLength) + ") reached");
          }
 
          const auto h1 = hashfn1(key);
-         const auto i1 = reductionfn1(h1, num_buckets_);
-         auto i2 = reductionfn2(hashfn2(key, h1), num_buckets_);
+         const auto i1 = reductionfn1(h1);
+         auto i2 = reductionfn2(hashfn2(key, h1));
 
          if (unlikely(i2 == i1)) {
             i2 = (i1 == num_buckets_ - 1) ? 0 : i1 + 1;
@@ -344,10 +332,6 @@ namespace Hashtable {
             int index = __builtin_ctz(mask) / 4;
             b2->values[index] = value;
             return;
-         }
-
-         if (!is_reinsert) {
-            size_++;
          }
 
          size_t count1 = 0;
@@ -381,7 +365,7 @@ namespace Hashtable {
             Payload old_value = victim_bucket->values[victim_index];
             victim_bucket->keys[victim_index] = key;
             victim_bucket->values[victim_index] = value;
-            insert(old_key, old_value, true, kick_count + 1);
+            insert(old_key, old_value, kick_count + 1);
          }
       }
    };
