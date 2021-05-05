@@ -24,7 +24,7 @@
    #define packed __attribute__((packed))
    #define prefetch(address, mode, locality) __builtin_prefetch(address, mode, locality)
 
-   #define full_mem_barrier __sync_synchronize();
+   #define full_mem_barrier __sync_synchronize()
 #else
 // TODO: we will need clang support, therefore verify that the above primitives all work with clang
    #error Your compiler is not supported

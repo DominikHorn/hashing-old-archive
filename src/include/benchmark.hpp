@@ -128,7 +128,7 @@ namespace Benchmark {
       // Insert every key
       auto start_time = std::chrono::steady_clock::now();
       for (const auto key : dataset) {
-         ht.insert(key, key - 5);
+         ht.insert(key, static_cast<uint32_t>(key) - 5);
       }
       auto end_time = std::chrono::steady_clock::now();
       uint64_t total_insert_ns =
@@ -139,7 +139,9 @@ namespace Benchmark {
       for (const auto& key : dataset) {
          const auto payload = ht.lookup(key);
          Optimizer::DoNotEliminate(payload);
-         full_mem_barrier // emulate doing something with payload, i.e., wait for it!
+         full_mem_barrier; // emulate doing something with payload by stalling at least until it arrives
+         assert(payload);
+         assert(payload.value() == static_cast<uint32_t>(key) - 5);
       }
       end_time = std::chrono::steady_clock::now();
       uint64_t total_lookup_ns =
