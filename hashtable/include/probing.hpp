@@ -1,35 +1,45 @@
 #pragma once
 
 #include <convenience.hpp>
+#include <reduction.hpp>
+#include <thirdparty/libdivide.h>
 
 namespace Hashtable {
    struct LinearProbingFunc {
+     private:
+      const size_t directory_size;
+
      public:
+      LinearProbingFunc(const size_t& directory_size) : directory_size(directory_size) {}
+
       static std::string name() {
          return "linear";
       }
 
-      forceinline size_t operator()(const size_t& index,
-                                    const size_t& probing_step,
-                                    const size_t& directory_size) const {
-         const auto next = index + probing_step;
-         // TODO: use fast modulo operation to make this truely competitive
-         return next >= directory_size ? next % directory_size : next;
+      forceinline size_t operator()(const size_t& index, const size_t& probing_step) const {
+         auto next = index + probing_step;
+         // TODO: benchmark whether this really is the fastest implementation
+         while (unlikely(next >= directory_size))
+            next -= directory_size;
+         return next;
       }
    };
 
    struct QuadraticProbingFunc {
+     private:
+      const size_t directory_size;
+      const libdivide::divider<size_t> div;
+
      public:
+      QuadraticProbingFunc(const size_t& directory_size)
+         : directory_size(directory_size), div(Reduction::make_magic_divider(directory_size)) {}
+
       static std::string name() {
          return "quadratic";
       }
 
-      forceinline size_t operator()(const size_t& index,
-                                    const size_t& probing_step,
-                                    const size_t& directory_size) const {
-         const auto next = index + probing_step * probing_step;
-         // TODO: use fast modulo operation to make this truely competitive
-         return next >= directory_size ? next % directory_size : next;
+      forceinline size_t operator()(const size_t& index, const size_t& probing_step) const {
+         return Reduction::magic_modulo(index + probing_step * probing_step, directory_size, div);
       }
    };
 
@@ -48,8 +58,8 @@ namespace Hashtable {
 
      public:
       explicit Probing(const size_t& capacity)
-         : hashfn(HashFn()), reductionfn(ReductionFn(directory_address_count(capacity))), probingfn(ProbingFn()),
-           slots(directory_address_count(capacity)) {
+         : hashfn(HashFn()), reductionfn(ReductionFn(directory_address_count(capacity))),
+           probingfn(ProbingFn(directory_address_count(capacity))), slots(directory_address_count(capacity)) {
          // Start with a well defined clean slate
          clear();
       };
@@ -92,7 +102,7 @@ namespace Hashtable {
             }
 
             // Slot is full, choose a new slot index based on probing function
-            slot_index = probingfn(orig_slot_index, ++probing_step, this->slots.size());
+            slot_index = probingfn(orig_slot_index, ++probing_step);
             if (unlikely(slot_index == orig_slot_index))
                throw std::runtime_error("Building " + this->name() +
                                         " failed: detected cycle during probing, all buckets along the way are full");
@@ -127,7 +137,7 @@ namespace Hashtable {
             }
 
             // Slot is full, choose a new slot index based on probing function
-            slot_index = probingfn(orig_slot_index, ++probing_step, this->slots.size());
+            slot_index = probingfn(orig_slot_index, ++probing_step);
             if (unlikely(slot_index == orig_slot_index))
                return std::nullopt;
          }

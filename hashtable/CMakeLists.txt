@@ -11,7 +11,7 @@ target_include_directories(${PROJECT_NAME} INTERFACE
         )
 
 # Link other code from this repo
-#target_link_libraries(${PROJECT_NAME} INTERFACE convenience thirdparty)
+target_link_libraries(${PROJECT_NAME} INTERFACE convenience reduction thirdparty)
 
 # Make IDE friendly
 target_sources(${PROJECT_NAME} INTERFACE hashtable.hpp include/)
