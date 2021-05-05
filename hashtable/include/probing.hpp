@@ -18,8 +18,8 @@ namespace Hashtable {
 
      public:
       explicit Probing(const size_t& capacity)
-         : hashfn(HashFn()), reductionfn(ReductionFn(num_buckets(capacity))), probingfn(ProbingFn()),
-           slots(num_buckets(capacity)) {
+         : hashfn(HashFn()), reductionfn(ReductionFn(directory_address_count(capacity))), probingfn(ProbingFn()),
+           slots(directory_address_count(capacity)) {
          // Start with a well defined clean slate
          clear();
       };
@@ -62,7 +62,7 @@ namespace Hashtable {
             }
 
             // Slot is full, choose a new slot index based on probing function
-            slot_index = probingfn(orig_slot_index, ++probing_step, this->directory_size());
+            slot_index = probingfn(orig_slot_index, ++probing_step, this->slots.size());
             if (unlikely(slot_index == orig_slot_index))
                throw std::runtime_error("Building " + this->name() +
                                         " failed: detected cycle during probing, all buckets along the way are full");
@@ -97,7 +97,7 @@ namespace Hashtable {
             }
 
             // Slot is full, choose a new slot index based on probing function
-            slot_index = probingfn(orig_slot_index, ++probing_step, this->directory_size());
+            slot_index = probingfn(orig_slot_index, ++probing_step, this->slots.size());
             if (unlikely(slot_index == orig_slot_index))
                return std::nullopt;
          }
@@ -123,6 +123,10 @@ namespace Hashtable {
          return BucketSize;
       }
 
+      static constexpr forceinline size_t directory_address_count(const size_t& capacity) {
+         return (capacity + BucketSize - 1) / BucketSize;
+      }
+
       /**
        * Clears all keys from the hashtable. Note that payloads are technically
        * still in memory (i.e., might leak if sensitive).
@@ -144,13 +148,5 @@ namespace Hashtable {
       } packed;
 
       std::vector<Bucket> slots;
-
-      static constexpr forceinline size_t num_buckets(const size_t& capacity) {
-         return capacity;
-      }
-
-      forceinline size_t directory_size() const {
-         return slots.size();
-      }
    };
 } // namespace Hashtable
