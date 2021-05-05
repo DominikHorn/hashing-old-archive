@@ -11,8 +11,8 @@
    #ifdef NDEBUG
       #define forceinline inline __attribute__((always_inline))
       #define unroll_loops __attribute__((optimize("unroll-loops")))
-      #define likely(expr) __builtin_expect((expr), 1)
-      #define unlikely(expr) __builtin_expect((expr), 0)
+      #define likely(expr) __builtin_expect((bool) (expr), 1)
+      #define unlikely(expr) __builtin_expect((bool) (expr), 0)
    #else
       #define forceinline
       #define unroll_loops
