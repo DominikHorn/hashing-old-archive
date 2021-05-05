@@ -42,8 +42,8 @@ namespace Hashtable {
 
      public:
       Cuckoo(const size_t& capacity, const HashFn1 hashfn1 = HashFn1(), const HashFn2 hashfn2 = HashFn2())
-         : hashfn1(hashfn1), hashfn2(hashfn2), reductionfn1(ReductionFn1(num_buckets(capacity))),
-           reductionfn2(ReductionFn2(num_buckets(capacity))), num_buckets_(num_buckets(capacity)) {
+         : hashfn1(hashfn1), hashfn2(hashfn2), reductionfn1(ReductionFn1(directory_address_count(capacity))),
+           reductionfn2(ReductionFn2(directory_address_count(capacity))), num_buckets_(directory_address_count(capacity)) {
          int r = posix_memalign(reinterpret_cast<void**>(&buckets_), 32, num_buckets_ * sizeof(Bucket));
          if (r != 0)
             throw std::runtime_error("Could not memalign allocate for cuckoo hash map");
@@ -111,7 +111,7 @@ namespace Hashtable {
          return BucketSize;
       }
 
-      static constexpr forceinline size_t num_buckets(const size_t& capacity) {
+      static constexpr forceinline size_t directory_address_count(const size_t& capacity) {
          return (capacity + BucketSize - 1) / BucketSize;
       }
 
@@ -212,8 +212,8 @@ namespace Hashtable {
 
      public:
       Cuckoo(const size_t& capacity)
-         : hashfn1(HashFn1()), hashfn2(HashFn2()), reductionfn1(ReductionFn1(num_buckets(capacity))),
-           reductionfn2(ReductionFn2(num_buckets(capacity))), num_buckets_(num_buckets(capacity)) {
+         : hashfn1(HashFn1()), hashfn2(HashFn2()), reductionfn1(ReductionFn1(directory_address_count(capacity))),
+           reductionfn2(ReductionFn2(directory_address_count(capacity))), num_buckets_(directory_address_count(capacity)) {
          int r = posix_memalign(reinterpret_cast<void**>(&buckets_), 32, num_buckets_ * sizeof(Bucket));
          if (r != 0)
             throw std::runtime_error("Could not memalign allocate for cuckoo hash map");
@@ -285,7 +285,7 @@ namespace Hashtable {
          return BucketSize;
       }
 
-      static constexpr forceinline size_t num_buckets(const size_t& capacity) {
+      static constexpr forceinline size_t directory_address_count(const size_t& capacity) {
          return (capacity + BucketSize - 1) / BucketSize;
       }
 

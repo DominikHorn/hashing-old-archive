@@ -196,20 +196,25 @@ int main(int argc, char* argv[]) {
       for (const auto& dataset : args.datasets) {
          const auto path = std::filesystem::current_path() / dataset.filepath;
          const auto dataset_size = std::filesystem::file_size(path);
+         const auto dataset_elem_count = dataset_size / dataset.bytesPerValue;
 
          for (const auto& load_fac : args.load_factors) {
-            const auto max_bucket_size =
-               Hashtable::Chained<uint64_t, uint32_t, 4, Mult64Func, FastrangeFunc<HASH_64>>::bucket_byte_size();
-            const auto base_ht_size =
-               (static_cast<long double>(dataset_size - dataset.bytesPerValue) / (load_fac * dataset.bytesPerValue)) *
-               max_bucket_size;
-            const auto max_excess_buckets_size =
-               (static_cast<long double>(dataset_size - 2 * dataset.bytesPerValue) / (dataset.bytesPerValue)) *
-               max_bucket_size;
-            //         const auto learned_index_size = (?)
+            const auto ht_capacity = static_cast<double>(dataset_elem_count) / load_fac;
 
-            // Chained hashtable memory consumption upper estimate
-            exec_mem.emplace_back(dataset_size + base_ht_size + max_excess_buckets_size);
+            using Chained = Hashtable::Chained<uint64_t, uint32_t, 4, Mult64Func, FastrangeFunc<HASH_64>>;
+            // Directory size + all keys go to one bucket chain
+            const auto wc_chaining = Chained::directory_address_count(ht_capacity) * Chained::slot_byte_size() +
+               ((dataset_elem_count - 1) / Chained::bucket_size()) * Chained::bucket_byte_size();
+
+            using Probing =
+               Hashtable::Probing<uint64_t, uint32_t, 1, Mult64Func, FastrangeFunc<HASH_64>, LinearProbingFunc>;
+            const auto wc_probing = Probing::bucket_byte_size() * Probing::directory_address_count(ht_capacity);
+
+            using Cuckoo = Hashtable::Cuckoo<uint64_t, uint32_t, 8, Mult64Func, Mult64Func, FastrangeFunc<HASH_64>,
+                                             FastrangeFunc<HASH_64>>;
+            const auto wc_cuckoo = Cuckoo::bucket_byte_size() * Cuckoo::directory_address_count(ht_capacity);
+
+            exec_mem.emplace_back(dataset_size + varmax(wc_chaining, wc_probing, wc_cuckoo));
          }
       }
 

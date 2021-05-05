@@ -126,6 +126,10 @@ namespace Hashtable {
          return sizeof(Bucket);
       }
 
+      static constexpr forceinline size_t slot_byte_size() {
+         return sizeof(Slot);
+      }
+
       static forceinline std::string name() {
          return "chained";
       }
