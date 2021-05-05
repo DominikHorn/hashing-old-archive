@@ -19,9 +19,8 @@ namespace Hashtable {
       explicit Chained(const size_t& size, const ReductionFn& reductionfn = ReductionFn(),
                        const HashFn& hashfn = HashFn())
          : hashfn(hashfn), reductionfn(reductionfn), slots(size) {
-         for (auto& slot : slots) {
-            slot.keys.fill(Sentinel);
-         }
+         // Start with a well defined clean slate
+         clear();
       };
 
       Chained(Chained&&) = default;
@@ -36,7 +35,7 @@ namespace Hashtable {
        */
       bool insert(const Key& key, const Payload& payload) {
          if (unlikely(key == Sentinel)) {
-            assert(false); // This must never happen in practice
+            assert(false); // TODO: this must never happen in practice
             return false;
          }
 
@@ -123,11 +122,14 @@ namespace Hashtable {
          return BucketSize;
       }
 
+      /**
+       * Clears all keys from the hashtable. Note that payloads are technically
+       * still in memory (i.e., might leak if sensitive).
+       */
       void clear() {
          for (auto& slot : slots) {
-            for (size_t i = 0; i < BucketSize; i++) {
-               slot.keys[i] = Sentinel;
-            }
+            slot.keys.fill(Sentinel);
+
             auto current = slot.next;
             slot.next = nullptr;
 
