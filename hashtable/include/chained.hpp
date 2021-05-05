@@ -18,7 +18,8 @@ namespace Hashtable {
 
      public:
       explicit Chained(const size_t& capacity, const HashFn hashfn = HashFn())
-         : hashfn(hashfn), reductionfn(ReductionFn(num_buckets(capacity))), slots(num_buckets(capacity)) {
+         : hashfn(hashfn), reductionfn(ReductionFn(directory_address_count(capacity))),
+           slots(directory_address_count(capacity)) {
          // Start with a well defined clean slate
          clear();
       };
@@ -40,34 +41,50 @@ namespace Hashtable {
          }
 
          // Using template functor should successfully inline actual hash computation
-         const auto slot_index = reductionfn(hashfn(key));
+         Slot& slot = slots[reductionfn(hashfn(key))];
 
-         Bucket* slot = &slots[slot_index];
+         // Store directly in slot if possible
+         if (slot.key == Sentinel) {
+            slot.key = key;
+            slot.payload = payload;
+            return true;
+         }
+
+         // Initialize bucket chain if empty
+         Bucket* bucket = slot.buckets;
+         if (bucket == nullptr) {
+            auto b = new Bucket();
+            b->keys[0] = key;
+            b->payloads[0] = payload;
+            slot.buckets = b;
+            return true;
+         }
+
+         // Go through existing buckets and try to insert there if possible
          for (;;) {
             // Find suitable empty entry place. Note that deletions with holes will require
             // searching entire bucket to deal with duplicate keys!
             for (size_t i = 0; i < BucketSize; i++) {
-               if (slot->keys[i] == Sentinel) {
-                  slot->keys[i] = key;
-                  slot->payloads[i] = payload;
+               if (bucket->keys[i] == Sentinel) {
+                  bucket->keys[i] = key;
+                  bucket->payloads[i] = payload;
                   return true;
-               } else if (slot->keys[i] == key) {
+               } else if (bucket->keys[i] == key) {
                   // key already exists
                   return false;
                }
             }
 
-            if (slot->next == nullptr)
+            if (bucket->next == nullptr)
                break;
-
-            slot = slot->next;
+            bucket = bucket->next;
          }
 
          // Append a new bucket to the chain and add element there
          auto b = new Bucket();
          b->keys[0] = key;
          b->payloads[0] = payload;
-         slot->next = b;
+         bucket->next = b;
          return true;
       }
 
@@ -84,19 +101,22 @@ namespace Hashtable {
          }
 
          // Using template functor should successfully inline actual hash computation
-         const auto slot_index = reductionfn(hashfn(key));
+         const Slot& slot = slots[reductionfn(hashfn(key))];
 
-         auto slot = &slots[slot_index];
+         if (slot.key == key) {
+            return std::make_optional(slot.payload);
+         }
 
-         while (slot != nullptr) {
+         Bucket* bucket = slot.buckets;
+         while (bucket != nullptr) {
             for (size_t i = 0; i < BucketSize; i++) {
-               if (slot->keys[i] == key)
-                  return std::make_optional(slot->payloads[i]);
+               if (bucket->keys[i] == key)
+                  return std::make_optional(bucket->payloads[i]);
 
-               if (slot->keys[i] == Sentinel)
+               if (bucket->keys[i] == Sentinel)
                   return std::nullopt;
             }
-            slot = slot->next;
+            bucket = bucket->next;
          }
 
          return std::nullopt;
@@ -122,7 +142,7 @@ namespace Hashtable {
          return BucketSize;
       }
 
-      static constexpr forceinline size_t num_buckets(const size_t& capacity) {
+      static constexpr forceinline size_t directory_address_count(const size_t& capacity) {
          return capacity;
       }
 
@@ -132,15 +152,15 @@ namespace Hashtable {
        */
       void clear() {
          for (auto& slot : slots) {
-            slot.keys.fill(Sentinel);
+            slot.key = Sentinel;
 
-            auto current = slot.next;
-            slot.next = nullptr;
+            auto bucket = slot.buckets;
+            slot.buckets = nullptr;
 
-            while (current != nullptr) {
-               auto next = current->next;
-               delete current;
-               current = next;
+            while (bucket != nullptr) {
+               auto next = bucket->next;
+               delete bucket;
+               bucket = next;
             }
          }
       }
@@ -156,7 +176,13 @@ namespace Hashtable {
          Bucket* next = nullptr;
       } packed;
 
+      struct Slot {
+         Key key;
+         Payload payload;
+         Bucket* buckets = nullptr;
+      } packed;
+
       // First bucket is always inline in the slot
-      std::vector<Bucket> slots;
+      std::vector<Slot> slots;
    };
 } // namespace Hashtable
