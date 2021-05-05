@@ -12,7 +12,6 @@
 #include "include/benchmark.hpp"
 #include "include/csv.hpp"
 #include "include/functors/hash_functors.hpp"
-#include "include/functors/probing_functors.hpp"
 #include "include/functors/reduction_functors.hpp"
 
 using Args = BenchmarkArgs::HashCollisionArgs;
@@ -154,20 +153,20 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
     */
 
    /// Linear Murmur finalizer
-   measure(Hashtable::Probing<uint64_t, uint32_t, Murmur3FinalizerFunc, FastrangeFunc<HASH_32>, LinearProbingFunc>(
-      ht_capacity));
-   measure(Hashtable::Probing<uint64_t, uint32_t, Murmur3FinalizerFunc, FastrangeFunc<HASH_64>, LinearProbingFunc>(
-      ht_capacity));
-   measure(Hashtable::Probing<uint64_t, uint32_t, Murmur3FinalizerFunc, FastModuloFunc<HASH_64>, LinearProbingFunc>(
-      ht_capacity));
+   measure(Hashtable::Probing<uint64_t, uint32_t, Murmur3FinalizerFunc, FastrangeFunc<HASH_32>,
+                              Hashtable::LinearProbingFunc>(ht_capacity));
+   measure(Hashtable::Probing<uint64_t, uint32_t, Murmur3FinalizerFunc, FastrangeFunc<HASH_64>,
+                              Hashtable::LinearProbingFunc>(ht_capacity));
+   measure(Hashtable::Probing<uint64_t, uint32_t, Murmur3FinalizerFunc, FastModuloFunc<HASH_64>,
+                              Hashtable::LinearProbingFunc>(ht_capacity));
 
    /// Quadratic Murmur finalizer
-   measure(Hashtable::Probing<uint64_t, uint32_t, Murmur3FinalizerFunc, FastrangeFunc<HASH_32>, QuadraticProbingFunc>(
-      ht_capacity));
-   measure(Hashtable::Probing<uint64_t, uint32_t, Murmur3FinalizerFunc, FastrangeFunc<HASH_64>, QuadraticProbingFunc>(
-      ht_capacity));
-   measure(Hashtable::Probing<uint64_t, uint32_t, Murmur3FinalizerFunc, FastModuloFunc<HASH_64>, QuadraticProbingFunc>(
-      ht_capacity));
+   measure(Hashtable::Probing<uint64_t, uint32_t, Murmur3FinalizerFunc, FastrangeFunc<HASH_32>,
+                              Hashtable::QuadraticProbingFunc>(ht_capacity));
+   measure(Hashtable::Probing<uint64_t, uint32_t, Murmur3FinalizerFunc, FastrangeFunc<HASH_64>,
+                              Hashtable::QuadraticProbingFunc>(ht_capacity));
+   measure(Hashtable::Probing<uint64_t, uint32_t, Murmur3FinalizerFunc, FastModuloFunc<HASH_64>,
+                              Hashtable::QuadraticProbingFunc>(ht_capacity));
 
    /**
     * ===============
@@ -204,7 +203,7 @@ int main(int argc, char* argv[]) {
                ((dataset_elem_count - 1) / Chained::bucket_size()) * Chained::bucket_byte_size();
 
             using Probing =
-               Hashtable::Probing<uint64_t, uint32_t, Mult64Func, FastrangeFunc<HASH_64>, LinearProbingFunc>;
+               Hashtable::Probing<uint64_t, uint32_t, Mult64Func, FastrangeFunc<HASH_64>, Hashtable::LinearProbingFunc>;
             const auto wc_probing = Probing::bucket_byte_size() * Probing::directory_address_count(ht_capacity);
 
             using Cuckoo = Hashtable::Cuckoo<uint64_t, uint32_t, 8, Mult64Func, Mult64Func, FastrangeFunc<HASH_64>,

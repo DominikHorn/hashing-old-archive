@@ -14,7 +14,6 @@
 #include "include/csv.hpp"
 #include "include/functors/hash_functors.hpp"
 #include "include/functors/learned_functors.hpp"
-#include "include/functors/probing_functors.hpp"
 #include "include/functors/reduction_functors.hpp"
 
 using Args = BenchmarkArgs::HashCollisionArgs;
