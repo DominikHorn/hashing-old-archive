@@ -26,7 +26,15 @@ namespace Hashtable {
 
       Chained(Chained&&) = default;
 
-      bool insert(const Key& key, const Payload payload) {
+      /**
+       * Inserts a key, value/payload pair into the hashtable
+       *
+       * @param key
+       * @param payload
+       * @return whether or not the key, payload pair was inserted. Insertion will fail
+       *    iff the same key already exists or if key == Sentinel value
+       */
+      bool insert(const Key& key, const Payload& payload) {
          if (unlikely(key == Sentinel)) {
             assert(false, "This must never happen in practice");
             return false;
@@ -45,7 +53,7 @@ namespace Hashtable {
                   slot->payloads[i] = payload;
                   return true;
                } else if (slot->keys[i] == key) {
-                  // entry already exists
+                  // key already exists
                   return false;
                }
             }
@@ -64,6 +72,12 @@ namespace Hashtable {
          return true;
       }
 
+      /**
+       * Retrives the associated payload/value for a given key.
+       *
+       * @param key
+       * @return the payload or std::nullopt if key was not found in the Hashtable
+       */
       std::optional<Payload> lookup(const Key& key) const {
          // Using template functor should successfully inline actual hash computation
          const auto slot_index = reductionfn(hashfn(key), this->directory_size());
