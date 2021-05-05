@@ -73,12 +73,17 @@ namespace Hashtable {
       }
 
       /**
-       * Retrives the associated payload/value for a given key.
+       * Retrieves the associated payload/value for a given key.
        *
        * @param key
        * @return the payload or std::nullopt if key was not found in the Hashtable
        */
       std::optional<Payload> lookup(const Key& key) const {
+         if (unlikely(key == Sentinel)) {
+            assert(false); // TODO: this must never happen in practice
+            return std::nullopt;
+         }
+
          // Using template functor should successfully inline actual hash computation
          const auto slot_index = reductionfn(hashfn(key), this->directory_size());
 
