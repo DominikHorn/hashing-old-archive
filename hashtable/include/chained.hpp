@@ -18,7 +18,11 @@ namespace Hashtable {
      public:
       explicit Chained(const size_t& size, const ReductionFn& reductionfn = ReductionFn(),
                        const HashFn& hashfn = HashFn())
-         : hashfn(hashfn), reductionfn(reductionfn), slots(size){};
+         : hashfn(hashfn), reductionfn(reductionfn), slots(size) {
+         for (auto& slot : slots) {
+            slot.keys.fill(Sentinel);
+         }
+      };
 
       Chained(Chained&&) = default;
 
@@ -125,8 +129,8 @@ namespace Hashtable {
 
      protected:
       struct Bucket {
-         Key keys[BucketSize] __attribute((aligned(sizeof(Key) * 8)));
-         Payload payloads[BucketSize];
+         std::array<Key, BucketSize> keys __attribute((aligned(sizeof(Key) * 8))) = {};
+         std::array<Payload, BucketSize> payloads = {};
          Bucket* next = nullptr;
       } packed;
 
