@@ -28,7 +28,7 @@ namespace Hashtable {
 
       bool insert(const Key& key, const Payload payload) {
          // Using template functor should successfully inline actual hash computation
-         const auto slot_index = reductionfn(hashfn(key), this->size());
+         const auto slot_index = reductionfn(hashfn(key), this->directory_size());
 
          Bucket* slot = &slots[slot_index];
          for (;;) {
@@ -61,7 +61,7 @@ namespace Hashtable {
 
       std::optional<Payload> lookup(const Key& key) const {
          // Using template functor should successfully inline actual hash computation
-         const auto slot_index = reductionfn(hashfn(key), this->size());
+         const auto slot_index = reductionfn(hashfn(key), this->directory_size());
 
          auto slot = &slots[slot_index];
 
@@ -77,10 +77,6 @@ namespace Hashtable {
          }
 
          return std::nullopt;
-      }
-
-      forceinline size_t size() const {
-         return slots.size();
       }
 
       static constexpr forceinline size_t bucket_byte_size() {
@@ -101,10 +97,6 @@ namespace Hashtable {
 
       static constexpr forceinline size_t bucket_size() {
          return BucketSize;
-      }
-
-      static constexpr forceinline size_t num_buckets(const size_t& capacity) {
-         return capacity;
       }
 
       void clear() {
@@ -136,5 +128,9 @@ namespace Hashtable {
 
       // First bucket is always inline in the slot
       std::vector<Bucket> slots;
+
+      forceinline size_t directory_size() const {
+         return slots.size();
+      }
    };
 } // namespace Hashtable
