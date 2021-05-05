@@ -27,8 +27,10 @@ namespace Hashtable {
       Chained(Chained&&) = default;
 
       bool insert(const Key& key, const Payload payload) {
-         if (unlikely(key == Sentinel))
+         if (unlikely(key == Sentinel)) {
+            assert(false, "This must never happen in practice");
             return false;
+         }
 
          // Using template functor should successfully inline actual hash computation
          const auto slot_index = reductionfn(hashfn(key), this->directory_size());
