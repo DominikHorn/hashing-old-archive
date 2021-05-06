@@ -174,13 +174,34 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
     * ===============
     */
 
-   /// Cuckoo murmur + murmur(xor) -> Stanford implementation
-   measure(Hashtable::Cuckoo<uint32_t, uint32_t, 8, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
-                             FastrangeFunc<HASH_32>, FastrangeFunc<HASH_32>>(ht_capacity));
+   /// Balanced Cuckoo murmur + murmur(xor) -> Stanford implementation
    measure(Hashtable::Cuckoo<uint64_t, uint32_t, 8, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
-                             FastrangeFunc<HASH_64>, FastrangeFunc<HASH_64>>(ht_capacity));
+                             FastrangeFunc<HASH_32>, FastrangeFunc<HASH_32>, Hashtable::BalancedKicking>(ht_capacity));
    measure(Hashtable::Cuckoo<uint64_t, uint32_t, 8, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
-                             FastModuloFunc<HASH_64>, FastModuloFunc<HASH_64>>(ht_capacity));
+                             FastrangeFunc<HASH_64>, FastrangeFunc<HASH_64>, Hashtable::BalancedKicking>(ht_capacity));
+   measure(
+      Hashtable::Cuckoo<uint64_t, uint32_t, 8, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
+                        FastModuloFunc<HASH_64>, FastModuloFunc<HASH_64>, Hashtable::BalancedKicking>(ht_capacity));
+
+   /// Unbiased Cuckoo murmur + murmur(xor) -> Stanford implementation
+   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 8, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
+                             FastrangeFunc<HASH_32>, FastrangeFunc<HASH_32>, Hashtable::UnbiasedKicking>(ht_capacity));
+   measure(Hashtable::Cuckoo<uint64_t, uint32_t, 8, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
+                             FastrangeFunc<HASH_64>, FastrangeFunc<HASH_64>, Hashtable::UnbiasedKicking>(ht_capacity));
+   measure(
+      Hashtable::Cuckoo<uint64_t, uint32_t, 8, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
+                        FastModuloFunc<HASH_64>, FastModuloFunc<HASH_64>, Hashtable::UnbiasedKicking>(ht_capacity));
+
+   /// Biases_10% Cuckoo murmur + murmur(xor) -> Stanford implementation
+   measure(
+      Hashtable::Cuckoo<uint64_t, uint32_t, 8, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
+                        FastrangeFunc<HASH_32>, FastrangeFunc<HASH_32>, Hashtable::BiasedKicking<26>>(ht_capacity));
+   measure(
+      Hashtable::Cuckoo<uint64_t, uint32_t, 8, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
+                        FastrangeFunc<HASH_64>, FastrangeFunc<HASH_64>, Hashtable::BiasedKicking<26>>(ht_capacity));
+   measure(
+      Hashtable::Cuckoo<uint64_t, uint32_t, 8, Murmur3FinalizerFunc, Murmur3FinalizerCuckoo2Func,
+                        FastModuloFunc<HASH_64>, FastModuloFunc<HASH_64>, Hashtable::BiasedKicking<26>>(ht_capacity));
 }
 
 int main(int argc, char* argv[]) {
@@ -207,7 +228,7 @@ int main(int argc, char* argv[]) {
             const auto wc_probing = Probing::bucket_byte_size() * Probing::directory_address_count(ht_capacity);
 
             using Cuckoo = Hashtable::Cuckoo<uint64_t, uint32_t, 8, Mult64Func, Mult64Func, FastrangeFunc<HASH_64>,
-                                             FastrangeFunc<HASH_64>>;
+                                             FastrangeFunc<HASH_64>, Hashtable::UnbiasedKicking>;
             const auto wc_cuckoo = Cuckoo::bucket_byte_size() * Cuckoo::directory_address_count(ht_capacity);
 
             exec_mem.emplace_back(dataset_size + varmax(wc_chaining, wc_probing, wc_cuckoo));
