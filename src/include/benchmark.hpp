@@ -4,6 +4,18 @@
 #include <cmath>
 #include <vector>
 
+#ifdef __APPLE__
+   #include "TargetConditionals.h"
+   #ifdef TARGET_OS_MAC
+      #define MACOS
+   #endif
+#endif
+
+#ifdef MACOS
+   #warning "Detected MacOS, building with perf counter utility"
+   #include <thirdparty/perf-macos.hpp>
+#endif
+
 namespace Benchmark {
 
    struct ThroughputStats {
@@ -30,13 +42,20 @@ namespace Benchmark {
       for (unsigned int repetiton = 0; repetiton < repeatCnt; repetiton++) {
          const auto start_time = std::chrono::steady_clock::now();
          // Hash each value and record entries per bucket
-         for (const auto& key : dataset) {
-            const auto index = reduce(hashfn(key), n);
+#ifdef MACOS
+         {
+            Perf::BlockCounter ctr(dataset.size());
+#endif
+            for (const auto& key : dataset) {
+               const auto index = reduce(hashfn(key), n);
 
-            // Ensure the compiler does not simply remove the index
-            // calculation during optimization.
-            Optimizer::DoNotEliminate(index);
-         }
+               // Ensure the compiler does not simply remove the index
+               // calculation during optimization.
+               Optimizer::DoNotEliminate(index);
+            }
+#ifdef MACOS
+         };
+#endif
          const auto end_time = std::chrono::steady_clock::now();
          const auto delta_ns =
             static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
