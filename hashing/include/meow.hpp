@@ -31,6 +31,8 @@
 #include <convenience.hpp>
 #include <reduction.hpp>
 
+#include <array>
+
 #define MEOW_HASH_VERSION 5
 #define MEOW_HASH_VERSION_NAME "0.5/calico"
 
@@ -143,36 +145,7 @@ meow_dump* MeowDumpTo;
 
 struct MeowHash {
    /**
-    * Obtain 32 bit meowhash value as recommended by meowhash authors
-    * @tparam T
-    * @param value
-    * @param seed
-    * @param offset bit offset, defaults to 0. According to meowhash authors this is fine
-    * @return
-    */
-   template<const unsigned short select = 0, typename T>
-   static forceinline HASH_32 hash32(const T& value,
-                                     const meow_u8 seed[128] = const_cast<unsigned char*>(MeowDefaultSeed)) {
-      return Reduction::extract_32<select>(_hash((void*) seed, sizeof(T), (void*) &value));
-   }
-
-   /**
-    * Obtain 64 bit meowhash value as recommended by meowhash authors
-    * @tparam T
-    * @param value
-    * @param seed
-    * @param offset bit offset, defaults to 0. According to meowhash authors this is fine
-    * @return
-    */
-   template<const unsigned short select = 0, typename T>
-   static forceinline HASH_64 hash64(const T& value,
-                                     const meow_u8 seed[128] = const_cast<unsigned char*>(MeowDefaultSeed)) {
-      return Reduction::extract_64<select>(_hash((void*) seed, sizeof(T), (void*) &value));
-   }
-
-   /**
-    * NOTE: to avoid the additional overhead, this function directly returns
-    * the meow_u128 hash value (e.g., __m128i).
+    * Obtain 128 bit meowhash value
     *
     * @tparam T
     * @param value
@@ -180,9 +153,37 @@ struct MeowHash {
     * @return
     */
    template<typename T>
-   static forceinline meow_u128 hash128(const T& value,
-                                        const meow_u8 seed[128] = const_cast<unsigned char*>(MeowDefaultSeed)) {
-      return _hash((void*) seed, sizeof(T), (void*) &value);
+   static forceinline meow_u128 hash(const T& value,
+                                     const meow_u8 seed[128] = const_cast<unsigned char*>(MeowDefaultSeed));
+
+   /**
+    * Obtain 64 bit value from 128 bit meowhash.
+    *
+    * @tparam select select which 64 bits to extract from the 128 bit hash value
+    * @tparam T
+    * @param value
+    * @param seed
+    * @return
+    */
+   template<int select = 0, typename T>
+   static forceinline HASH_64 hash64(const T& value,
+                                     const meow_u8 seed[128] = const_cast<unsigned char*>(MeowDefaultSeed)) {
+      return Reduction::extract_64<select>(hash(value, seed));
+   }
+
+   /**
+    * Obtain 32 bit value from 128 bit meowhash.
+    *
+    * @tparam select select which 32 bits to extract from the 128 bit hash value
+    * @tparam T
+    * @param value
+    * @param seed
+    * @return
+    */
+   template<int select = 0, typename T>
+   static forceinline HASH_32 hash32(const T& value,
+                                     const meow_u8 seed[128] = const_cast<unsigned char*>(MeowDefaultSeed)) {
+      return Reduction::extract_32<select>(hash(value, seed));
    }
 
   private:
@@ -206,7 +207,7 @@ struct MeowHash {
    // NOTE(casey): Single block version
    //
 
-   static forceinline meow_u128 _hash(void* Seed128Init, meow_umm Len, void* SourceInit) {
+   static forceinline meow_u128 _hash(const void* Seed128Init, const meow_umm& Len, const void* SourceInit) {
       meow_u128 xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6,
          xmm7; // NOTE(casey): xmm0-xmm7 are the hash accumulation lanes
       meow_u128 xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14,
@@ -703,3 +704,17 @@ struct MeowHash {
       MeowEnd(&State, SeedResult);
    }
 };
+
+template<>
+forceinline meow_u128 MeowHash::hash(const HASH_32& value, const meow_u8 seed[128]) {
+   std::array<uint32_t, 4> dat{};
+   dat.fill(value);
+   return _hash(reinterpret_cast<const void*>(seed), sizeof(HASH_32), reinterpret_cast<const void*>(&dat));
+}
+
+template<>
+forceinline meow_u128 MeowHash::hash(const HASH_64& value, const meow_u8 seed[128]) {
+   std::array<uint64_t, 2> dat{};
+   dat.fill(value);
+   return _hash(reinterpret_cast<const void*>(seed), sizeof(HASH_64), reinterpret_cast<const void*>(&dat));
+}
