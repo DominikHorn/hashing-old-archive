@@ -54,7 +54,7 @@ namespace Benchmark {
                Optimizer::DoNotEliminate(index);
             }
 #ifdef MACOS
-         };
+         }
 #endif
          const auto end_time = std::chrono::steady_clock::now();
          const auto delta_ns =
@@ -102,16 +102,24 @@ namespace Benchmark {
       std::fill(collision_counter.begin(), collision_counter.end(), 0);
 
       auto start_time = std::chrono::steady_clock::now();
-      // Hash each value and record entries per bucket
-      for (const auto key : dataset) {
-         const auto hash = hashfn(key);
-         const auto index = reduce(hash, n);
-         collision_counter[index]++;
 
-         // Our datasets are too small to ever cause unsigned int addition overflow
-         // therefore this check is redundant
-         //         assert(collision_counter[index] != 0);
+#ifdef MACOS
+      {
+         Perf::BlockCounter ctr(dataset.size());
+#endif
+         // Hash each value and record entries per bucket
+         for (const auto key : dataset) {
+            const auto hash = hashfn(key);
+            const auto index = reduce(hash, n);
+            collision_counter[index]++;
+
+            // Our datasets are too small to ever cause unsigned int addition overflow
+            // therefore this check is redundant
+            //         assert(collision_counter[index] != 0);
+         }
+#ifdef MACOS
       }
+#endif
       auto end_time = std::chrono::steady_clock::now();
       uint64_t inference_reduction_memaccess_total_ns =
          static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
@@ -146,22 +154,36 @@ namespace Benchmark {
 
       // Insert every key
       auto start_time = std::chrono::steady_clock::now();
-      for (const auto key : dataset) {
-         ht.insert(key, static_cast<uint32_t>(key) - 5);
+#ifdef MACOS
+      {
+         Perf::BlockCounter ctr(dataset.size());
+#endif
+         for (const auto key : dataset) {
+            ht.insert(key, static_cast<uint32_t>(key) - 5);
+         }
+#ifdef MACOS
       }
+#endif
       auto end_time = std::chrono::steady_clock::now();
       uint64_t total_insert_ns =
          static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
 
       // Lookup every key
       start_time = std::chrono::steady_clock::now();
-      for (const auto& key : dataset) {
-         const auto payload = ht.lookup(key);
-         Optimizer::DoNotEliminate(payload);
-         full_mem_barrier; // emulate doing something with payload by stalling at least until it arrives
-         assert(payload);
-         assert(payload.value() == static_cast<uint32_t>(key) - 5);
+#ifdef MACOS
+      {
+         Perf::BlockCounter ctr(dataset.size());
+#endif
+         for (const auto& key : dataset) {
+            const auto payload = ht.lookup(key);
+            Optimizer::DoNotEliminate(payload);
+            full_mem_barrier; // emulate doing something with payload by stalling at least until it arrives
+            assert(payload);
+            assert(payload.value() == static_cast<uint32_t>(key) - 5);
+         }
+#ifdef MACOS
       }
+#endif
       end_time = std::chrono::steady_clock::now();
       uint64_t total_lookup_ns =
          static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());

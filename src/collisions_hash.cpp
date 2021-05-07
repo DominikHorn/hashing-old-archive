@@ -116,6 +116,12 @@ static void measure(const std::string& dataset_name, const std::shared_ptr<const
                                   });
    };
 
+   /// Baseline
+   {
+      RandomHash<HASH_64> rand_uni(hashtable_size);
+      measure_hashfn("random_uniform", [&](const HASH_64& key) { return rand_uni.next(); });
+   }
+
    /**
     * ====================================
     *        Classic hash functions
