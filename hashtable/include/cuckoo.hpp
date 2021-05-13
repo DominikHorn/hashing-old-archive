@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <map>
 #include <optional>
 #include <random>
 #include <vector>
@@ -204,6 +205,27 @@ namespace Hashtable {
          return std::nullopt;
       }
 
+      std::map<std::string, std::string> lookup_statistics(const std::vector<Key>& dataset) {
+         size_t primary_key_cnt = 0;
+
+         for (const auto& key : dataset) {
+            const auto h1 = hashfn1(key);
+            const auto i1 = reductionfn1(h1);
+
+            Bucket* b1 = &buckets_[i1];
+            for (size_t i = 0; i < BucketSize; i++) {
+               if (b1->keys[i] == key) {
+                  primary_key_cnt++;
+               }
+            }
+         }
+
+         return {
+            {"primary_key_ratio",
+             std::to_string(static_cast<long double>(primary_key_cnt) / static_cast<long double>(dataset.size()))},
+         };
+      }
+
       void insert(const Key& key, const Payload& value) {
          insert(key, value, 0);
       }
@@ -365,6 +387,29 @@ namespace Hashtable {
          }
 
          return std::nullopt;
+      }
+
+      std::map<std::string, std::string> lookup_statistics(const std::vector<KeyType>& dataset) {
+         size_t primary_key_cnt;
+
+         for (const auto& key : dataset) {
+            const auto h1 = hashfn1(key);
+            const auto i1 = reductionfn1(h1);
+
+            Bucket* b1 = &buckets_[i1];
+            __m256i vkey = _mm256_set1_epi32(key);
+            __m256i vbucket = _mm256_load_si256(reinterpret_cast<const __m256i*>(&b1->keys));
+            __m256i cmp = _mm256_cmpeq_epi32(vkey, vbucket);
+            int mask = _mm256_movemask_epi8(cmp);
+            if (mask != 0) {
+               primary_key_cnt++;
+            }
+         }
+
+         return {
+            {"primary_key_ratio",
+             std::to_string(static_cast<long double>(primary_key_cnt) / static_cast<long double>(dataset.size()))},
+         };
       }
 
       void insert(const uint32_t& key, const Payload& value) {

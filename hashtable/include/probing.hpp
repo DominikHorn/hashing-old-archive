@@ -1,5 +1,8 @@
 #pragma once
 
+#include <map>
+#include <vector>
+
 #include <convenience.hpp>
 #include <reduction.hpp>
 #include <thirdparty/libdivide.h>
@@ -159,6 +162,40 @@ namespace Hashtable {
             if (unlikely(slot_index == orig_slot_index))
                return std::nullopt;
          }
+      }
+
+      std::map<std::string, std::string> lookup_statistics(const std::vector<Key>& dataset) {
+         size_t min_psl, max_psl, total_psl = 0;
+
+         for (const auto& key : dataset) {
+            // Using template functor should successfully inline actual hash computation
+            const auto orig_slot_index = reductionfn(hashfn(key));
+            auto slot_index = orig_slot_index;
+            size_t probing_step = 0;
+
+            for (;;) {
+               auto& slot = slots[slot_index];
+               for (size_t i = 0; i < BucketSize; i++) {
+                  if (slot.keys[i] == key) {
+                     min_psl = std::min(min_psl, probing_step);
+                     max_psl = std::max(max_psl, probing_step);
+                     total_psl += probing_step;
+                  }
+
+                  if (slot.keys[i] == Sentinel)
+                     break;
+               }
+
+               // Slot is full, choose a new slot index based on probing function
+               slot_index = probingfn(orig_slot_index, ++probing_step);
+               if (unlikely(slot_index == orig_slot_index))
+                  break;
+            }
+         }
+
+         return {{"min_psl", std::to_string(min_psl)},
+                 {"max_psl", std::to_string(max_psl)},
+                 {"total_psl", std::to_string(total_psl)}};
       }
 
       static constexpr forceinline size_t bucket_byte_size() {

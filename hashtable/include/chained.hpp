@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cmath>
+#include <map>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -135,6 +136,36 @@ namespace Hashtable {
          }
 
          return std::nullopt;
+      }
+
+      std::map<std::string, std::string> lookup_statistics(const std::vector<Key>& dataset) {
+         size_t max_chain_length = 0;
+         size_t min_chain_length = std::numeric_limits<size_t>::max();
+         size_t total_chain_ctr = 0;
+         size_t empty_buckets = 0;
+
+         for (const auto& slot : slots) {
+            if (slot.key == Sentinel) {
+               empty_buckets++;
+               continue;
+            }
+
+            size_t chain_length = 0;
+            Bucket* b = slot.buckets;
+            while (b != nullptr) {
+               chain_length++;
+               b = b->next;
+            }
+
+            total_chain_ctr += chain_length;
+            min_chain_length = std::min(min_chain_length, chain_length);
+            max_chain_length = std::max(max_chain_length, chain_length);
+         }
+
+         return {{"empty_buckets", std::to_string(empty_buckets)},
+                 {"min_chain_length", std::to_string(min_chain_length)},
+                 {"max_chain_length", std::to_string(max_chain_length)},
+                 {"total_chain_pointer_count", std::to_string(total_chain_ctr)}};
       }
 
       static constexpr forceinline size_t bucket_byte_size() {

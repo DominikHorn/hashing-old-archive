@@ -19,18 +19,20 @@
 using Args = BenchmarkArgs::HashCollisionArgs;
 
 const std::vector<std::string> csv_columns = {
-   "dataset",
-   "numelements",
-   "load_factor",
-   "sample_size",
-   "bucket_size",
-   "hashtable",
-   "model",
-   "reducer",
-   "insert_nanoseconds_total",
-   "insert_nanoseconds_per_key",
-   "lookup_nanoseconds_total",
-   "lookup_nanoseconds_per_key",
+   // General statistics
+   "dataset", "numelements", "load_factor", "sample_size", "bucket_size", "hashtable", "model", "reducer",
+   "insert_nanoseconds_total", "insert_nanoseconds_per_key", "lookup_nanoseconds_total", "lookup_nanoseconds_per_key",
+
+   // Cuckoo custom statistics
+   "primary_key_ratio",
+
+   // Chained custom statistics
+   "empty_buckets", "min_chain_length", "max_chain_length", "total_chain_pointer_count",
+
+   // Probing custom statistics
+   "min_psl", "max_psl", "total_psl"
+
+   //
 };
 
 static void benchmark(const std::string& dataset_name, const std::shared_ptr<const std::vector<uint64_t>> dataset_ptr,
@@ -88,6 +90,11 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
          datapoint.emplace("insert_nanoseconds_per_key", str(relative_to(stats.total_insert_ns, dataset_ptr->size())));
          datapoint.emplace("lookup_nanoseconds_total", str(stats.total_lookup_ns));
          datapoint.emplace("lookup_nanoseconds_per_key", str(relative_to(stats.total_lookup_ns, dataset_ptr->size())));
+
+         // Make sure we collect more insight based on hashtable
+         for (const auto& stat : hashtable.lookup_statistics(*dataset)) {
+            datapoint.emplace(stat);
+         }
 
          // Write to csv
          outfile.write(datapoint);
