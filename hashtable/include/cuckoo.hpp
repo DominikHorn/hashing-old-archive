@@ -124,6 +124,10 @@ namespace Hashtable {
    template<class Key, class Payload, size_t BucketSize, class HashFn1, class HashFn2, class ReductionFn1,
             class ReductionFn2, class KickingFn, Key Sentinel = std::numeric_limits<Key>::max()>
    class Cuckoo {
+     public:
+      typedef Key KeyType;
+      typedef Payload PayloadType;
+
      private:
       const size_t MaxKickCycleLength;
       const HashFn1 hashfn1;
@@ -277,6 +281,10 @@ namespace Hashtable {
    template<class Payload, class HashFn1, class HashFn2, class ReductionFn1, class ReductionFn2, class KickingFn,
             uint32_t Sentinel>
    class Cuckoo<uint32_t, Payload, 8, HashFn1, HashFn2, ReductionFn1, ReductionFn2, KickingFn, Sentinel> {
+     public:
+      typedef uint32_t KeyType;
+      typedef Payload PayloadType;
+
      private:
       static constexpr uint32_t BucketSize = 8;
       const size_t MaxKickCycleLength;

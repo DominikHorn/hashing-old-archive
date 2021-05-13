@@ -12,6 +12,10 @@ namespace Hashtable {
    template<class Key, class Payload, size_t BucketSize, class HashFn, class ReductionFn,
             Key Sentinel = std::numeric_limits<Key>::max()>
    struct Chained {
+     public:
+      typedef Key KeyType;
+      typedef Payload PayloadType;
+
      private:
       const HashFn hashfn;
       const ReductionFn reductionfn;

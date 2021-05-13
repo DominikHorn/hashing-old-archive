@@ -51,6 +51,10 @@ namespace Hashtable {
             size_t BucketSize = 1,
             Key Sentinel = std::numeric_limits<Key>::max()>
    struct Probing {
+     public:
+      typedef Key KeyType;
+      typedef Payload PayloadType;
+
      private:
       const HashFn hashfn;
       const ReductionFn reductionfn;

@@ -148,7 +148,7 @@ namespace Benchmark {
    };
 
    template<typename Hashtable>
-   HashtableStats measure_hashtable(const std::vector<uint64_t>& dataset, Hashtable& ht) {
+   HashtableStats measure_hashtable(const std::vector<typename Hashtable::KeyType>& dataset, Hashtable& ht) {
       // Ensure hashtable is empty when we begin
       ht.clear();
 
@@ -159,7 +159,7 @@ namespace Benchmark {
          Perf::BlockCounter ctr(dataset.size());
 #endif
          for (const auto key : dataset) {
-            ht.insert(key, static_cast<uint32_t>(key) - 5);
+            ht.insert(key, static_cast<typename Hashtable::PayloadType>(key) - 5);
          }
 #ifdef MACOS
       }
@@ -179,7 +179,7 @@ namespace Benchmark {
             Optimizer::DoNotEliminate(payload);
             full_mem_barrier; // emulate doing something with payload by stalling at least until it arrives
             assert(payload);
-            assert(payload.value() == static_cast<uint32_t>(key) - 5);
+            assert(payload.value() == static_cast<typename Hashtable::PayloadType>(key) - 5);
          }
 #ifdef MACOS
       }
