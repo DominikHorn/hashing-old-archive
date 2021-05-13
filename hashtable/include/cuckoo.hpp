@@ -131,6 +131,7 @@ namespace Hashtable {
       const ReductionFn1 reductionfn1;
       const ReductionFn2 reductionfn2;
       KickingFn kickingfn;
+      bool allocated = false;
 
       struct Bucket {
          Key keys[BucketSize];
@@ -147,16 +148,24 @@ namespace Hashtable {
          : MaxKickCycleLength(4096), hashfn1(hashfn1), hashfn2(hashfn2),
            reductionfn1(ReductionFn1(directory_address_count(capacity))),
            reductionfn2(ReductionFn2(directory_address_count(capacity))), kickingfn(KickingFn()),
-           num_buckets_(directory_address_count(capacity)) {
+           num_buckets_(directory_address_count(capacity)) {}
+
+      /**
+       * Allocates hashtable memory. For production use, we would presumably call this in the constructor,
+       * however this way we can save some time in case a measurement for this hashtable already exists.
+       */
+      void allocate() {
+         if (allocated)
+            return;
+         allocated = true;
+
+         // Allocate memory
          int r = posix_memalign(reinterpret_cast<void**>(&buckets_), 32, num_buckets_ * sizeof(Bucket));
          if (r != 0)
             throw std::runtime_error("Could not memalign allocate for cuckoo hash map");
 
-         for (size_t i = 0; i < num_buckets_; i++) {
-            for (size_t j = 0; j < BucketSize; j++) {
-               buckets_[i].keys[j] = Sentinel;
-            }
-         }
+         // Ensure all slots are in cleared state
+         clear();
       }
 
       ~Cuckoo() {
@@ -220,9 +229,9 @@ namespace Hashtable {
       }
 
       void clear() {
-         for (Bucket* ptr = buckets_; ptr < buckets_ + num_buckets_; ptr++) {
-            for (size_t i = 0; i < BucketSize; i++) {
-               ptr->keys[i] = Sentinel;
+         for (size_t i = 0; i < num_buckets_; i++) {
+            for (size_t j = 0; j < BucketSize; j++) {
+               buckets_[i].keys[j] = Sentinel;
             }
          }
       }
@@ -277,6 +286,7 @@ namespace Hashtable {
       const ReductionFn1 reductionfn1;
       const ReductionFn2 reductionfn2;
       KickingFn kickingfn;
+      bool allocated = false;
 
       struct Bucket {
          uint32_t keys[BucketSize] __attribute((aligned(32)));
@@ -293,16 +303,24 @@ namespace Hashtable {
          : MaxKickCycleLength(4096), hashfn1(HashFn1()), hashfn2(HashFn2()),
            reductionfn1(ReductionFn1(directory_address_count(capacity))),
            reductionfn2(ReductionFn2(directory_address_count(capacity))), kickingfn(KickingFn()),
-           num_buckets_(directory_address_count(capacity)) {
+           num_buckets_(directory_address_count(capacity)) {}
+
+      /**
+       * Allocates hashtable memory. For production use, we would presumably call this in the constructor,
+       * however this way we can save some time in case a measurement for this hashtable already exists.
+       */
+      void allocate() {
+         if (allocated)
+            return;
+         allocated = true;
+
+         // Allocate memory
          int r = posix_memalign(reinterpret_cast<void**>(&buckets_), 32, num_buckets_ * sizeof(Bucket));
          if (r != 0)
             throw std::runtime_error("Could not memalign allocate for cuckoo hash map");
 
-         for (size_t i = 0; i < num_buckets_; i++) {
-            for (size_t j = 0; j < 8; j++) {
-               buckets_[i].keys[j] = Sentinel;
-            }
-         }
+         // Ensure all slots are in cleared state
+         clear();
       }
 
       ~Cuckoo() {
@@ -370,9 +388,9 @@ namespace Hashtable {
       }
 
       void clear() {
-         for (auto ptr = buckets_; ptr < buckets_ + num_buckets_; ptr++) {
-            for (size_t i = 0; i < BucketSize; i++) {
-               ptr->keys[i] = Sentinel;
+         for (size_t i = 0; i < num_buckets_; i++) {
+            for (size_t j = 0; j < BucketSize; j++) {
+               buckets_[i].keys[j] = Sentinel;
             }
          }
       }

@@ -55,16 +55,30 @@ namespace Hashtable {
       const HashFn hashfn;
       const ReductionFn reductionfn;
       const ProbingFn probingfn;
+      const size_t capacity;
+      bool allocated = false;
 
      public:
       explicit Probing(const size_t& capacity, const HashFn hashfn = HashFn())
          : hashfn(hashfn), reductionfn(ReductionFn(directory_address_count(capacity))),
-           probingfn(ProbingFn(directory_address_count(capacity))), slots(directory_address_count(capacity)) {
-         // Start with a well defined clean slate
-         clear();
-      };
+           probingfn(ProbingFn(directory_address_count(capacity))), capacity(capacity){};
 
       Probing(Probing&&) = default;
+
+      /**
+       * Allocates hashtable memory. For production use, we would presumably call this in the constructor,
+       * however this way we can save some time in case a measurement for this hashtable already exists.
+       */
+      void allocate() {
+         if (allocated)
+            return;
+         allocated = true;
+
+         // Reserve required memory
+         slots.resize(directory_address_count(capacity));
+         // Ensure all slots are in cleared state
+         clear();
+      }
 
       /**
        * Inserts a key, value/payload pair into the hashtable
