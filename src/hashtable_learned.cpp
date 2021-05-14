@@ -35,7 +35,8 @@ const std::vector<std::string> csv_columns = {
    //
 };
 
-static void benchmark(const std::string& dataset_name, const std::shared_ptr<const std::vector<uint64_t>> dataset_ptr,
+template<class T>
+static void benchmark(const std::string& dataset_name, const std::shared_ptr<const std::vector<T>> dataset_ptr,
                       const double load_factor, CSV& outfile, std::mutex& iomutex) {
    const auto measure = [&](auto hashtable, const auto& sample_size) {
       const auto hash_name = hashtable.hash_name();
@@ -92,7 +93,7 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
          datapoint.emplace("lookup_nanoseconds_per_key", str(relative_to(stats.total_lookup_ns, dataset_ptr->size())));
 
          // Make sure we collect more insight based on hashtable
-         for (const auto& stat : hashtable.lookup_statistics(*dataset)) {
+         for (const auto& stat : hashtable.lookup_statistics(*dataset_ptr)) {
             datapoint.emplace(stat);
          }
 
@@ -151,28 +152,28 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
     */
    {
       // pgm_hash_eps256_epsrec0
-      using HT = Hashtable::Chained<uint64_t, uint32_t, 1, PGMHashFunc<HASH_64, 256, 0>, MinMaxCutoffFunc<HASH_64>>;
+      using HT = Hashtable::Chained<T, uint32_t, 1, PGMHashFunc<HASH_64, 256, 0>, MinMaxCutoffFunc<HASH_64>>;
       measure(HT(ht_capacity,
                  PGMHashFunc<HASH_64, 256, 0>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
               sample_size);
    }
    {
       // pgm_hash_eps128_epsrec4
-      using HT = Hashtable::Chained<uint64_t, uint32_t, 1, PGMHashFunc<HASH_64, 128, 4>, MinMaxCutoffFunc<HASH_64>>;
+      using HT = Hashtable::Chained<T, uint32_t, 1, PGMHashFunc<HASH_64, 128, 4>, MinMaxCutoffFunc<HASH_64>>;
       measure(HT(ht_capacity,
                  PGMHashFunc<HASH_64, 128, 4>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
               sample_size);
    }
    {
       // pgm_hash_eps64_epsrec1
-      using HT = Hashtable::Chained<uint64_t, uint32_t, 1, PGMHashFunc<HASH_64, 64, 1>, MinMaxCutoffFunc<HASH_64>>;
+      using HT = Hashtable::Chained<T, uint32_t, 1, PGMHashFunc<HASH_64, 64, 1>, MinMaxCutoffFunc<HASH_64>>;
       measure(HT(ht_capacity,
                  PGMHashFunc<HASH_64, 64, 1>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
               sample_size);
    }
    {
       // pgm_hash_eps4_epsrec4
-      using HT = Hashtable::Chained<uint64_t, uint32_t, 1, PGMHashFunc<HASH_64, 4, 4>, MinMaxCutoffFunc<HASH_64>>;
+      using HT = Hashtable::Chained<T, uint32_t, 1, PGMHashFunc<HASH_64, 4, 4>, MinMaxCutoffFunc<HASH_64>>;
       measure(HT(ht_capacity,
                  PGMHashFunc<HASH_64, 4, 4>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
               sample_size);
@@ -186,7 +187,7 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
    /// Balanced
    {
       // pgm_hash_eps256_epsrec0
-      using HT = Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 256, 0>, Murmur3FinalizerCuckoo2Func,
+      using HT = Hashtable::Cuckoo<T, uint32_t, 8, PGMHashFunc<HASH_64, 256, 0>, Murmur3FinalizerCuckoo2Func,
                                    MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>, Hashtable::BalancedKicking>;
       measure(HT(ht_capacity,
                  PGMHashFunc<HASH_64, 256, 0>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
@@ -194,7 +195,7 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
    }
    {
       // pgm_hash_eps128_epsrec4
-      using HT = Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 128, 4>, Murmur3FinalizerCuckoo2Func,
+      using HT = Hashtable::Cuckoo<T, uint32_t, 8, PGMHashFunc<HASH_64, 128, 4>, Murmur3FinalizerCuckoo2Func,
                                    MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>, Hashtable::BalancedKicking>;
       measure(HT(ht_capacity,
                  PGMHashFunc<HASH_64, 128, 4>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
@@ -202,7 +203,7 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
    }
    {
       // pgm_hash_eps64_epsrec1
-      using HT = Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 64, 1>, Murmur3FinalizerCuckoo2Func,
+      using HT = Hashtable::Cuckoo<T, uint32_t, 8, PGMHashFunc<HASH_64, 64, 1>, Murmur3FinalizerCuckoo2Func,
                                    MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>, Hashtable::BalancedKicking>;
       measure(HT(ht_capacity,
                  PGMHashFunc<HASH_64, 64, 1>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
@@ -210,7 +211,7 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
    }
    {
       // pgm_hash_eps4_epsrec4
-      using HT = Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 4, 4>, Murmur3FinalizerCuckoo2Func,
+      using HT = Hashtable::Cuckoo<T, uint32_t, 8, PGMHashFunc<HASH_64, 4, 4>, Murmur3FinalizerCuckoo2Func,
                                    MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>, Hashtable::BalancedKicking>;
       measure(HT(ht_capacity,
                  PGMHashFunc<HASH_64, 4, 4>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
@@ -220,7 +221,7 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
    /// Biased (~10% secondary bucket kicking)
    {
       // pgm_hash_eps256_epsrec0
-      using HT = Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 256, 0>, Murmur3FinalizerCuckoo2Func,
+      using HT = Hashtable::Cuckoo<T, uint32_t, 8, PGMHashFunc<HASH_64, 256, 0>, Murmur3FinalizerCuckoo2Func,
                                    MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>, Hashtable::BiasedKicking<26>>;
       measure(HT(ht_capacity,
                  PGMHashFunc<HASH_64, 256, 0>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
@@ -228,7 +229,7 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
    }
    {
       // pgm_hash_eps128_epsrec4
-      using HT = Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 128, 4>, Murmur3FinalizerCuckoo2Func,
+      using HT = Hashtable::Cuckoo<T, uint32_t, 8, PGMHashFunc<HASH_64, 128, 4>, Murmur3FinalizerCuckoo2Func,
                                    MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>, Hashtable::BiasedKicking<26>>;
       measure(HT(ht_capacity,
                  PGMHashFunc<HASH_64, 128, 4>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
@@ -236,7 +237,7 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
    }
    {
       // pgm_hash_eps64_epsrec1
-      using HT = Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 64, 1>, Murmur3FinalizerCuckoo2Func,
+      using HT = Hashtable::Cuckoo<T, uint32_t, 8, PGMHashFunc<HASH_64, 64, 1>, Murmur3FinalizerCuckoo2Func,
                                    MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>, Hashtable::BiasedKicking<26>>;
       measure(HT(ht_capacity,
                  PGMHashFunc<HASH_64, 64, 1>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
@@ -244,7 +245,7 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
    }
    {
       // pgm_hash_eps4_epsrec4
-      using HT = Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 4, 4>, Murmur3FinalizerCuckoo2Func,
+      using HT = Hashtable::Cuckoo<T, uint32_t, 8, PGMHashFunc<HASH_64, 4, 4>, Murmur3FinalizerCuckoo2Func,
                                    MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>, Hashtable::BiasedKicking<26>>;
       measure(HT(ht_capacity,
                  PGMHashFunc<HASH_64, 4, 4>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
@@ -254,7 +255,7 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
    /// Unbiased (100% kick from primary bucket)
    {
       // pgm_hash_eps256_epsrec0
-      using HT = Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 256, 0>, Murmur3FinalizerCuckoo2Func,
+      using HT = Hashtable::Cuckoo<T, uint32_t, 8, PGMHashFunc<HASH_64, 256, 0>, Murmur3FinalizerCuckoo2Func,
                                    MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>, Hashtable::UnbiasedKicking>;
       measure(HT(ht_capacity,
                  PGMHashFunc<HASH_64, 256, 0>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
@@ -262,7 +263,7 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
    }
    {
       // pgm_hash_eps128_epsrec4
-      using HT = Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 128, 4>, Murmur3FinalizerCuckoo2Func,
+      using HT = Hashtable::Cuckoo<T, uint32_t, 8, PGMHashFunc<HASH_64, 128, 4>, Murmur3FinalizerCuckoo2Func,
                                    MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>, Hashtable::UnbiasedKicking>;
       measure(HT(ht_capacity,
                  PGMHashFunc<HASH_64, 128, 4>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
@@ -270,7 +271,7 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
    }
    {
       // pgm_hash_eps64_epsrec1
-      using HT = Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 64, 1>, Murmur3FinalizerCuckoo2Func,
+      using HT = Hashtable::Cuckoo<T, uint32_t, 8, PGMHashFunc<HASH_64, 64, 1>, Murmur3FinalizerCuckoo2Func,
                                    MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>, Hashtable::UnbiasedKicking>;
       measure(HT(ht_capacity,
                  PGMHashFunc<HASH_64, 64, 1>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
@@ -278,7 +279,7 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
    }
    {
       // pgm_hash_eps4_epsrec4
-      using HT = Hashtable::Cuckoo<uint64_t, uint32_t, 8, PGMHashFunc<HASH_64, 4, 4>, Murmur3FinalizerCuckoo2Func,
+      using HT = Hashtable::Cuckoo<T, uint32_t, 8, PGMHashFunc<HASH_64, 4, 4>, Murmur3FinalizerCuckoo2Func,
                                    MinMaxCutoffFunc<HASH_64>, FastModuloFunc<HASH_64>, Hashtable::UnbiasedKicking>;
       measure(HT(ht_capacity,
                  PGMHashFunc<HASH_64, 4, 4>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
@@ -291,44 +292,90 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
     * ========================================================
     */
 
-   const auto directory_address_count =
-      Hashtable::Probing<uint64_t, uint32_t, PGMHashFunc<HASH_64, 256, 0>, MinMaxCutoffFunc<HASH_64>,
+   const auto prob_directory_address_count =
+      Hashtable::Probing<T, uint32_t, PGMHashFunc<HASH_64, 256, 0>, MinMaxCutoffFunc<HASH_64>,
                          Hashtable::LinearProbingFunc>::directory_address_count(ht_capacity);
 
    /// Linear
-   measure(Hashtable::Probing<uint64_t, uint32_t, PGMHashFunc<HASH_64, 256, 0>, MinMaxCutoffFunc<HASH_64>,
+   measure(Hashtable::Probing<T, uint32_t, PGMHashFunc<HASH_64, 256, 0>, MinMaxCutoffFunc<HASH_64>,
                               Hashtable::LinearProbingFunc>(
-              ht_capacity, PGMHashFunc<HASH_64, 256, 0>(sample.begin(), sample.end(), directory_address_count)),
+              ht_capacity, PGMHashFunc<HASH_64, 256, 0>(sample.begin(), sample.end(), prob_directory_address_count)),
            sample_size);
-   measure(Hashtable::Probing<uint64_t, uint32_t, PGMHashFunc<HASH_64, 128, 4>, MinMaxCutoffFunc<HASH_64>,
+   measure(Hashtable::Probing<T, uint32_t, PGMHashFunc<HASH_64, 128, 4>, MinMaxCutoffFunc<HASH_64>,
                               Hashtable::LinearProbingFunc>(
-              ht_capacity, PGMHashFunc<HASH_64, 128, 4>(sample.begin(), sample.end(), directory_address_count)),
+              ht_capacity, PGMHashFunc<HASH_64, 128, 4>(sample.begin(), sample.end(), prob_directory_address_count)),
            sample_size);
-   measure(Hashtable::Probing<uint64_t, uint32_t, PGMHashFunc<HASH_64, 64, 1>, MinMaxCutoffFunc<HASH_64>,
+   measure(Hashtable::Probing<T, uint32_t, PGMHashFunc<HASH_64, 64, 1>, MinMaxCutoffFunc<HASH_64>,
                               Hashtable::LinearProbingFunc>(
-              ht_capacity, PGMHashFunc<HASH_64, 64, 1>(sample.begin(), sample.end(), directory_address_count)),
+              ht_capacity, PGMHashFunc<HASH_64, 64, 1>(sample.begin(), sample.end(), prob_directory_address_count)),
            sample_size);
-   measure(Hashtable::Probing<uint64_t, uint32_t, PGMHashFunc<HASH_64, 4, 4>, MinMaxCutoffFunc<HASH_64>,
+   measure(Hashtable::Probing<T, uint32_t, PGMHashFunc<HASH_64, 4, 4>, MinMaxCutoffFunc<HASH_64>,
                               Hashtable::LinearProbingFunc>(
-              ht_capacity, PGMHashFunc<HASH_64, 4, 4>(sample.begin(), sample.end(), directory_address_count)),
+              ht_capacity, PGMHashFunc<HASH_64, 4, 4>(sample.begin(), sample.end(), prob_directory_address_count)),
            sample_size);
 
    /// Quadratic
-   measure(Hashtable::Probing<uint64_t, uint32_t, PGMHashFunc<HASH_64, 256, 0>, MinMaxCutoffFunc<HASH_64>,
+   measure(Hashtable::Probing<T, uint32_t, PGMHashFunc<HASH_64, 256, 0>, MinMaxCutoffFunc<HASH_64>,
                               Hashtable::QuadraticProbingFunc>(
-              ht_capacity, PGMHashFunc<HASH_64, 256, 0>(sample.begin(), sample.end(), directory_address_count)),
+              ht_capacity, PGMHashFunc<HASH_64, 256, 0>(sample.begin(), sample.end(), prob_directory_address_count)),
            sample_size);
-   measure(Hashtable::Probing<uint64_t, uint32_t, PGMHashFunc<HASH_64, 128, 4>, MinMaxCutoffFunc<HASH_64>,
+   measure(Hashtable::Probing<T, uint32_t, PGMHashFunc<HASH_64, 128, 4>, MinMaxCutoffFunc<HASH_64>,
                               Hashtable::QuadraticProbingFunc>(
-              ht_capacity, PGMHashFunc<HASH_64, 128, 4>(sample.begin(), sample.end(), directory_address_count)),
+              ht_capacity, PGMHashFunc<HASH_64, 128, 4>(sample.begin(), sample.end(), prob_directory_address_count)),
            sample_size);
-   measure(Hashtable::Probing<uint64_t, uint32_t, PGMHashFunc<HASH_64, 64, 1>, MinMaxCutoffFunc<HASH_64>,
+   measure(Hashtable::Probing<T, uint32_t, PGMHashFunc<HASH_64, 64, 1>, MinMaxCutoffFunc<HASH_64>,
                               Hashtable::QuadraticProbingFunc>(
-              ht_capacity, PGMHashFunc<HASH_64, 64, 1>(sample.begin(), sample.end(), directory_address_count)),
+              ht_capacity, PGMHashFunc<HASH_64, 64, 1>(sample.begin(), sample.end(), prob_directory_address_count)),
            sample_size);
-   measure(Hashtable::Probing<uint64_t, uint32_t, PGMHashFunc<HASH_64, 4, 4>, MinMaxCutoffFunc<HASH_64>,
+   measure(Hashtable::Probing<T, uint32_t, PGMHashFunc<HASH_64, 4, 4>, MinMaxCutoffFunc<HASH_64>,
                               Hashtable::QuadraticProbingFunc>(
-              ht_capacity, PGMHashFunc<HASH_64, 4, 4>(sample.begin(), sample.end(), directory_address_count)),
+              ht_capacity, PGMHashFunc<HASH_64, 4, 4>(sample.begin(), sample.end(), prob_directory_address_count)),
+           sample_size);
+
+   /**
+    * ========================================================
+    *          Robin Hood, 64-bit key, 32-bit value
+    * ========================================================
+    */
+
+   const auto robin_directory_address_count =
+      Hashtable::RobinhoodProbing<T, uint32_t, PGMHashFunc<HASH_64, 256, 0>, MinMaxCutoffFunc<HASH_64>,
+                                  Hashtable::LinearProbingFunc>::directory_address_count(ht_capacity);
+
+   /// Linear
+   measure(Hashtable::RobinhoodProbing<T, uint32_t, PGMHashFunc<HASH_64, 256, 0>, MinMaxCutoffFunc<HASH_64>,
+                                       Hashtable::LinearProbingFunc>(
+              ht_capacity, PGMHashFunc<HASH_64, 256, 0>(sample.begin(), sample.end(), robin_directory_address_count)),
+           sample_size);
+   measure(Hashtable::RobinhoodProbing<T, uint32_t, PGMHashFunc<HASH_64, 128, 4>, MinMaxCutoffFunc<HASH_64>,
+                                       Hashtable::LinearProbingFunc>(
+              ht_capacity, PGMHashFunc<HASH_64, 128, 4>(sample.begin(), sample.end(), robin_directory_address_count)),
+           sample_size);
+   measure(Hashtable::RobinhoodProbing<T, uint32_t, PGMHashFunc<HASH_64, 64, 1>, MinMaxCutoffFunc<HASH_64>,
+                                       Hashtable::LinearProbingFunc>(
+              ht_capacity, PGMHashFunc<HASH_64, 64, 1>(sample.begin(), sample.end(), robin_directory_address_count)),
+           sample_size);
+   measure(Hashtable::RobinhoodProbing<T, uint32_t, PGMHashFunc<HASH_64, 4, 4>, MinMaxCutoffFunc<HASH_64>,
+                                       Hashtable::LinearProbingFunc>(
+              ht_capacity, PGMHashFunc<HASH_64, 4, 4>(sample.begin(), sample.end(), robin_directory_address_count)),
+           sample_size);
+
+   /// Quadratic
+   measure(Hashtable::RobinhoodProbing<T, uint32_t, PGMHashFunc<HASH_64, 256, 0>, MinMaxCutoffFunc<HASH_64>,
+                                       Hashtable::QuadraticProbingFunc>(
+              ht_capacity, PGMHashFunc<HASH_64, 256, 0>(sample.begin(), sample.end(), robin_directory_address_count)),
+           sample_size);
+   measure(Hashtable::RobinhoodProbing<T, uint32_t, PGMHashFunc<HASH_64, 128, 4>, MinMaxCutoffFunc<HASH_64>,
+                                       Hashtable::QuadraticProbingFunc>(
+              ht_capacity, PGMHashFunc<HASH_64, 128, 4>(sample.begin(), sample.end(), robin_directory_address_count)),
+           sample_size);
+   measure(Hashtable::RobinhoodProbing<T, uint32_t, PGMHashFunc<HASH_64, 64, 1>, MinMaxCutoffFunc<HASH_64>,
+                                       Hashtable::QuadraticProbingFunc>(
+              ht_capacity, PGMHashFunc<HASH_64, 64, 1>(sample.begin(), sample.end(), robin_directory_address_count)),
+           sample_size);
+   measure(Hashtable::RobinhoodProbing<T, uint32_t, PGMHashFunc<HASH_64, 4, 4>, MinMaxCutoffFunc<HASH_64>,
+                                       Hashtable::QuadraticProbingFunc>(
+              ht_capacity, PGMHashFunc<HASH_64, 4, 4>(sample.begin(), sample.end(), robin_directory_address_count)),
            sample_size);
 }
 
