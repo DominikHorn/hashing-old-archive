@@ -55,8 +55,8 @@ namespace Hashtable {
             Key Sentinel = std::numeric_limits<Key>::max()>
    struct Probing {
      public:
-      typedef Key KeyType;
-      typedef Payload PayloadType;
+      using KeyType = Key;
+      using PayloadType = Payload;
 
      private:
       const HashFn hashfn;
@@ -180,17 +180,21 @@ namespace Hashtable {
                      min_psl = std::min(min_psl, probing_step);
                      max_psl = std::max(max_psl, probing_step);
                      total_psl += probing_step;
+                     goto next;
                   }
 
                   if (slot.keys[i] == Sentinel)
-                     break;
+                     goto next;
                }
 
                // Slot is full, choose a new slot index based on probing function
                slot_index = probingfn(orig_slot_index, ++probing_step);
                if (unlikely(slot_index == orig_slot_index))
-                  break;
+                  goto next;
             }
+
+         next:
+            continue;
          }
 
          return {{"min_psl", std::to_string(min_psl)},

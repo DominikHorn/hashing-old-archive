@@ -14,8 +14,8 @@ namespace Hashtable {
             Key Sentinel = std::numeric_limits<Key>::max()>
    struct Chained {
      public:
-      typedef Key KeyType;
-      typedef Payload PayloadType;
+      using KeyType = Key;
+      using PayloadType = Payload;
 
      private:
       const HashFn hashfn;
