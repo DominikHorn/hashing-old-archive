@@ -174,7 +174,9 @@ namespace Hashtable {
       }
 
       ~Cuckoo() {
-         free(buckets_);
+         if (allocated) {
+            free(buckets_);
+         }
       }
 
       std::optional<Payload> lookup(const Key& key) const {
@@ -354,7 +356,9 @@ namespace Hashtable {
       }
 
       ~Cuckoo() {
-         free(buckets_);
+         if (allocated) {
+            free(buckets_);
+         }
       }
 
       std::optional<Payload> lookup(const uint32_t& key) const {
