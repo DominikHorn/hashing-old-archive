@@ -22,17 +22,17 @@ do
     -D CMAKE_CXX_COMPILER=${2} \
     -G "CodeBlocks - Unix Makefiles" \
     .
-  cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target throughput_hash
+  cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target throughput_hash -j
   mv src/throughput_hash benchmark/throughput_hash-${2}
-  cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target throughput_learned
+  cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target throughput_learned -j
   mv src/throughput_learned benchmark/throughput_learned-${2}
-  cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target collisions_hash
+  cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target collisions_hash -j
   mv src/collisions_hash benchmark/collisions_hash-${2}
-  cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target collisions_learned
+  cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target collisions_learned -j
   mv src/collisions_learned benchmark/collisions_learned-${2}
-  cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target hashtable_hash
+  cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target hashtable_hash -j
   mv src/hashtable_hash benchmark/hashtable_hash-${2}
-  cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target hashtable_learned
+  cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target hashtable_learned -j
   mv src/hashtable_learned benchmark/hashtable_learned-${2}
 done
 
