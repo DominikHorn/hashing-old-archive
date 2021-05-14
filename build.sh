@@ -4,7 +4,9 @@
 set -e
 cd "$(dirname "$0")"
 
+# Guarantee clean slate to start
 mkdir -p benchmark
+find . -name "CMakeCache.txt" -type f | xargs rm
 
 # Build with various compilers. SET THIS ACCORDING TO YOUR SYSTEM CONFIG
 for c in clang,clang++ gcc-10,g++-10
@@ -33,3 +35,6 @@ do
   cmake --build . --clean-first -DCMAKE_BUILD_TYPE=Release --target hashtable_learned
   mv src/hashtable_learned benchmark/hashtable_learned-${2}
 done
+
+# Leave clean slate (important for clion interop)
+find . -name "CMakeCache.txt" -type f | xargs rm
