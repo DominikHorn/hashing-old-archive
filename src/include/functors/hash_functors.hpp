@@ -34,7 +34,7 @@ struct Murmur3FinalizerFunc {
 
 struct Murmur3FinalizerCuckoo2Func {
    static std::string name() {
-      return "murmur3_fin64";
+      return "murmur3_fin64_2";
    }
 
    forceinline HASH_64 operator()(const HASH_64& key, const HASH_64& h1) const {
