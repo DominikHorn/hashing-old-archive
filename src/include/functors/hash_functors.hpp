@@ -2,16 +2,6 @@
 
 #include <hashing.hpp>
 
-struct MultAdd64Func {
-   static std::string name() {
-      return "multadd64";
-   }
-
-   forceinline HASH_64 operator()(const HASH_64& key) const {
-      return MultAddHash::multadd64_hash(key);
-   }
-};
-
 struct Murmur3FinalizerFunc {
    static std::string name() {
       return "murmur3_fin64";

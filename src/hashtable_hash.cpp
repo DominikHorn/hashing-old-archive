@@ -126,15 +126,15 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
    measure(Hashtable::Chained<T, uint32_t, 4, PrimeMultiplicationHash64, FastModuloFunc<HASH_64>>(ht_capacity));
 
    /// mult-add
-   measure(Hashtable::Chained<T, uint32_t, 1, MultAdd64Func, FastrangeFunc<HASH_32>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 1, MultAdd64Func, FastrangeFunc<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 1, MultAdd64Func, FastModuloFunc<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 2, MultAdd64Func, FastrangeFunc<HASH_32>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 2, MultAdd64Func, FastrangeFunc<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 2, MultAdd64Func, FastModuloFunc<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 4, MultAdd64Func, FastrangeFunc<HASH_32>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 4, MultAdd64Func, FastrangeFunc<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 4, MultAdd64Func, FastModuloFunc<HASH_64>>(ht_capacity));
+   measure(Hashtable::Chained<T, uint32_t, 1, MultAddHash64, FastrangeFunc<HASH_32>>(ht_capacity));
+   measure(Hashtable::Chained<T, uint32_t, 1, MultAddHash64, FastrangeFunc<HASH_64>>(ht_capacity));
+   measure(Hashtable::Chained<T, uint32_t, 1, MultAddHash64, FastModuloFunc<HASH_64>>(ht_capacity));
+   measure(Hashtable::Chained<T, uint32_t, 2, MultAddHash64, FastrangeFunc<HASH_32>>(ht_capacity));
+   measure(Hashtable::Chained<T, uint32_t, 2, MultAddHash64, FastrangeFunc<HASH_64>>(ht_capacity));
+   measure(Hashtable::Chained<T, uint32_t, 2, MultAddHash64, FastModuloFunc<HASH_64>>(ht_capacity));
+   measure(Hashtable::Chained<T, uint32_t, 4, MultAddHash64, FastrangeFunc<HASH_32>>(ht_capacity));
+   measure(Hashtable::Chained<T, uint32_t, 4, MultAddHash64, FastrangeFunc<HASH_64>>(ht_capacity));
+   measure(Hashtable::Chained<T, uint32_t, 4, MultAddHash64, FastModuloFunc<HASH_64>>(ht_capacity));
 
    /// murmur3 finalizer
    measure(Hashtable::Chained<T, uint32_t, 1, Murmur3FinalizerFunc, FastrangeFunc<HASH_32>>(ht_capacity));
