@@ -104,9 +104,6 @@
    } while (0)
 
 struct CityHash {
-  private:
-   CityHash(){};
-
   protected:
    static forceinline HASH_64 UNALIGNED_LOAD64(const char* p) {
       HASH_64 result;
@@ -504,7 +501,7 @@ struct CityHash32 : private CityHash {
    }
 
    forceinline HASH_32 operator()(const T& key) const {
-      auto* s = static_cast<const char*>(&key);
+      auto* s = reinterpret_cast<const char*>(&key);
       size_t len = sizeof(T) * 8;
 
       if (len <= 24) {
@@ -585,7 +582,7 @@ struct CityHash64 : private CityHash {
    }
 
    forceinline HASH_64 operator()(const T& key) const {
-      auto s = static_cast<const char*>(&key);
+      auto s = reinterpret_cast<const char*>(&key);
       size_t len = sizeof(T) * 8;
 
       if (len <= 32) {
@@ -675,7 +672,7 @@ struct CityHash128 : private CityHash {
    }
 
    forceinline HASH_128 operator()(const T& key) const {
-      const auto* s = static_cast<const char*>(&key);
+      const auto* s = reinterpret_cast<const char*>(&key);
       size_t len = sizeof(T) * 8;
 
       return len >= 16 ? CityHash128WithSeed(s + 16, len - 16, to_hash128(Fetch64(s), Fetch64(s + 8) + k0)) :
@@ -695,7 +692,7 @@ struct CityHash128Seed : private CityHash {
    }
 
    forceinline HASH_64 operator()(const T& key) const {
-      const auto* s = static_cast<const char*>(&key);
+      const auto* s = reinterpret_cast<const char*>(&key);
       size_t len = sizeof(T) * 8;
 
       return CityHash128WithSeed(s, len, seed);
@@ -716,7 +713,7 @@ struct CityHashCrc256 : private CityHash {
    }
 
    forceinline HASH_256 operator()(const T& key) const {
-      const auto* s = static_cast<const char*>(&key);
+      const auto* s = reinterpret_cast<const char*>(&key);
       size_t len = sizeof(T) * 8;
 
       HASH_256 result;
@@ -767,7 +764,7 @@ struct CityHashCrc128Seed : private CityHash {
    }
 
    forceinline HASH_128 operator()(const T& key) {
-      const auto* s = static_cast<const char*>(&key);
+      const auto* s = reinterpret_cast<const char*>(&key);
       size_t len = sizeof(T) * 8;
 
       if (len <= 900) {

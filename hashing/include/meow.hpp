@@ -144,9 +144,6 @@ meow_dump* MeowDumpTo;
 #endif
 
 struct MeowHash {
-  private:
-   MeowHash() {}
-
   protected:
    /**
     * Obtain 128 bit meowhash value
@@ -715,7 +712,7 @@ struct MeowHash32 : private MeowHash {
 template<class T, unsigned int select = 0>
 struct MeowHash64 : private MeowHash {
    static std::string name() {
-      return "meow64";
+      return "meow64" + std::string(select == 0 ? "_low" : "_upp");
    }
 
    /**

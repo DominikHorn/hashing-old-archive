@@ -30,14 +30,16 @@ namespace Benchmark {
     *
     * Does not actually perform hashtable insert/lookup!
     *
-    * @tparam HashFunction
-    * @tparam Reducer
+    * @tparam Hashfn
+    * @tparam Reducerfn
     */
-   template<unsigned int repeatCnt = 10, typename HashFunction, typename Reducer>
-   ThroughputStats measure_throughput(const std::vector<uint64_t>& dataset, const HashFunction& hashfn,
-                                      const Reducer& reduce) {
+   template<typename Hashfn, typename Reducefn, unsigned int repeatCnt = 10>
+   ThroughputStats measure_throughput(const std::vector<uint64_t>& dataset) {
       const auto n = static_cast<uint64_t>(dataset.size());
       uint64_t avg = 0;
+
+      Hashfn hashfn;
+      Reducefn reducefn(n);
 
       for (unsigned int repetiton = 0; repetiton < repeatCnt; repetiton++) {
          const auto start_time = std::chrono::steady_clock::now();
@@ -47,7 +49,7 @@ namespace Benchmark {
             Perf::BlockCounter ctr(dataset.size());
 #endif
             for (const auto& key : dataset) {
-               const auto index = reduce(hashfn(key), n);
+               const auto index = reducefn(hashfn(key));
 
                // Ensure the compiler does not simply remove the index
                // calculation during optimization.

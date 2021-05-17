@@ -14,6 +14,71 @@
 
 using Args = BenchmarkArgs::HashThroughputArgs;
 
+template<class Hashfn, class Reducerfn, class Dataset>
+static void measure(const std::string& dataset_name, const Dataset& dataset, CSV& outfile, std::mutex& iomutex) {
+   const auto str = [](auto s) { return std::to_string(s); };
+   std::map<std::string, std::string> datapoint({
+      {"dataset", dataset_name},
+      {"numelements", str(dataset.size())},
+      {"hash", Hashfn::name()},
+      {"reducer", Reducerfn::name()},
+   });
+
+   if (outfile.exists(datapoint)) {
+      std::unique_lock<std::mutex> lock(iomutex);
+      std::cout << "Skipping (";
+      auto iter = datapoint.begin();
+      while (iter != datapoint.end()) {
+         std::cout << iter->first << ": " << iter->second;
+
+         iter++;
+         if (iter != datapoint.end())
+            std::cout << ", ";
+      }
+      std::cout << ") since it already exist" << std::endl;
+      return;
+   }
+
+   // Measure & log
+   const auto stats = Benchmark::measure_throughput<Hashfn, Reducerfn>(dataset);
+#ifdef VERBOSE
+   {
+      std::unique_lock<std::mutex> lock(iomutex);
+      std::cout << std::setw(55) << std::right << Reducerfn::name() + "(" + Hashfn::name() + "): "
+                << relative_to(stats.average_total_inference_reduction_ns, dataset.size()) << " ns/key on average for "
+                << stats.repeatCnt << " repetitions ("
+                << nanoseconds_to_seconds(stats.average_total_inference_reduction_ns) << " s total)" << std::endl;
+   };
+#endif
+
+   datapoint.emplace("nanoseconds_total", str(stats.average_total_inference_reduction_ns));
+   datapoint.emplace("nanoseconds_per_key",
+                     str(relative_to(stats.average_total_inference_reduction_ns, dataset.size())));
+   datapoint.emplace("benchmark_repeat_cnt", str(stats.repeatCnt));
+
+   // Write to csv
+   outfile.write(datapoint);
+};
+
+template<class Hashfn, class Dataset>
+static void measure64(const std::string& dataset_name, const Dataset& dataset, CSV& outfile, std::mutex& iomutex) {
+   using namespace Reduction;
+   measure<Hashfn, DoNothing<HASH_64>>(dataset_name, dataset, outfile, iomutex);
+   measure<Hashfn, Fastrange<HASH_32>>(dataset_name, dataset, outfile, iomutex);
+   measure<Hashfn, Fastrange<HASH_64>>(dataset_name, dataset, outfile, iomutex);
+   measure<Hashfn, FastModulo<HASH_64>>(dataset_name, dataset, outfile, iomutex);
+   measure<Hashfn, BranchlessFastModulo<HASH_64>>(dataset_name, dataset, outfile, iomutex);
+}
+
+template<class Hashfn, class Dataset>
+static void measure128(const std::string& dataset_name, const Dataset& dataset, CSV& outfile, std::mutex& iomutex) {
+   using namespace Reduction;
+   measure64<Reduction::Lower<Hashfn>>(dataset_name, dataset, outfile, iomutex);
+   measure64<Reduction::Higher<Hashfn>>(dataset_name, dataset, outfile, iomutex);
+   measure64<Reduction::Xor<Hashfn>>(dataset_name, dataset, outfile, iomutex);
+   measure64<Reduction::City<Hashfn>>(dataset_name, dataset, outfile, iomutex);
+}
+
 // TODO: ensure that we don't use two separate reducers for 128bit hashes for throughput benchmark, i.e.,
 //  some 64 bit hashes are already implemented as 128bit hash + reducer!
 int main(int argc, char* argv[]) {
@@ -30,12 +95,6 @@ int main(int argc, char* argv[]) {
                      "benchmark_repeat_cnt",
                   });
 
-      // Precompute tabulation hash tables
-      HASH_64 small_tabulation_table[0xFF] = {0};
-      HASH_64 large_tabulation_table[sizeof(HASH_64)][0xFF] = {0};
-      TabulationHash::gen_column(small_tabulation_table);
-      TabulationHash::gen_table(large_tabulation_table);
-
       // Worker pool for speeding up the benchmarking
       std::mutex iomutex;
       std::counting_semaphore cpu_blocker(args.max_threads);
@@ -45,153 +104,52 @@ int main(int argc, char* argv[]) {
          threads.emplace_back(std::thread([&, it] {
             cpu_blocker.aquire();
 
-            auto dataset = it.load(iomutex);
-
-            const auto hashtable_size = static_cast<size_t>(dataset.size());
-            const auto magic_div = Reduction::make_magic_divider(static_cast<HASH_64>(hashtable_size));
-            const auto magic_branchfree_div =
-               Reduction::make_branchfree_magic_divider(static_cast<HASH_64>(hashtable_size));
-
-            const auto measure_hashfn_with_reducer = [&](const std::string& hash_name,
-                                                         const auto& hashfn,
-                                                         const std::string& reducer_name,
-                                                         const auto& reducerfn) {
-               const auto str = [](auto s) { return std::to_string(s); };
-               std::map<std::string, std::string> datapoint({
-                  {"dataset", it.name()},
-                  {"numelements", str(dataset.size())},
-                  {"hash", hash_name},
-                  {"reducer", reducer_name},
-               });
-
-               if (outfile.exists(datapoint)) {
-                  std::unique_lock<std::mutex> lock(iomutex);
-                  std::cout << "Skipping (";
-                  auto iter = datapoint.begin();
-                  while (iter != datapoint.end()) {
-                     std::cout << iter->first << ": " << iter->second;
-
-                     iter++;
-                     if (iter != datapoint.end())
-                        std::cout << ", ";
-                  }
-                  std::cout << ") since it already exist" << std::endl;
-                  return;
-               }
-
-               // Measure & log
-               const auto stats = Benchmark::measure_throughput(dataset, hashfn, reducerfn);
-#ifdef VERBOSE
-               {
-                  std::unique_lock<std::mutex> lock(iomutex);
-                  std::cout << std::setw(55) << std::right << reducer_name + "(" + hash_name + "): "
-                            << relative_to(stats.average_total_inference_reduction_ns, dataset.size())
-                            << " ns/key on average for " << stats.repeatCnt << " repetitions ("
-                            << nanoseconds_to_seconds(stats.average_total_inference_reduction_ns) << " s total)"
-                            << std::endl;
-               };
-#endif
-
-               datapoint.emplace("nanoseconds_total", str(stats.average_total_inference_reduction_ns));
-               datapoint.emplace("nanoseconds_per_key",
-                                 str(relative_to(stats.average_total_inference_reduction_ns, dataset.size())));
-               datapoint.emplace("benchmark_repeat_cnt", str(stats.repeatCnt));
-
-               // Write to csv
-               outfile.write(datapoint);
-            };
-
-            const auto measure_hashfn = [&](const std::string& hash_name, const auto& hashfn) {
-               measure_hashfn_with_reducer(hash_name, hashfn, "do_nothing", Reduction::do_nothing<HASH_64>);
-               measure_hashfn_with_reducer(hash_name, hashfn, "fastrange32", Reduction::fastrange<HASH_32>);
-               measure_hashfn_with_reducer(hash_name, hashfn, "fastrange64", Reduction::fastrange<HASH_64>);
-               measure_hashfn_with_reducer(hash_name, hashfn, "modulo", Reduction::modulo<HASH_64, HASH_64>);
-               measure_hashfn_with_reducer(hash_name,
-                                           hashfn,
-                                           "fast_modulo",
-                                           [&magic_div](const HASH_64& value, const HASH_64& n) {
-                                              return Reduction::magic_modulo(value, n, magic_div);
-                                           });
-               measure_hashfn_with_reducer(hash_name, hashfn, "branchless_fast_modulo",
-                                           [&magic_branchfree_div](const HASH_64& value, const HASH_64& n) {
-                                              return Reduction::magic_modulo(value, n, magic_branchfree_div);
-                                           });
-            };
+            const auto name = it.name();
+            using Data = uint64_t;
+            std::vector<Data> dataset = it.load(iomutex);
 
             /**
             * ====================================
             *           Actual measuring
             * ====================================
             */
-
-            measure_hashfn("mult64", [](HASH_64 key) { return MultHash::mult64_hash(key); });
-            measure_hashfn("fibo64", [](HASH_64 key) { return MultHash::fibonacci64_hash(key); });
-            measure_hashfn("fibo_prime64", [](HASH_64 key) { return MultHash::fibonacci_prime64_hash(key); });
-            measure_hashfn("multadd64", [](HASH_64 key) { return MultAddHash::multadd64_hash(key); });
+            measure64<PrimeMultiplicationHash64>(name, dataset, outfile, iomutex);
+            measure64<FibonacciHash64>(name, dataset, outfile, iomutex);
+            measure64<FibonnaciPrimeHash64>(name, dataset, outfile, iomutex);
+            measure64<MultAddHash64>(name, dataset, outfile, iomutex);
 
             // More significant bits supposedly are of higher quality for multiplicative methods -> compute
             // how much we need to shift/rotate to throw away the least/make 'high quality bits' as prominent as possible
-            const auto p = (sizeof(hashtable_size) * 8) - __builtin_clz(hashtable_size - 1);
-            measure_hashfn("mult64_shift" + std::to_string(p),
-                           [p](HASH_64 key) { return MultHash::mult64_hash(key, p); });
-            measure_hashfn("fibo64_shift" + std::to_string(p),
-                           [p](HASH_64 key) { return MultHash::fibonacci64_hash(key, p); });
-            measure_hashfn("fibo_prime64_shift" + std::to_string(p),
-                           [p](HASH_64 key) { return MultHash::fibonacci_prime64_hash(key, p); });
-            measure_hashfn("multadd64_shift" + std::to_string(p),
-                           [p](HASH_64 key) { return MultAddHash::multadd64_hash(key, p); });
-            const unsigned int rot = 64 - p;
-            measure_hashfn("mult64_rotate" + std::to_string(rot),
-                           [&](HASH_64 key) { return rotr(MultHash::mult64_hash(key), rot); });
-            measure_hashfn("fibo64_rotate" + std::to_string(rot),
-                           [&](HASH_64 key) { return rotr(MultHash::fibonacci64_hash(key), rot); });
-            measure_hashfn("fibo_prime64_rotate" + std::to_string(rot),
-                           [&](HASH_64 key) { return rotr(MultHash::fibonacci_prime64_hash(key), rot); });
-            measure_hashfn("multadd64_rotate" + std::to_string(rot),
-                           [&](HASH_64 key) { return rotr(MultAddHash::multadd64_hash(key), rot); });
+            constexpr auto p = (sizeof(Data) * 8) - __builtin_clz(200000000 - 1);
+            measure64<PrimeMultiplicationShiftHash64<p>>(name, dataset, outfile, iomutex);
+            measure64<FibonacciShiftHash64<p>>(name, dataset, outfile, iomutex);
+            measure64<FibonnaciPrimeShiftHash64<p>>(name, dataset, outfile, iomutex);
+            measure64<MultAddShiftHash64<p>>(name, dataset, outfile, iomutex);
 
-            measure_hashfn("murmur3_128_low",
-                           [](HASH_64 key) { return Reduction::lower_half(MurmurHash3::murmur3_128(key)); });
-            measure_hashfn("murmur3_128_upp",
-                           [](HASH_64 key) { return Reduction::upper_half(MurmurHash3::murmur3_128(key)); });
-            measure_hashfn("murmur3_128_xor",
-                           [](HASH_64 key) { return Reduction::xor_both(MurmurHash3::murmur3_128(key)); });
-            measure_hashfn("murmur3_128_city",
-                           [](HASH_64 key) { return Reduction::hash_128_to_64(MurmurHash3::murmur3_128(key)); });
-            measure_hashfn("murmur3_fin64", [](HASH_64 key) { return MurmurHash3::finalize_64(key); });
+            // TODO: measure rotation instead of shift?
+            //            const unsigned int rot = 64 - p;
+            //            measure_hashfn("mult64_rotate" + std::to_string(rot),
+            //                           [&](HASH_64 key) { return rotr(MultHash::mult64_hash(key), rot); });
 
-            measure_hashfn("xxh64", [](HASH_64 key) { return XXHash::XXH64_hash(key); });
-            measure_hashfn("xxh3", [](HASH_64 key) { return XXHash::XXH3_hash(key); });
-            measure_hashfn("xxh3_128_low",
-                           [](HASH_64 key) { return Reduction::lower_half(XXHash::XXH3_128_hash(key)); });
-            measure_hashfn("xxh3_128_upp",
-                           [](HASH_64 key) { return Reduction::upper_half(XXHash::XXH3_128_hash(key)); });
-            measure_hashfn("xxh3_128_xor", [](HASH_64 key) { return Reduction::xor_both(XXHash::XXH3_128_hash(key)); });
-            measure_hashfn("xxh3_128_city",
-                           [](HASH_64 key) { return Reduction::hash_128_to_64(XXHash::XXH3_128_hash(key)); });
+            measure128<Murmur3Hash128<>>(name, dataset, outfile, iomutex);
+            measure64<MurmurFinalizer<Data>>(name, dataset, outfile, iomutex);
 
-            // cold vs hot does not really make a difference, just benchmark not messing with the hardware prefetcher magic
-            //            Cache::clearcache((void*) large_tabulation_table, sizeof(large_tabulation_table));
-            //            Cache::prefetch_block<Cache::READ, Cache::HIGH>(&small_tabulation_table, sizeof(small_tabulation_table));
-            measure_hashfn("tabulation_small64",
-                           [&](HASH_64 key) { return TabulationHash::small_hash(key, small_tabulation_table); });
-            measure_hashfn("tabulation_large64",
-                           [&](HASH_64 key) { return TabulationHash::large_hash(key, large_tabulation_table); });
+            measure64<XXHash64<Data>>(name, dataset, outfile, iomutex);
+            measure64<XXHash3<Data>>(name, dataset, outfile, iomutex);
+            measure128<XXHash3_128<Data>>(name, dataset, outfile, iomutex);
 
-            measure_hashfn("city64", [](HASH_64 key) { return CityHash::CityHash64(key); });
-            measure_hashfn("city128_low",
-                           [](HASH_64 key) { return Reduction::lower_half(CityHash::CityHash128(key)); });
-            measure_hashfn("city128_upp",
-                           [](HASH_64 key) { return Reduction::upper_half(CityHash::CityHash128(key)); });
-            measure_hashfn("city128_xor", [](HASH_64 key) { return Reduction::xor_both(CityHash::CityHash128(key)); });
-            measure_hashfn("city128_city",
-                           [](HASH_64 key) { return Reduction::hash_128_to_64(CityHash::CityHash128(key)); });
+            measure64<SmallTabulationTable<Data>>(name, dataset, outfile, iomutex);
+            measure64<MediumTabulationTable<Data>>(name, dataset, outfile, iomutex);
+            measure64<LargeTabulationTable<Data>>(name, dataset, outfile, iomutex);
 
-            measure_hashfn("meow64_low", [](HASH_64 key) { return MeowHash::hash64(key); });
-            measure_hashfn("meow64_upp", [](HASH_64 key) { return MeowHash::hash64<1>(key); });
+            measure64<CityHash64<Data>>(name, dataset, outfile, iomutex);
+            measure128<CityHash128<Data>>(name, dataset, outfile, iomutex);
 
-            measure_hashfn("aqua_low", [](HASH_64 key) { return AquaHash::hash64(key); });
-            measure_hashfn("aqua_upp", [](HASH_64 key) { return AquaHash::hash64<1>(key); });
+            measure64<MeowHash64<Data, 0>>(name, dataset, outfile, iomutex);
+            measure64<MeowHash64<Data, 1>>(name, dataset, outfile, iomutex);
+
+            measure64<AquaHash<Data, 0>>(name, dataset, outfile, iomutex);
+            measure64<AquaHash<Data, 1>>(name, dataset, outfile, iomutex);
 
             cpu_blocker.release();
          }));

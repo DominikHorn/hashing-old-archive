@@ -194,6 +194,20 @@ namespace Reduction {
       return value & 0xFFFFFFFFFFFFFFFFLLU;
    }
 
+   template<class Hashfn>
+   struct Lower {
+      static std::string name() {
+         return Hashfn::name() + "_low";
+      }
+
+      forceinline HASH_64 operator()(const HASH_128& value) const {
+         return lower(value);
+      }
+
+     private:
+      Hashfn hashfn;
+   };
+
    /**
     * Takes the upper 64 bits of a 128 bit hash value
     * @param value
@@ -203,6 +217,20 @@ namespace Reduction {
       return value >> 64;
    }
 
+   template<class Hashfn>
+   struct Higher {
+      static std::string name() {
+         return Hashfn::name() + "_upp";
+      }
+
+      forceinline HASH_64 operator()(const HASH_128& value) const {
+         return higher(value);
+      }
+
+     private:
+      Hashfn hashfn;
+   };
+
    /**
     * xors the upper and lower 64-bits of a 128 bit value to obtain a final 64 bit hash
     * @param value
@@ -211,6 +239,20 @@ namespace Reduction {
    static constexpr forceinline HASH_64 xor_both(const HASH_128& value) {
       return lower(value) ^ higher(value);
    }
+
+   template<class Hashfn>
+   struct Xor {
+      static std::string name() {
+         return Hashfn::name() + "_xor";
+      }
+
+      forceinline HASH_64 operator()(const HASH_128& value) const {
+         return xor_both(value);
+      }
+
+     private:
+      Hashfn hashfn;
+   };
 
    /**
     * Hash 128 input bits down to 64 bits of output, intended to be a
@@ -247,6 +289,20 @@ namespace Reduction {
       b *= kMul;
       return b;
    }
+
+   template<class Hashfn>
+   struct City {
+      static std::string name() {
+         return Hashfn::name() + "_city";
+      }
+
+      forceinline HASH_64 operator()(const HASH_128& value) const {
+         return hash_128_to_64(value);
+      }
+
+     private:
+      Hashfn hashfn;
+   };
 
    /**
     * Extract 32 bits using __mm_extract_epi32
