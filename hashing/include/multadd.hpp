@@ -6,7 +6,7 @@
 template<class T, class R, const R constant1, const R constant2, const char* base_name, const uint8_t p = sizeof(T) * 8>
 struct MultiplicationAddHash {
    static std::string name() {
-      return base_name + std::to_string(sizeof(T) * 8);
+      return base_name + (p < sizeof(T) * 8 ? "_shift" + std::to_string(p) + "_" : "") + std::to_string(sizeof(T) * 8);
    }
 
    /**

@@ -16,7 +16,8 @@
 template<class T, const T constant, const char* base_name, const uint8_t p = sizeof(T) * 8>
 struct MultiplicationHash {
    static std::string name() {
-      return base_name + (p < sizeof(T) * 8 ? "_shift" + std::to_string(p) : "") + std::to_string(sizeof(T) * 8);
+      return base_name + (p < sizeof(T) * 8 ? "_shift" + std::to_string(sizeof(T) * 8 - p) + "_" : "") +
+         std::to_string(sizeof(T) * 8);
    }
 
    /**

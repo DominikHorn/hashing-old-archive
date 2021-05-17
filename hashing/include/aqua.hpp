@@ -232,7 +232,6 @@
 #include <convenience.hpp>
 #include <reduction.hpp>
 
-#warning "TODO sanitize (beware of potential bugs, e.g., similar to meowhash!)"
 template<class T, const int select = 0>
 struct AquaHash {
    static std::string name() {

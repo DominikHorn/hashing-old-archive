@@ -120,7 +120,7 @@ int main(int argc, char* argv[]) {
 
             // More significant bits supposedly are of higher quality for multiplicative methods -> compute
             // how much we need to shift/rotate to throw away the least/make 'high quality bits' as prominent as possible
-            constexpr auto p = (sizeof(Data) * 8) - __builtin_clz(200000000 - 1);
+            constexpr auto p = (sizeof(Data) * 8) - __builtin_clzll(200000000 - 1);
             measure64<PrimeMultiplicationShiftHash64<p>>(name, dataset, outfile, iomutex);
             measure64<FibonacciShiftHash64<p>>(name, dataset, outfile, iomutex);
             measure64<FibonnaciPrimeShiftHash64<p>>(name, dataset, outfile, iomutex);

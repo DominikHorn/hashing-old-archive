@@ -49,11 +49,11 @@ namespace Benchmark {
             Perf::BlockCounter ctr(dataset.size());
 #endif
             for (const auto& key : dataset) {
-               const auto index = reducefn(hashfn(key));
+               const auto probe_index = reducefn(hashfn(key));
 
                // Ensure the compiler does not simply remove the index
                // calculation during optimization.
-               Optimizer::DoNotEliminate(index);
+               Optimizer::DoNotEliminate(probe_index);
             }
 #ifdef MACOS
          }
