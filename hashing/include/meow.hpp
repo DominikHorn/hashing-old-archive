@@ -144,6 +144,10 @@ meow_dump* MeowDumpTo;
 #endif
 
 struct MeowHash {
+  private:
+   MeowHash() {}
+
+  protected:
    /**
     * Obtain 128 bit meowhash value
     *
@@ -155,36 +159,6 @@ struct MeowHash {
    template<typename T>
    static forceinline meow_u128 hash(const T& value,
                                      const meow_u8 seed[128] = const_cast<unsigned char*>(MeowDefaultSeed));
-
-   /**
-    * Obtain 64 bit value from 128 bit meowhash.
-    *
-    * @tparam select select which 64 bits to extract from the 128 bit hash value
-    * @tparam T
-    * @param value
-    * @param seed
-    * @return
-    */
-   template<int select = 0, typename T>
-   static forceinline HASH_64 hash64(const T& value,
-                                     const meow_u8 seed[128] = const_cast<unsigned char*>(MeowDefaultSeed)) {
-      return Reduction::extract_64<select>(hash(value, seed));
-   }
-
-   /**
-    * Obtain 32 bit value from 128 bit meowhash.
-    *
-    * @tparam select select which 32 bits to extract from the 128 bit hash value
-    * @tparam T
-    * @param value
-    * @param seed
-    * @return
-    */
-   template<int select = 0, typename T>
-   static forceinline HASH_32 hash32(const T& value,
-                                     const meow_u8 seed[128] = const_cast<unsigned char*>(MeowDefaultSeed)) {
-      return Reduction::extract_32<select>(hash(value, seed));
-   }
 
   private:
    constexpr static const meow_u8 MeowShiftAdjust[32] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -413,7 +387,7 @@ struct MeowHash {
    // NOTE(casey): Streaming construction
    //
 
-   typedef struct meow_state {
+   struct meow_state {
       meow_u128 xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
       meow_u64 TotalLengthInBytes;
 
@@ -421,10 +395,10 @@ struct MeowHash {
 
       meow_u8 Buffer[256];
       meow_u128 Pad[2]; // NOTE(casey): So we know we can over-read Buffer as necessary
-   } meow_state;
+   };
 
    static void MeowBegin(meow_state* State, void* Seed128) {
-      meow_u8* rcx = (meow_u8*) Seed128;
+      meow_u8* rcx = static_cast<meow_u8*>(Seed128);
 
       movdqu(State->xmm0, rcx + 0x00);
       movdqu(State->xmm1, rcx + 0x10);
@@ -497,13 +471,13 @@ struct MeowHash {
 
    static void MeowAbsorb(meow_state* State, meow_umm Len, void* SourceInit) {
       State->TotalLengthInBytes += Len;
-      meow_u8* Source = (meow_u8*) SourceInit;
+      meow_u8* Source = static_cast<meow_u8*>(SourceInit);
 
       // NOTE(casey): Handle any buffered residual
       if (State->BufferLen) {
          int unsigned Fill = (sizeof(State->Buffer) - State->BufferLen);
          if (Fill > Len) {
-            Fill = (int unsigned) Len;
+            Fill = static_cast<int unsigned>(Len);
          }
 
          Len -= Fill;
@@ -718,3 +692,53 @@ forceinline meow_u128 MeowHash::hash(const HASH_64& value, const meow_u8 seed[12
    dat.fill(value);
    return _hash(reinterpret_cast<const void*>(seed), sizeof(HASH_64), reinterpret_cast<const void*>(&dat));
 }
+
+template<class T, unsigned int select = 0>
+struct MeowHash32 : private MeowHash {
+   static std::string name() {
+      return "meow32";
+   }
+
+   /**
+    * Obtain 32 bit value from 128 bit meowhash.
+    *
+    * @tparam select select which 32 bits to extract from the 128 bit hash value
+    * @tparam T
+    * @param value
+    * @param seed
+    * @return
+    */
+   forceinline HASH_32 operator()(const T& data) const {
+      return Reduction::extract_32<select>(hash(data));
+   }
+};
+template<class T, unsigned int select = 0>
+struct MeowHash64 : private MeowHash {
+   static std::string name() {
+      return "meow64";
+   }
+
+   /**
+    * Obtain 64 bit value from 128 bit meowhash.
+    *
+    * @tparam select select which 64 bits to extract from the 128 bit hash value
+    * @tparam T
+    * @param value
+    * @param seed
+    * @return
+    */
+   forceinline HASH_64 operator()(const T& data) {
+      return Reduction::extract_64<select>(hash(data));
+   }
+};
+
+template<class T, unsigned int select = 0>
+struct MeowHash128 : private MeowHash {
+   static std::string name() {
+      return "meow128";
+   }
+
+   forceinline meow_u128 operator()(const T& key) {
+      return hash(key);
+   }
+};
