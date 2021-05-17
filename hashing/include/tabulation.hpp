@@ -1,62 +1,24 @@
 #pragma once
 
-#include <convenience.hpp>
 #include <fstream>
 #include <iostream>
+#include <string>
 
-/**
- *
- * ----------------------------
- *       Tabulation Hash
- * ----------------------------
- */
+#include <convenience.hpp>
 
-struct TabulationHash {
-   /**
-    *  Tabulation hashing using a small table and no manual vectorization
-    *
-    * @tparam T
-    * @param value the value to hash
-    * @param table tabulation lookup table
-    * @param seed seed value, defaults to 0
-    * @return
-    */
-   template<typename T>
-   static forceinline T small_hash(const T& value, const T (&table)[0xFF], const T& seed = 0) {
-      return seed ^
-         (table[static_cast<uint8_t>(value >> 8 * 0)] ^ table[static_cast<uint8_t>(value >> 8 * 1)] ^
-          table[static_cast<uint8_t>(value >> 8 * 2)] ^ table[static_cast<uint8_t>(value >> 8 * 3)] ^
-          table[static_cast<uint8_t>(value >> 8 * 4)] ^ table[static_cast<uint8_t>(value >> 8 * 5)] ^
-          table[static_cast<uint8_t>(value >> 8 * 6)] ^ table[static_cast<uint8_t>(value >> 8 * 7)]);
+template<class T, const T seed = 0, size_t COLUMNS = sizeof(T), size_t ROWS = 0xFF>
+struct _TabulationHashImplementation {
+   static std::string name() {
+      return "tabulation_" + std::to_string(COLUMNS) + "x" + std::to_string(ROWS) + "_" + std::to_string(sizeof(T) * 8);
    }
 
    /**
-    * Tabulation hashing with a large table and no manual vectorization
-    *
-    * @tparam T
-    * @param value the value to hash
-    * @param table tabulation lookup table
-    * @param seed seed value, defaults to 0
-    * @return
-    */
-   template<typename T>
-   static forceinline T large_hash(const T& value, const T (&table)[sizeof(T)][0xFF], const T& seed = 0) {
-      T out = seed;
-
-      for (size_t i = 0; i < sizeof(T); i++) {
-         out ^= table[i][static_cast<uint8_t>(value >> 8 * i)];
-      }
-      return out;
-   }
-
-   /**
-    * Initializes a tabulation hash table with random data, depending on seed
-    * @tparam T hash output type, e.g., HASH_64
-    * @param table, must have 255 rows
-    * @param seed defaults to 1
-    */
-   template<typename T, size_t COLUMNS = sizeof(T)>
-   static forceinline void gen_table(T (&table)[COLUMNS][0xFF], unsigned int seed = 0x238EF8E3LU) {
+       * Initializes a tabulation hash tables with random data, depending on seed
+       * @tparam T hash output type, e.g., HASH_64
+       * @param table, must have 255 rows
+       * @param seed defaults to 1
+       */
+   _TabulationHashImplementation(unsigned int rand_seed = 0x238EF8E3LU) {
       // TODO: consider better (but unseeded) random function:
       //      std::ifstream file("/dev/random", std::ios::in | std::ios::binary | std::ios::ate);
       //      if (file.is_open()) {
@@ -64,33 +26,42 @@ struct TabulationHash {
       //         file.read((char*) table, sizeof(T) * sizeof(T) * 0xFF);
       //      }
 
-      srand(seed);
+      const auto gen_column = [](std::array<T, ROWS>& column) {
+         for (auto& r : column) {
+            r = 0;
+            for (size_t i = 0; i < sizeof(T); i++) {
+               r |= static_cast<T>(rand() % 256) << 8 * i;
+            }
+         }
+      };
+
+      srand(rand_seed);
       for (size_t c = 0; c < COLUMNS; c++) {
          gen_column(table[c]);
       }
    }
 
-   template<typename T>
-   static forceinline void gen_column(T (&column)[0xFF]) {
-      for (auto& r : column) {
-         r = 0;
-         for (size_t i = 0; i < sizeof(T); i++) {
-            r |= static_cast<T>(rand() % 256) << 8 * i;
+   constexpr forceinline T operator()(const T& key) const {
+      T out = seed;
+
+      for (size_t i = 0; i < sizeof(T); i++) {
+         out ^= table[i % COLUMNS][static_cast<uint8_t>(key >> (8 * i)) % ROWS];
+      }
+      return out;
+   }
+
+  private:
+   std::array<std::array<T, ROWS>, COLUMNS> table;
+
+   void print_table() {
+      const auto print_column = [](const std::array<T, ROWS>& column) {
+         std::cout << "col ";
+         for (auto& r : column) {
+            std::cout << std::hex << r << ", ";
          }
-      }
-   }
+         std::cout << std::endl;
+      };
 
-   template<typename T, size_t ROWS = 0xFF>
-   static void print_column(const T (&column)[ROWS]) {
-      std::cout << "col ";
-      for (auto& r : column) {
-         std::cout << std::hex << r << ", ";
-      }
-      std::cout << std::endl;
-   }
-
-   template<typename T, size_t COLUMNS = sizeof(T), size_t ROWS = 0xFF>
-   static void print_table(const T (&table)[COLUMNS][ROWS]) {
       std::cout << "addr\t";
       for (size_t c = 0; c < COLUMNS; c++) {
          std::cout << "col " << c << "\t";
@@ -106,3 +77,21 @@ struct TabulationHash {
       }
    }
 };
+
+/**
+ * Small tabulation hash, i.e., single column
+ */
+template<class T, const T seed = 0>
+using SmallTabulationTable = _TabulationHashImplementation<T, seed, 1, 0xFF>;
+
+/**
+ * Medium tabulation hash, i.e., four columns
+ */
+template<class T, const T seed = 0>
+using MediumTabulationTable = _TabulationHashImplementation<T, seed, 4, 0xFF>;
+
+/**
+ * Large tabulation hash, i.e., eight columns
+ */
+template<class T, const T seed = 0>
+using LargeTabulationTable = _TabulationHashImplementation<T, seed, 8, 0xFF>;
