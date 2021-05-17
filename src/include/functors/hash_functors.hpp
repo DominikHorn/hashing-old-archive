@@ -14,13 +14,3 @@ struct Murmur3FinalizerCuckoo2Func {
   private:
    MurmurFinalizer<HASH_64> fin;
 };
-
-struct AquaLowFunc {
-   static std::string name() {
-      return "aqua_low";
-   }
-
-   forceinline HASH_64 operator()(const HASH_64& key) const {
-      return AquaHash::hash64(key);
-   }
-};

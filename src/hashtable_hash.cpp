@@ -148,15 +148,15 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
    measure(Hashtable::Chained<T, uint32_t, 4, MurmurFinalizer<HASH_64>, FastModuloFunc<HASH_64>>(ht_capacity));
 
    /// aquahash
-   measure(Hashtable::Chained<T, uint32_t, 1, AquaLowFunc, FastrangeFunc<HASH_32>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 1, AquaLowFunc, FastrangeFunc<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 1, AquaLowFunc, FastModuloFunc<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 2, AquaLowFunc, FastrangeFunc<HASH_32>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 2, AquaLowFunc, FastrangeFunc<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 2, AquaLowFunc, FastModuloFunc<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 4, AquaLowFunc, FastrangeFunc<HASH_32>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 4, AquaLowFunc, FastrangeFunc<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 4, AquaLowFunc, FastModuloFunc<HASH_64>>(ht_capacity));
+   measure(Hashtable::Chained<T, uint32_t, 1, AquaHash<HASH_64>, FastrangeFunc<HASH_32>>(ht_capacity));
+   measure(Hashtable::Chained<T, uint32_t, 1, AquaHash<HASH_64>, FastrangeFunc<HASH_64>>(ht_capacity));
+   measure(Hashtable::Chained<T, uint32_t, 1, AquaHash<HASH_64>, FastModuloFunc<HASH_64>>(ht_capacity));
+   measure(Hashtable::Chained<T, uint32_t, 2, AquaHash<HASH_64>, FastrangeFunc<HASH_32>>(ht_capacity));
+   measure(Hashtable::Chained<T, uint32_t, 2, AquaHash<HASH_64>, FastrangeFunc<HASH_64>>(ht_capacity));
+   measure(Hashtable::Chained<T, uint32_t, 2, AquaHash<HASH_64>, FastModuloFunc<HASH_64>>(ht_capacity));
+   measure(Hashtable::Chained<T, uint32_t, 4, AquaHash<HASH_64>, FastrangeFunc<HASH_32>>(ht_capacity));
+   measure(Hashtable::Chained<T, uint32_t, 4, AquaHash<HASH_64>, FastrangeFunc<HASH_64>>(ht_capacity));
+   measure(Hashtable::Chained<T, uint32_t, 4, AquaHash<HASH_64>, FastModuloFunc<HASH_64>>(ht_capacity));
 
    /**
     * ===============
