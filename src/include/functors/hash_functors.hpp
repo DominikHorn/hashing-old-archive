@@ -2,16 +2,6 @@
 
 #include <hashing.hpp>
 
-struct Mult64Func {
-   static std::string name() {
-      return "mult64";
-   }
-
-   forceinline HASH_64 operator()(const HASH_64& key) const {
-      return MultHash::mult64_hash(key);
-   }
-};
-
 struct MultAdd64Func {
    static std::string name() {
       return "multadd64";
