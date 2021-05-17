@@ -139,6 +139,8 @@ namespace Hashtable {
       }
 
       std::map<std::string, std::string> lookup_statistics(const std::vector<Key>& dataset) {
+         UNUSED(dataset);
+
          size_t max_chain_length = 0;
          size_t min_chain_length = std::numeric_limits<size_t>::max();
          size_t total_chain_ctr = 0;

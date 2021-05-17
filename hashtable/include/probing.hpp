@@ -307,7 +307,6 @@ namespace Hashtable {
          auto payload = p;
 
          const auto orig_key = key;
-         const auto orig_payload = payload;
 
          if (unlikely(key == Sentinel)) {
             assert(false); // TODO: this must never happen in practice
