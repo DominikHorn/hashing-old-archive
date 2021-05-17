@@ -2,24 +2,17 @@
 
 #include <hashing.hpp>
 
-struct Murmur3FinalizerFunc {
-   static std::string name() {
-      return "murmur3_fin64";
-   }
-
-   forceinline HASH_64 operator()(const HASH_64& key) const {
-      return MurmurHash3::finalize_64(key);
-   }
-};
-
 struct Murmur3FinalizerCuckoo2Func {
    static std::string name() {
       return "murmur3_fin64_2";
    }
 
    forceinline HASH_64 operator()(const HASH_64& key, const HASH_64& h1) const {
-      return MurmurHash3::finalize_64(key ^ h1);
+      return fin(key ^ h1);
    }
+
+  private:
+   MurmurFinalizer<HASH_64> fin;
 };
 
 struct AquaLowFunc {

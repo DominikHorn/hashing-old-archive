@@ -122,8 +122,8 @@ struct Reduction {
     * @param value
     * @return
     */
-   static constexpr forceinline HASH_64 lower_half(const HASH_128& value) {
-      return value.lower;
+   static constexpr forceinline HASH_64 lower(const HASH_128& value) {
+      return value & 0xFFFFFFFFFFFFFFFFLLU;
    }
 
    /**
@@ -131,8 +131,8 @@ struct Reduction {
     * @param value
     * @return
     */
-   static constexpr forceinline HASH_64 upper_half(const HASH_128& value) {
-      return value.higher;
+   static constexpr forceinline HASH_64 higher(const HASH_128& value) {
+      return value >> 64;
    }
 
    /**
@@ -141,7 +141,7 @@ struct Reduction {
     * @return
     */
    static constexpr forceinline HASH_64 xor_both(const HASH_128& value) {
-      return value.higher ^ value.lower;
+      return lower(value) ^ higher(value);
    }
 
    /**
@@ -172,9 +172,9 @@ struct Reduction {
    static constexpr forceinline HASH_64 hash_128_to_64(const HASH_128& x) {
       // Murmur-inspired hashing.
       const HASH_64 kMul = 0x9ddfea08eb382d69ULL;
-      HASH_64 a = (x.lower ^ x.higher) * kMul;
+      HASH_64 a = (lower(x) ^ higher(x)) * kMul;
       a ^= (a >> 47);
-      HASH_64 b = (x.higher ^ a) * kMul;
+      HASH_64 b = (higher(x) ^ a) * kMul;
       b ^= (b >> 47);
       b *= kMul;
       return b;
@@ -188,7 +188,7 @@ struct Reduction {
     * @param a
     * @return
     */
-   template<unsigned short select = 0, typename A>
+   template<uint8_t select = 0, typename A>
    static constexpr forceinline HASH_32 extract_32(const A& a) {
       return _mm_extract_epi32(a, select);
    }
@@ -201,7 +201,7 @@ struct Reduction {
     * @param a
     * @return
     */
-   template<unsigned short select = 0, typename A>
+   template<uint8_t select = 0, typename A>
    static constexpr forceinline HASH_64 extract_64(const A& a) {
       return _mm_extract_epi64(a, select);
    }
