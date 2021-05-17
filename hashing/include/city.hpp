@@ -34,6 +34,7 @@
 
 #include <algorithm>
 #include <cstring> // for memcpy and memset
+#include <string>
 #include <nmmintrin.h>
 
 #include <convenience.hpp>
@@ -95,15 +96,6 @@
    #define uint64_in_expected_order(x) (x)
 #endif
 
-// TODO: replace this with convenience/likely(expr)
-#if !defined(LIKELY)
-   #if HAVE_BUILTIN_EXPECT
-      #define LIKELY(x) (__builtin_expect(!!(x), 1))
-   #else
-      #define LIKELY(x) (x)
-   #endif
-#endif
-
 #undef PERMUTE3
 #define PERMUTE3(a, b, c) \
    do {                   \
@@ -112,230 +104,10 @@
    } while (0)
 
 struct CityHash {
-   static forceinline HASH_32 CityHash32(const char* s, size_t len) {
-      if (len <= 24) {
-         return len <= 12 ? (len <= 4 ? Hash32Len0to4(s, len) : Hash32Len5to12(s, len)) : Hash32Len13to24(s, len);
-      }
-
-      // len > 24
-      HASH_32 h = len, g = c1 * len, f = g;
-      HASH_32 a0 = Rotate32(Fetch32(s + len - 4) * c1, 17) * c2;
-      HASH_32 a1 = Rotate32(Fetch32(s + len - 8) * c1, 17) * c2;
-      HASH_32 a2 = Rotate32(Fetch32(s + len - 16) * c1, 17) * c2;
-      HASH_32 a3 = Rotate32(Fetch32(s + len - 12) * c1, 17) * c2;
-      HASH_32 a4 = Rotate32(Fetch32(s + len - 20) * c1, 17) * c2;
-      h ^= a0;
-      h = Rotate32(h, 19);
-      h = h * 5 + 0xe6546b64;
-      h ^= a2;
-      h = Rotate32(h, 19);
-      h = h * 5 + 0xe6546b64;
-      g ^= a1;
-      g = Rotate32(g, 19);
-      g = g * 5 + 0xe6546b64;
-      g ^= a3;
-      g = Rotate32(g, 19);
-      g = g * 5 + 0xe6546b64;
-      f += a4;
-      f = Rotate32(f, 19);
-      f = f * 5 + 0xe6546b64;
-      size_t iters = (len - 1) / 20;
-      do {
-         HASH_32 a0 = Rotate32(Fetch32(s) * c1, 17) * c2;
-         HASH_32 a1 = Fetch32(s + 4);
-         HASH_32 a2 = Rotate32(Fetch32(s + 8) * c1, 17) * c2;
-         HASH_32 a3 = Rotate32(Fetch32(s + 12) * c1, 17) * c2;
-         HASH_32 a4 = Fetch32(s + 16);
-         h ^= a0;
-         h = Rotate32(h, 18);
-         h = h * 5 + 0xe6546b64;
-         f += a1;
-         f = Rotate32(f, 19);
-         f = f * c1;
-         g += a2;
-         g = Rotate32(g, 18);
-         g = g * 5 + 0xe6546b64;
-         h ^= a3 + a1;
-         h = Rotate32(h, 19);
-         h = h * 5 + 0xe6546b64;
-         g ^= a4;
-         g = bswap_32(g) * 5;
-         h += a4 * 5;
-         h = bswap_32(h);
-         f += a0;
-         PERMUTE3(f, h, g);
-         s += 20;
-      } while (--iters != 0);
-      g = Rotate32(g, 11) * c1;
-      g = Rotate32(g, 17) * c1;
-      f = Rotate32(f, 11) * c1;
-      f = Rotate32(f, 17) * c1;
-      h = Rotate32(h + g, 19);
-      h = h * 5 + 0xe6546b64;
-      h = Rotate32(h, 17) * c1;
-      h = Rotate32(h + f, 19);
-      h = h * 5 + 0xe6546b64;
-      h = Rotate32(h, 17) * c1;
-      return h;
-   }
-
-   template<typename T>
-   static forceinline HASH_64 CityHash64(const T& value) {
-      return CityHash64((char*) &value, sizeof(T));
-   }
-
-   static forceinline HASH_64 CityHash64(const char* s, size_t len) {
-      if (len <= 32) {
-         if (len <= 16) {
-            return HashLen0to16(s, len);
-         } else {
-            return HashLen17to32(s, len);
-         }
-      } else if (len <= 64) {
-         return HashLen33to64(s, len);
-      }
-
-      // For strings over 64 bytes we hash the end first, and then as we
-      // loop we keep 56 bytes of state: v, w, x, y, and z.
-      HASH_64 x = Fetch64(s + len - 40);
-      HASH_64 y = Fetch64(s + len - 16) + Fetch64(s + len - 56);
-      HASH_64 z = HashLen16(Fetch64(s + len - 48) + len, Fetch64(s + len - 24));
-      HASH_128 v = WeakHashLen32WithSeeds(s + len - 64, len, z);
-      HASH_128 w = WeakHashLen32WithSeeds(s + len - 32, y + k1, x);
-      x = x * k1 + Fetch64(s);
-
-      // Decrease len to the nearest multiple of 64, and operate on 64-byte chunks.
-      len = (len - 1) & ~static_cast<size_t>(63);
-      do {
-         x = Rotate(x + y + Reduction::lower(v) + Fetch64(s + 8), 37) * k1;
-         y = Rotate(y + Reduction::higher(v) + Fetch64(s + 48), 42) * k1;
-         x ^= Reduction::higher(w);
-         y += Reduction::lower(v) + Fetch64(s + 40);
-         z = Rotate(z + Reduction::lower(w), 33) * k1;
-         v = WeakHashLen32WithSeeds(s, Reduction::higher(v) * k1, x + Reduction::lower(w));
-         w = WeakHashLen32WithSeeds(s + 32, z + Reduction::higher(w), y + Fetch64(s + 16));
-         std::swap(z, x);
-         s += 64;
-         len -= 64;
-      } while (len != 0);
-      return HashLen16(HashLen16(Reduction::lower(v), Reduction::lower(w)) + ShiftMix(y) * k1 + z,
-                       HashLen16(Reduction::higher(v), Reduction::higher(w)) + x);
-   }
-
-   static forceinline HASH_64 CityHash64WithSeed(const char* s, size_t len, HASH_64 seed) {
-      return CityHash64WithSeeds(s, len, k2, seed);
-   }
-
-   static forceinline HASH_64 CityHash64WithSeeds(const char* s, size_t len, HASH_64 seed0, HASH_64 seed1) {
-      return HashLen16(CityHash64(s, len) - seed0, seed1);
-   }
-
-   static forceinline HASH_128 CityHash128WithSeed(const char* s, size_t len, HASH_128 seed) {
-      if (len < 128) {
-         return CityMurmur(s, len, seed);
-      }
-
-      // We expect len >= 128 to be the common case.  Keep 56 bytes of state:
-      // v, w, x, y, and z.
-      HASH_128 v, w;
-      HASH_64 x = Reduction::lower(seed);
-      HASH_64 y = Reduction::higher(seed);
-      HASH_64 z = len * k1;
-
-      HASH_64 _l = Rotate(y ^ k1, 49) * k1 + Fetch64(s);
-      v = to_hash128(Rotate(_l, 42) * k1 + Fetch64(s + 8), _l);
-      w = to_hash128(Rotate(x + Fetch64(s + 88), 53) * k1, Rotate(y + z, 35) * k1 + x);
-
-      // This is the same inner loop as CityHash64(), manually unrolled.
-      do {
-         x = Rotate(x + y + Reduction::lower(v) + Fetch64(s + 8), 37) * k1;
-         y = Rotate(y + Reduction::higher(v) + Fetch64(s + 48), 42) * k1;
-         x ^= Reduction::higher(w);
-         y += Reduction::lower(v) + Fetch64(s + 40);
-         z = Rotate(z + Reduction::lower(w), 33) * k1;
-         v = WeakHashLen32WithSeeds(s, Reduction::higher(v) * k1, x + Reduction::lower(w));
-         w = WeakHashLen32WithSeeds(s + 32, z + Reduction::higher(w), y + Fetch64(s + 16));
-         std::swap(z, x);
-         s += 64;
-         x = Rotate(x + y + Reduction::lower(v) + Fetch64(s + 8), 37) * k1;
-         y = Rotate(y + Reduction::higher(v) + Fetch64(s + 48), 42) * k1;
-         x ^= Reduction::higher(w);
-         y += Reduction::lower(v) + Fetch64(s + 40);
-         z = Rotate(z + Reduction::lower(w), 33) * k1;
-         v = WeakHashLen32WithSeeds(s, Reduction::higher(v) * k1, x + Reduction::lower(w));
-         w = WeakHashLen32WithSeeds(s + 32, z + Reduction::higher(w), y + Fetch64(s + 16));
-         std::swap(z, x);
-         s += 64;
-         len -= 128;
-      } while (LIKELY(len >= 128));
-      x += Rotate(Reduction::lower(v) + z, 49) * k0;
-      y = y * k0 + Rotate(Reduction::higher(w), 37);
-      z = z * k0 + Rotate(Reduction::lower(w), 27);
-      w = to_hash128(Reduction::higher(w), Reduction::lower(w) * 9);
-      v = to_hash128(Reduction::higher(v), Reduction::lower(v) * k0);
-
-      // If 0 < len < 128, hash up to 4 chunks of 32 bytes each from the end of s.
-      for (size_t tail_done = 0; tail_done < len;) {
-         tail_done += 32;
-         y = Rotate(x + y, 42) * k0 + Reduction::higher(v);
-         w = to_hash128(Reduction::higher(w), Reduction::lower(w) + Fetch64(s + len - tail_done + 16));
-         x = x * k0 + Reduction::lower(w);
-         z += Reduction::higher(w) + Fetch64(s + len - tail_done);
-         w = to_hash128(Reduction::higher(w) + Reduction::lower(w), Reduction::lower(w));
-         v = WeakHashLen32WithSeeds(s + len - tail_done, Reduction::lower(v) + z, Reduction::higher(v));
-         v = to_hash128(Reduction::higher(v), Reduction::lower(v) * k0);
-      }
-      // At this point our 56 bytes of state should contain more than
-      // enough information for a strong 128-bit hash.  We use two
-      // different 56-byte-to-8-byte hashes to get a 16-byte final result.
-      x = HashLen16(x, Reduction::lower(v));
-      y = HashLen16(y + z, Reduction::lower(w));
-
-      return static_cast<HASH_128>(HashLen16(x + Reduction::higher(v), Reduction::higher(w)) + y) << 64 |
-         HashLen16(x + Reduction::higher(w), y + Reduction::higher(v));
-   }
-
-   template<typename T>
-   static forceinline HASH_128 CityHash128(const T& value) {
-      return CityHash128(reinterpret_cast<char*>(&value), sizeof(T));
-   }
-
-   static forceinline HASH_128 CityHash128(const char* s, size_t len) {
-      return len >= 16 ? CityHash128WithSeed(s + 16, len - 16, to_hash128(Fetch64(s), Fetch64(s + 8) + k0)) :
-                         CityHash128WithSeed(s, len, to_hash128(k0, k1));
-   }
-
-   static forceinline void CityHashCrc256(const char* s, size_t len, HASH_64* result) {
-      if (LIKELY(len >= 240)) {
-         CityHashCrc256Long(s, len, 0, result);
-      } else {
-         CityHashCrc256Short(s, len, result);
-      }
-   }
-
-   static forceinline HASH_128 CityHashCrc128WithSeed(const char* s, size_t len, HASH_128 seed) {
-      if (len <= 900) {
-         return CityHash128WithSeed(s, len, seed);
-      } else {
-         HASH_64 result[4];
-         CityHashCrc256(s, len, result);
-         HASH_64 u = Reduction::higher(seed) + result[0];
-         HASH_64 v = Reduction::lower(seed) + result[1];
-         return to_hash128(HashLen16(u, v + result[2]), HashLen16(Rotate(v, 32), u * k0 + result[3]));
-      }
-   }
-
-   static forceinline HASH_128 CityHashCrc128(const char* s, size_t len) {
-      if (len <= 900) {
-         return CityHash128(s, len);
-      } else {
-         HASH_64 result[4];
-         CityHashCrc256(s, len, result);
-         return to_hash128(result[2], result[3]);
-      }
-   }
-
   private:
+   CityHash(){};
+
+  protected:
    static forceinline HASH_64 UNALIGNED_LOAD64(const char* p) {
       HASH_64 result;
       memcpy(&result, p, sizeof(result));
@@ -654,4 +426,368 @@ struct CityHash {
       memset(buf + len, 0, 240 - len);
       CityHashCrc256Long(buf, 240, ~static_cast<HASH_32>(len), result);
    }
+
+   static forceinline HASH_128 CityHash128WithSeed(const char* s, size_t len, HASH_128 seed) {
+      if (len < 128) {
+         return CityMurmur(s, len, seed);
+      }
+
+      // We expect len >= 128 to be the common case.  Keep 56 bytes of state:
+      // v, w, x, y, and z.
+      HASH_128 v, w;
+      HASH_64 x = Reduction::lower(seed);
+      HASH_64 y = Reduction::higher(seed);
+      HASH_64 z = len * k1;
+
+      HASH_64 _l = Rotate(y ^ k1, 49) * k1 + Fetch64(s);
+      v = to_hash128(Rotate(_l, 42) * k1 + Fetch64(s + 8), _l);
+      w = to_hash128(Rotate(x + Fetch64(s + 88), 53) * k1, Rotate(y + z, 35) * k1 + x);
+
+      // This is the same inner loop as CityHash64(), manually unrolled.
+      do {
+         x = Rotate(x + y + Reduction::lower(v) + Fetch64(s + 8), 37) * k1;
+         y = Rotate(y + Reduction::higher(v) + Fetch64(s + 48), 42) * k1;
+         x ^= Reduction::higher(w);
+         y += Reduction::lower(v) + Fetch64(s + 40);
+         z = Rotate(z + Reduction::lower(w), 33) * k1;
+         v = WeakHashLen32WithSeeds(s, Reduction::higher(v) * k1, x + Reduction::lower(w));
+         w = WeakHashLen32WithSeeds(s + 32, z + Reduction::higher(w), y + Fetch64(s + 16));
+         std::swap(z, x);
+         s += 64;
+         x = Rotate(x + y + Reduction::lower(v) + Fetch64(s + 8), 37) * k1;
+         y = Rotate(y + Reduction::higher(v) + Fetch64(s + 48), 42) * k1;
+         x ^= Reduction::higher(w);
+         y += Reduction::lower(v) + Fetch64(s + 40);
+         z = Rotate(z + Reduction::lower(w), 33) * k1;
+         v = WeakHashLen32WithSeeds(s, Reduction::higher(v) * k1, x + Reduction::lower(w));
+         w = WeakHashLen32WithSeeds(s + 32, z + Reduction::higher(w), y + Fetch64(s + 16));
+         std::swap(z, x);
+         s += 64;
+         len -= 128;
+      } while (likely(len >= 128));
+      x += Rotate(Reduction::lower(v) + z, 49) * k0;
+      y = y * k0 + Rotate(Reduction::higher(w), 37);
+      z = z * k0 + Rotate(Reduction::lower(w), 27);
+      w = to_hash128(Reduction::higher(w), Reduction::lower(w) * 9);
+      v = to_hash128(Reduction::higher(v), Reduction::lower(v) * k0);
+
+      // If 0 < len < 128, hash up to 4 chunks of 32 bytes each from the end of s.
+      for (size_t tail_done = 0; tail_done < len;) {
+         tail_done += 32;
+         y = Rotate(x + y, 42) * k0 + Reduction::higher(v);
+         w = to_hash128(Reduction::higher(w), Reduction::lower(w) + Fetch64(s + len - tail_done + 16));
+         x = x * k0 + Reduction::lower(w);
+         z += Reduction::higher(w) + Fetch64(s + len - tail_done);
+         w = to_hash128(Reduction::higher(w) + Reduction::lower(w), Reduction::lower(w));
+         v = WeakHashLen32WithSeeds(s + len - tail_done, Reduction::lower(v) + z, Reduction::higher(v));
+         v = to_hash128(Reduction::higher(v), Reduction::lower(v) * k0);
+      }
+      // At this point our 56 bytes of state should contain more than
+      // enough information for a strong 128-bit hash.  We use two
+      // different 56-byte-to-8-byte hashes to get a 16-byte final result.
+      x = HashLen16(x, Reduction::lower(v));
+      y = HashLen16(y + z, Reduction::lower(w));
+
+      return static_cast<HASH_128>(HashLen16(x + Reduction::higher(v), Reduction::higher(w)) + y) << 64 |
+         HashLen16(x + Reduction::higher(w), y + Reduction::higher(v));
+   }
 };
+
+/**
+ * Hashes arbitrary bytes to 32-bit hash value
+ * @tparam T
+ */
+template<class T>
+struct CityHash32 : private CityHash {
+   static std::string name() {
+      return "city32";
+   }
+
+   forceinline HASH_32 operator()(const T& key) const {
+      auto* s = static_cast<const char*>(&key);
+      size_t len = sizeof(T) * 8;
+
+      if (len <= 24) {
+         return len <= 12 ? (len <= 4 ? Hash32Len0to4(s, len) : Hash32Len5to12(s, len)) : Hash32Len13to24(s, len);
+      }
+
+      // len > 24
+      HASH_32 h = len, g = c1 * len, f = g;
+      HASH_32 a0 = Rotate32(Fetch32(s + len - 4) * c1, 17) * c2;
+      HASH_32 a1 = Rotate32(Fetch32(s + len - 8) * c1, 17) * c2;
+      HASH_32 a2 = Rotate32(Fetch32(s + len - 16) * c1, 17) * c2;
+      HASH_32 a3 = Rotate32(Fetch32(s + len - 12) * c1, 17) * c2;
+      HASH_32 a4 = Rotate32(Fetch32(s + len - 20) * c1, 17) * c2;
+      h ^= a0;
+      h = Rotate32(h, 19);
+      h = h * 5 + 0xe6546b64;
+      h ^= a2;
+      h = Rotate32(h, 19);
+      h = h * 5 + 0xe6546b64;
+      g ^= a1;
+      g = Rotate32(g, 19);
+      g = g * 5 + 0xe6546b64;
+      g ^= a3;
+      g = Rotate32(g, 19);
+      g = g * 5 + 0xe6546b64;
+      f += a4;
+      f = Rotate32(f, 19);
+      f = f * 5 + 0xe6546b64;
+      size_t iters = (len - 1) / 20;
+      do {
+         HASH_32 a0 = Rotate32(Fetch32(s) * c1, 17) * c2;
+         HASH_32 a1 = Fetch32(s + 4);
+         HASH_32 a2 = Rotate32(Fetch32(s + 8) * c1, 17) * c2;
+         HASH_32 a3 = Rotate32(Fetch32(s + 12) * c1, 17) * c2;
+         HASH_32 a4 = Fetch32(s + 16);
+         h ^= a0;
+         h = Rotate32(h, 18);
+         h = h * 5 + 0xe6546b64;
+         f += a1;
+         f = Rotate32(f, 19);
+         f = f * c1;
+         g += a2;
+         g = Rotate32(g, 18);
+         g = g * 5 + 0xe6546b64;
+         h ^= a3 + a1;
+         h = Rotate32(h, 19);
+         h = h * 5 + 0xe6546b64;
+         g ^= a4;
+         g = bswap_32(g) * 5;
+         h += a4 * 5;
+         h = bswap_32(h);
+         f += a0;
+         PERMUTE3(f, h, g);
+         s += 20;
+      } while (--iters != 0);
+      g = Rotate32(g, 11) * c1;
+      g = Rotate32(g, 17) * c1;
+      f = Rotate32(f, 11) * c1;
+      f = Rotate32(f, 17) * c1;
+      h = Rotate32(h + g, 19);
+      h = h * 5 + 0xe6546b64;
+      h = Rotate32(h, 17) * c1;
+      h = Rotate32(h + f, 19);
+      h = h * 5 + 0xe6546b64;
+      h = Rotate32(h, 17) * c1;
+      return h;
+   }
+};
+
+/**
+ * Hashes arbitrary bytes to 64-bit hash value
+ * @tparam T
+ */
+template<class T>
+struct CityHash64 : private CityHash {
+   static std::string name() {
+      return "city64";
+   }
+
+   forceinline HASH_64 operator()(const T& key) const {
+      auto s = static_cast<const char*>(&key);
+      size_t len = sizeof(T) * 8;
+
+      if (len <= 32) {
+         if (len <= 16) {
+            return HashLen0to16(s, len);
+         } else {
+            return HashLen17to32(s, len);
+         }
+      } else if (len <= 64) {
+         return HashLen33to64(s, len);
+      }
+
+      // For strings over 64 bytes we hash the end first, and then as we
+      // loop we keep 56 bytes of state: v, w, x, y, and z.
+      HASH_64 x = Fetch64(s + len - 40);
+      HASH_64 y = Fetch64(s + len - 16) + Fetch64(s + len - 56);
+      HASH_64 z = HashLen16(Fetch64(s + len - 48) + len, Fetch64(s + len - 24));
+      HASH_128 v = WeakHashLen32WithSeeds(s + len - 64, len, z);
+      HASH_128 w = WeakHashLen32WithSeeds(s + len - 32, y + k1, x);
+      x = x * k1 + Fetch64(s);
+
+      // Decrease len to the nearest multiple of 64, and operate on 64-byte chunks.
+      len = (len - 1) & ~static_cast<size_t>(63);
+      do {
+         x = Rotate(x + y + Reduction::lower(v) + Fetch64(s + 8), 37) * k1;
+         y = Rotate(y + Reduction::higher(v) + Fetch64(s + 48), 42) * k1;
+         x ^= Reduction::higher(w);
+         y += Reduction::lower(v) + Fetch64(s + 40);
+         z = Rotate(z + Reduction::lower(w), 33) * k1;
+         v = WeakHashLen32WithSeeds(s, Reduction::higher(v) * k1, x + Reduction::lower(w));
+         w = WeakHashLen32WithSeeds(s + 32, z + Reduction::higher(w), y + Fetch64(s + 16));
+         std::swap(z, x);
+         s += 64;
+         len -= 64;
+      } while (len != 0);
+      return HashLen16(HashLen16(Reduction::lower(v), Reduction::lower(w)) + ShiftMix(y) * k1 + z,
+                       HashLen16(Reduction::higher(v), Reduction::higher(w)) + x);
+   }
+};
+
+/**
+ * CityHash64 with a seed
+ * @tparam T
+ * @tparam seed
+ */
+template<class T, const HASH_64 seed>
+struct CityHash64Seed : private CityHash {
+   static std::string name() {
+      return "city64_seed_" + std::to_string(seed);
+   }
+
+   forceinline HASH_64 operator()(const T& key) const {
+      return HashLen16(this(key) - k2, seed);
+   }
+
+  private:
+   const CityHash64<T> hash;
+};
+
+/**
+ * CityHash64 with two seeds
+ * @tparam T
+ * @tparam seed
+ */
+template<class T, const HASH_64 seed0, const HASH_64 seed1>
+struct CityHash64Seeds : private CityHash {
+   static std::string name() {
+      return "city64_seeds_" + std::to_string(seed0) + "_" + std::to_string(seed1);
+   }
+
+   forceinline HASH_64 operator()(const T& key) const {
+      return HashLen16(this(key) - seed0, seed1);
+   }
+
+  private:
+   const CityHash64<T> hash;
+};
+
+/**
+ * Hashes arbitrary bytes to 128-bit hash value
+ * @tparam T
+ */
+template<class T>
+struct CityHash128 : private CityHash {
+   static std::string name() {
+      return "city128";
+   }
+
+   forceinline HASH_128 operator()(const T& key) const {
+      const auto* s = static_cast<const char*>(&key);
+      size_t len = sizeof(T) * 8;
+
+      return len >= 16 ? CityHash128WithSeed(s + 16, len - 16, to_hash128(Fetch64(s), Fetch64(s + 8) + k0)) :
+                         CityHash128WithSeed(s, len, to_hash128(k0, k1));
+   }
+};
+
+/**
+ * CityHash128 with a seed
+ * @tparam T
+ * @tparam seed
+ */
+template<class T, const HASH_128 seed>
+struct CityHash128Seed : private CityHash {
+   static std::string name() {
+      return "city128_seed_h" + std::to_string(Reduction::higher(seed)) + "_l" + std::to_string(Reduction::lower(seed));
+   }
+
+   forceinline HASH_64 operator()(const T& key) const {
+      const auto* s = static_cast<const char*>(&key);
+      size_t len = sizeof(T) * 8;
+
+      return CityHash128WithSeed(s, len, seed);
+   }
+
+  private:
+   const CityHash64<T> hash;
+};
+
+/**
+ * Hashes arbitrary bytes to 256-bit hash value
+ * @tparam T
+ */
+template<class T>
+struct CityHashCrc256 : private CityHash {
+   static std::string name() {
+      return "city_crc256";
+   }
+
+   forceinline HASH_256 operator()(const T& key) const {
+      const auto* s = static_cast<const char*>(&key);
+      size_t len = sizeof(T) * 8;
+
+      HASH_256 result;
+      if (likely(len >= 240)) {
+         CityHashCrc256Long(s, len, 0, reinterpret_cast<uint64_t*>(&result));
+      } else {
+         CityHashCrc256Short(s, len, reinterpret_cast<uint64_t*>(&result));
+      }
+
+      return result;
+   }
+};
+
+/**
+ * Hashes arbitrary bytes to 128-bit hash value
+ * @tparam T
+ */
+template<class T>
+struct CityHashCrc128 : private CityHash {
+   static std::string name() {
+      return "city_crc128";
+   }
+
+   forceinline HASH_128 operator()(const T& key) {
+      size_t len = sizeof(T) * 8;
+
+      if (len <= 900) {
+         CityHash128<T> hash;
+         return hash(key);
+      } else {
+         CityHashCrc256<T> hash;
+         auto result = hash(key);
+         return to_hash128(result.r2, result.r3);
+      }
+   }
+};
+
+/**
+ * CityHashCrc128 with a seed
+ * @tparam T
+ * @tparam seed
+ */
+template<class T, HASH_128 seed>
+struct CityHashCrc128Seed : private CityHash {
+   static std::string name() {
+      return "city_crc128_seed_h" + std::to_string(Reduction::higher(seed)) + "_l" +
+         std::to_string(Reduction::lower(seed));
+   }
+
+   forceinline HASH_128 operator()(const T& key) {
+      const auto* s = static_cast<const char*>(&key);
+      size_t len = sizeof(T) * 8;
+
+      if (len <= 900) {
+         return CityHash128WithSeed(s, len, seed);
+      } else {
+         CityHashCrc256<T> hash;
+         auto result = hash(key);
+         HASH_64 u = Reduction::higher(seed) + result.r0;
+         HASH_64 v = Reduction::lower(seed) + result.r1;
+         return to_hash128(HashLen16(u, v + result.r2), HashLen16(Rotate(v, 32), u * k0 + result.r3));
+      }
+   }
+};
+
+/**
+ * Cleanup defines
+ */
+#undef bswap_32
+#undef bswap_64
+#undef uint32_in_expected_order
+#undef uint64_in_expected_order
+#undef PERMUTE3
+#undef CHUNK
