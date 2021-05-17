@@ -20,15 +20,24 @@
  * [0,2^d] into [0, N]
  *
  */
-struct Reduction {
+namespace Reduction {
    /**
     * NOOP reduction, i.e., doesn't do anything
     */
-   template<typename T>
-   static constexpr forceinline T do_nothing(const T& value, const T& n) {
-      UNUSED(n);
-      return value;
-   }
+   template<class T>
+   struct DoNothing {
+      DoNothing(const size_t& num_buckets) {
+         UNUSED(num_buckets);
+      }
+
+      static std::string name() {
+         return "do_nothing";
+      }
+
+      constexpr forceinline T operator()(const T& hash) const {
+         return hash;
+      }
+   };
 
    /**
     * standard modulo reduction. NOTE that modulo is really slow on modern CPU,
@@ -40,34 +49,71 @@ struct Reduction {
     * @param n upper bound for result interval
     * @return value mapped to interval [0, n]
     */
-   template<typename T, typename R>
-   static constexpr forceinline T modulo(const T& value, const R& n) {
-      return value % n;
-   }
+   template<class T>
+   struct Modulo {
+      Modulo(const size_t& num_buckets) : N(num_buckets) {}
 
-   template<typename T, typename R, typename Divider = libdivide::divider<T>>
-   static constexpr forceinline T magic_modulo(const T& value, const R& n, const Divider& fast_d) {
-      // TODO: investigate SIMD batching opportunities (see libdivide include for different options)
+      static std::string name() {
+         return "modulo";
+      }
 
-      const auto div = value / fast_d; // Operator overloading ensures this is not an actual division
-      const auto remainder = value - div * n;
-      assert(remainder < n);
-      return remainder;
-   }
+      constexpr forceinline T operator()(const T& hash) const {
+         return hash % N;
+      }
 
-   template<typename T>
-   static forceinline libdivide::divider<T> make_magic_divider(const T& divisor) {
-      // TODO: similar to https://github.com/peterboncz/bloomfilter-bsd/blob/master/src/dtl/div.hpp,
-      //  we might want to filter out certain generated dividers to gain extra speed
-      return {divisor};
-   }
+     private:
+      const size_t N;
+   };
 
    template<typename T>
-   static forceinline libdivide::branchfree_divider<T> make_branchfree_magic_divider(const T& divisor) {
+   struct FastModulo {
+     private:
+      const libdivide::divider<T> magic_div;
+      const size_t N;
+
+     public:
       // TODO: similar to https://github.com/peterboncz/bloomfilter-bsd/blob/master/src/dtl/div.hpp,
       //  we might want to filter out certain generated dividers to gain extra speed
-      return {divisor};
-   }
+      FastModulo(const size_t& num_buckets) : magic_div({static_cast<T>(num_buckets)}), N(num_buckets) {}
+
+      static std::string name() {
+         return "fast_modulo";
+      }
+
+      forceinline T operator()(const T& hash) const {
+         // TODO: investigate SIMD batching opportunities (see libdivide include for different options)
+
+         const auto div = hash / magic_div; // Operator overloading ensures this is not an actual division
+         const auto remainder = hash - div * N;
+         assert(remainder < N);
+         return remainder;
+      }
+   };
+
+   template<typename T>
+   struct BranchlessFastModulo {
+     private:
+      const libdivide::branchfree_divider<T> magic_div;
+      const size_t N;
+
+     public:
+      // TODO: similar to https://github.com/peterboncz/bloomfilter-bsd/blob/master/src/dtl/div.hpp,
+      //  we might want to filter out certain generated dividers to gain extra speed
+      BranchlessFastModulo(const size_t& num_buckets) : magic_div({static_cast<T>(num_buckets)}), N(num_buckets) {}
+
+      static std::string name() {
+         return "branchless_fast_modulo";
+      }
+
+      forceinline T operator()(const T& hash) const {
+         // TODO: investigate SIMD batching opportunities (see libdivide include for different options)
+
+         const auto div = hash / magic_div; // Operator overloading ensures this is not an actual division
+         const auto remainder = hash - div * N;
+         assert(remainder < N);
+         return remainder;
+      }
+   };
 
    /**
     * Multiply & Shift reduction as proposed by Daniel Lemire:
@@ -85,25 +131,47 @@ struct Reduction {
     * @param n upper bound for the result interval
     * @return value mapped to interval [0, n]
     */
-   template<typename T>
-   static constexpr forceinline T fastrange(const T& value, const size_t& n);
+   template<class T>
+   struct Fastrange {
+      Fastrange(const size_t& num_buckets) : N(num_buckets){};
 
-   /**
-    * min/max cuts the value
-    * @tparam T
-    * @param value
-    * @param N
-    * @return
-    */
-   template<typename T>
-   static constexpr forceinline T min_max_cutoff(const T& value, const size_t& N) {
-      if (unlikely(value < 0))
-         return 0;
-      if (unlikely(value >= N))
-         return N - 1;
+      static std::string name() {
+         return "fastrange" + std::to_string(sizeof(T) * 8);
+      }
 
-      return value;
-   }
+      constexpr forceinline T operator()(const T& hash) const;
+
+     private:
+      const size_t N;
+   };
+
+   template<typename T>
+   struct MinMaxCutoffFunc {
+      MinMaxCutoffFunc(const size_t& num_buckets) : N(num_buckets) {}
+
+      static std::string name() {
+         return "min_max_cutoff";
+      }
+
+      /**
+       * min/max clamps the value. Optimized for values that are very likely inside of bounds
+       * @tparam T
+       * @param value
+       * @param N
+       * @return
+       */
+      forceinline T operator()(const T& hash) const {
+         if (unlikely(hash < 0))
+            return 0;
+         if (unlikely(hash >= N))
+            return N - 1;
+
+         return hash;
+      }
+
+     private:
+      const size_t N;
+   };
 
    /**
     * Reduces value to interval [0, 2^p]
@@ -205,17 +273,17 @@ struct Reduction {
    static constexpr forceinline HASH_64 extract_64(const A& a) {
       return _mm_extract_epi64(a, select);
    }
-};
+}; // namespace Reduction
 
 template<>
-constexpr forceinline HASH_32 Reduction::fastrange(const HASH_32& value, const size_t& n) {
-   return static_cast<HASH_32>((static_cast<uint64_t>(value) * static_cast<uint64_t>(n)) >> 32);
+constexpr forceinline HASH_32 Reduction::Fastrange<HASH_32>::operator()(const HASH_32& value) const {
+   return static_cast<HASH_32>((static_cast<uint64_t>(value) * static_cast<uint64_t>(N)) >> 32);
 }
 
 template<>
-constexpr forceinline HASH_64 Reduction::fastrange(const HASH_64& value, const size_t& n) {
+constexpr forceinline HASH_64 Reduction::Fastrange<HASH_64>::operator()(const HASH_64& value) const {
 #ifdef __SIZEOF_INT128__
-   return static_cast<HASH_64>((static_cast<__uint128_t>(value) * static_cast<__uint128_t>(n)) >> 64);
+   return static_cast<HASH_64>((static_cast<__uint128_t>(value) * static_cast<__uint128_t>(N)) >> 64);
 #else
    #warning \
       "Fastrange fallback (actual modulo) active, since 128bit integer multiplication seems to be unsupported on this system/compiler"
