@@ -6,12 +6,6 @@
 #include <convenience.hpp>
 
 /**
- * ----------------------------
- *    Multiplicative Hashing
- * ----------------------------
- */
-
-/**
  * Multiplicative hashing, i.e., (x * constant % 2^w) >> (w - p)
  */
 template<class T, const T constant, const char* base_name>
