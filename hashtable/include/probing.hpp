@@ -301,8 +301,63 @@ namespace Hashtable {
        * @return whether or not the key, payload pair was inserted. Insertion will fail
        *    iff the same key already exists or if key == Sentinel value
        */
-      bool insert(const Key& key, const Payload payload) {
-         return insert(key, payload, key);
+      bool insert(const Key& k, const Payload& p) {
+         // r+w variables (required to avoid insert recursion+issues)
+         auto key = k;
+         auto payload = p;
+
+         const auto orig_key = key;
+         const auto orig_payload = payload;
+
+         if (unlikely(key == Sentinel)) {
+            assert(false); // TODO: this must never happen in practice
+            return false;
+         }
+
+         // Using template functor should successfully inline actual hash computation
+         auto orig_slot_index = reductionfn(hashfn(key));
+         auto slot_index = orig_slot_index;
+         size_t probing_step = 0;
+
+         for (;;) {
+            auto& slot = slots[slot_index];
+            for (size_t i = 0; i < BucketSize; i++) {
+               if (slot.keys[i] == Sentinel) {
+                  slot.keys[i] = key;
+                  slot.payloads[i] = payload;
+                  slot.psl[i] = probing_step;
+                  return true;
+               } else if (slot.keys[i] == key) {
+                  // key already exists
+                  return false;
+               } else if (slot.psl[i] < probing_step) {
+                  const auto rich_key = slot.keys[i];
+                  const auto rich_payload = slot.payloads[i];
+                  const auto rich_psl = slot.psl[i];
+
+                  if (unlikely(orig_key == rich_key))
+                     throw std::runtime_error("insertion failed, infinite loop detected");
+
+                  slot.keys[i] = key;
+                  slot.payloads[i] = payload;
+                  slot.psl[i] = probing_step;
+
+                  key = rich_key;
+                  payload = rich_payload;
+                  probing_step = rich_psl;
+
+                  // This is important to guarantee lookup success, e.g.,
+                  // for quadratic probing.
+                  orig_slot_index = reductionfn(hashfn(key));
+               }
+            }
+
+            // Slot is full, choose a new slot index based on probing function
+            slot_index = probingfn(orig_slot_index, ++probing_step);
+            if (unlikely(slot_index == orig_slot_index))
+               throw std::runtime_error("Building " + this->name() +
+                                        " failed: detected cycle during probing, all buckets along the way are full");
+         }
       }
 
       /**
@@ -423,51 +478,5 @@ namespace Hashtable {
       } packed;
 
       std::vector<Bucket> slots;
-
-     private:
-      bool insert(const Key& key, const Payload& payload, const Key& orig_key) {
-         if (unlikely(key == Sentinel)) {
-            assert(false); // TODO: this must never happen in practice
-            return false;
-         }
-
-         // Using template functor should successfully inline actual hash computation
-         const auto orig_slot_index = reductionfn(hashfn(key));
-         auto slot_index = orig_slot_index;
-         size_t probing_step = 0;
-
-         for (;;) {
-            auto& slot = slots[slot_index];
-            for (size_t i = 0; i < BucketSize; i++) {
-               if (slot.keys[i] == Sentinel) {
-                  slot.keys[i] = key;
-                  slot.payloads[i] = payload;
-                  slot.psl[i] = probing_step;
-                  return true;
-               } else if (slot.keys[i] == key) {
-                  // key already exists
-                  return false;
-               } else if (slot.psl[i] < probing_step) {
-                  const auto rich_key = slot.keys[i];
-                  const auto rich_payload = slot.payloads[i];
-
-                  if (unlikely(orig_key == rich_key))
-                     throw std::runtime_error("insertion failed, infinite loop detected");
-
-                  slot.keys[i] = key;
-                  slot.payloads[i] = payload;
-                  slot.psl[i] = probing_step;
-
-                  return insert(rich_key, rich_payload, orig_key);
-               }
-            }
-
-            // Slot is full, choose a new slot index based on probing function
-            slot_index = probingfn(orig_slot_index, ++probing_step);
-            if (unlikely(slot_index == orig_slot_index))
-               throw std::runtime_error("Building " + this->name() +
-                                        " failed: detected cycle during probing, all buckets along the way are full");
-         }
-      }
    };
 } // namespace Hashtable
