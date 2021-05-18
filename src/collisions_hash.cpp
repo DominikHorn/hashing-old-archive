@@ -158,6 +158,7 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
    measure64<XXHash3<Data>>(dataset_name, *dataset, collision_counter, outfile, iomutex);
    measure128<XXHash3_128<Data>>(dataset_name, *dataset, collision_counter, outfile, iomutex);
 
+   // SmallTabulation is bad since higher bits are always 0 & table[0] ^ table[0] = 0, i.e., we yeet many bytes entirely ;/
    measure64<SmallTabulationTable<Data>>(dataset_name, *dataset, collision_counter, outfile, iomutex);
    measure64<MediumTabulationTable<Data>>(dataset_name, *dataset, collision_counter, outfile, iomutex);
    measure64<LargeTabulationTable<Data>>(dataset_name, *dataset, collision_counter, outfile, iomutex);
