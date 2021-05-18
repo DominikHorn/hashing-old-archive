@@ -80,7 +80,7 @@ namespace Hashtable {
          allocated = true;
 
          // Reserve required memory
-         slots.resize(directory_address_count(capacity));
+         buckets.resize(directory_address_count(capacity));
          // Ensure all slots are in cleared state
          clear();
       }
@@ -108,13 +108,12 @@ namespace Hashtable {
          size_t probing_step = 0;
 
          for (;;) {
-            auto& slot = slots[slot_index];
+            auto& bucket = buckets[slot_index];
             for (size_t i = 0; i < BucketSize; i++) {
-               if (slot.keys[i] == Sentinel) {
-                  slot.keys[i] = key;
-                  slot.payloads[i] = payload;
+               if (bucket.slots[i].key == Sentinel) {
+                  bucket.slots[i] = {.key = key, .payload = payload};
                   return true;
-               } else if (slot.keys[i] == key) {
+               } else if (bucket.slots[i].key == key) {
                   // key already exists
                   return false;
                }
@@ -146,12 +145,12 @@ namespace Hashtable {
          size_t probing_step = 0;
 
          for (;;) {
-            auto& slot = slots[slot_index];
+            auto& bucket = buckets[slot_index];
             for (size_t i = 0; i < BucketSize; i++) {
-               if (slot.keys[i] == key)
-                  return std::make_optional(slot.payloads[i]);
+               if (bucket.slots[i].key == key)
+                  return std::make_optional(bucket.slots[i].payload);
 
-               if (slot.keys[i] == Sentinel)
+               if (bucket.slots[i].key == Sentinel)
                   return std::nullopt;
             }
 
@@ -172,16 +171,16 @@ namespace Hashtable {
             size_t probing_step = 0;
 
             for (;;) {
-               auto& slot = slots[slot_index];
+               auto& bucket = buckets[slot_index];
                for (size_t i = 0; i < BucketSize; i++) {
-                  if (slot.keys[i] == key) {
+                  if (bucket.slots[i].key == key) {
                      min_psl = std::min(min_psl, probing_step);
                      max_psl = std::max(max_psl, probing_step);
                      total_psl += probing_step;
                      goto next;
                   }
 
-                  if (slot.keys[i] == Sentinel)
+                  if (bucket.slots[i].key == Sentinel)
                      goto next;
                }
 
@@ -229,8 +228,8 @@ namespace Hashtable {
        * still in memory (i.e., might leak if sensitive).
        */
       void clear() {
-         for (auto& slot : slots) {
-            slot.keys.fill(Sentinel);
+         for (auto& bucket : buckets) {
+            bucket.slots.fill({});
          }
       }
 
@@ -240,11 +239,15 @@ namespace Hashtable {
 
      protected:
       struct Bucket {
-         std::array<Key, BucketSize> keys /*__attribute((aligned(sizeof(Key) * 8)))*/;
-         std::array<Payload, BucketSize> payloads;
+         struct Slot {
+            Key key = Sentinel;
+            Payload payload;
+         } packed;
+
+         std::array<Slot, BucketSize> slots /*__attribute((aligned(sizeof(Key) * 8)))*/;
       } packed;
 
-      std::vector<Bucket> slots;
+      std::vector<Bucket> buckets;
    };
 
    template<class Key,
@@ -283,7 +286,7 @@ namespace Hashtable {
          allocated = true;
 
          // Reserve required memory
-         slots.resize(directory_address_count(capacity));
+         buckets.resize(directory_address_count(capacity));
          // Ensure all slots are in cleared state
          clear();
       }
@@ -317,31 +320,25 @@ namespace Hashtable {
          size_t probing_step = 0;
 
          for (;;) {
-            auto& slot = slots[slot_index];
+            auto& bucket = buckets[slot_index];
             for (size_t i = 0; i < BucketSize; i++) {
-               if (slot.keys[i] == Sentinel) {
-                  slot.keys[i] = key;
-                  slot.payloads[i] = payload;
-                  slot.psl[i] = probing_step;
+               if (bucket.slots[i].key == Sentinel) {
+                  bucket.slots[i] = {.key = key, .psl = probing_step, .payload = payload};
                   return true;
-               } else if (slot.keys[i] == key) {
+               } else if (bucket.slots[i].key == key) {
                   // key already exists
                   return false;
-               } else if (slot.psl[i] < probing_step) {
-                  const auto rich_key = slot.keys[i];
-                  const auto rich_payload = slot.payloads[i];
-                  const auto rich_psl = slot.psl[i];
+               } else if (bucket.slots[i].psl < probing_step) {
+                  const auto rich_slot = bucket.slots[i];
 
-                  if (unlikely(orig_key == rich_key))
+                  if (unlikely(orig_key == rich_slot.key))
                      throw std::runtime_error("insertion failed, infinite loop detected");
 
-                  slot.keys[i] = key;
-                  slot.payloads[i] = payload;
-                  slot.psl[i] = probing_step;
+                  bucket.slots[i] = {.key = key, .psl = probing_step, .payload = payload};
 
-                  key = rich_key;
-                  payload = rich_payload;
-                  probing_step = rich_psl;
+                  key = rich_slot.key;
+                  payload = rich_slot.payload;
+                  probing_step = rich_slot.psl;
 
                   // This is important to guarantee lookup success, e.g.,
                   // for quadratic probing.
@@ -375,12 +372,12 @@ namespace Hashtable {
          size_t probing_step = 0;
 
          for (;;) {
-            auto& slot = slots[slot_index];
+            auto& bucket = buckets[slot_index];
             for (size_t i = 0; i < BucketSize; i++) {
-               if (slot.keys[i] == key)
-                  return std::make_optional(slot.payloads[i]);
+               if (bucket.slots[i].key == key)
+                  return std::make_optional(bucket.slots[i].payload);
 
-               if (slot.keys[i] == Sentinel)
+               if (bucket.slots[i].key == Sentinel)
                   return std::nullopt;
             }
 
@@ -401,16 +398,16 @@ namespace Hashtable {
             size_t probing_step = 0;
 
             for (;;) {
-               auto& slot = slots[slot_index];
+               auto& bucket = buckets[slot_index];
                for (size_t i = 0; i < BucketSize; i++) {
-                  if (slot.keys[i] == key) {
+                  if (bucket.slots[i].key == key) {
                      min_psl = std::min(min_psl, probing_step);
                      max_psl = std::max(max_psl, probing_step);
                      total_psl += probing_step;
                      goto next;
                   }
 
-                  if (slot.keys[i] == Sentinel)
+                  if (bucket.slots[i].key == Sentinel)
                      goto next;
                }
 
@@ -458,8 +455,8 @@ namespace Hashtable {
        * still in memory (i.e., might leak if sensitive).
        */
       void clear() {
-         for (auto& slot : slots) {
-            slot.keys.fill(Sentinel);
+         for (auto& bucket : buckets) {
+            bucket.slots.fill({});
          }
       }
 
@@ -469,11 +466,15 @@ namespace Hashtable {
 
      protected:
       struct Bucket {
-         std::array<Key, BucketSize> keys /*__attribute((aligned(sizeof(Key) * 8)))*/;
-         std::array<Payload, BucketSize> payloads;
-         std::array<unsigned short, BucketSize> psl;
+         struct Slot {
+            Key key = Sentinel;
+            size_t psl;
+            Payload payload;
+         } packed;
+
+         std::array<Slot, BucketSize> slots /*__attribute((aligned(sizeof(Key) * 8)))*/;
       } packed;
 
-      std::vector<Bucket> slots;
+      std::vector<Bucket> buckets;
    };
 } // namespace Hashtable
