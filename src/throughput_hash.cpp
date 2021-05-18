@@ -14,8 +14,9 @@
 
 using Args = BenchmarkArgs::HashThroughputArgs;
 
-template<class Hashfn, class Reducerfn, class Dataset>
-static void measure(const std::string& dataset_name, const Dataset& dataset, CSV& outfile, std::mutex& iomutex) {
+template<class Hashfn, class Reducerfn, class Data>
+static void
+measure(const std::string& dataset_name, const std::vector<Data>& dataset, CSV& outfile, std::mutex& iomutex) {
    const auto str = [](auto s) { return std::to_string(s); };
    std::map<std::string, std::string> datapoint({
       {"dataset", dataset_name},

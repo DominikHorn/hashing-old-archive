@@ -34,12 +34,11 @@ namespace Benchmark {
     * @tparam Reducerfn
     */
    template<typename Hashfn, typename Reducefn, unsigned int repeatCnt = 10>
-   ThroughputStats measure_throughput(const std::vector<uint64_t>& dataset) {
-      const auto n = static_cast<uint64_t>(dataset.size());
+   ThroughputStats measure_throughput(const std::vector<uint64_t>& dataset, Hashfn hashfn = Hashfn()) {
       uint64_t avg = 0;
 
-      Hashfn hashfn;
-      Reducefn reducefn(n);
+      // For throughput experiment, assume load_factor = 1
+      Reducefn reducefn = Reducefn(dataset.size());
 
       for (unsigned int repetiton = 0; repetiton < repeatCnt; repetiton++) {
          const auto start_time = std::chrono::steady_clock::now();
