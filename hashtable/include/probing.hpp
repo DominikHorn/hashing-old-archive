@@ -65,12 +65,8 @@ namespace Hashtable {
      public:
       explicit Probing(const size_t& capacity, const HashFn hashfn = HashFn())
          : hashfn(hashfn), reductionfn(ReductionFn(directory_address_count(capacity))),
-           probingfn(ProbingFn(directory_address_count(capacity))), capacity(capacity) {
-         // Reserve required memory
-         buckets.resize(directory_address_count(capacity));
-         // Ensure all slots are in cleared state
-         clear();
-      };
+           probingfn(ProbingFn(directory_address_count(capacity))), capacity(capacity),
+           buckets(directory_address_count(capacity)) {}
 
       Probing(Probing&&) = default;
 
@@ -218,7 +214,9 @@ namespace Hashtable {
        */
       void clear() {
          for (auto& bucket : buckets) {
-            bucket.slots.fill({});
+            for (auto& slot : bucket.slots) {
+               slot.key = Sentinel;
+            }
          }
       }
 
@@ -260,12 +258,8 @@ namespace Hashtable {
      public:
       explicit RobinhoodProbing(const size_t& capacity, const HashFn hashfn = HashFn())
          : hashfn(hashfn), reductionfn(ReductionFn(directory_address_count(capacity))),
-           probingfn(ProbingFn(directory_address_count(capacity))), capacity(capacity) {
-         // Reserve required memory
-         buckets.resize(directory_address_count(capacity));
-         // Ensure all slots are in cleared state
-         clear();
-      };
+           probingfn(ProbingFn(directory_address_count(capacity))), capacity(capacity),
+           buckets(directory_address_count(capacity)) {}
 
       RobinhoodProbing(RobinhoodProbing&&) = default;
 
@@ -434,7 +428,9 @@ namespace Hashtable {
        */
       void clear() {
          for (auto& bucket : buckets) {
-            bucket.slots.fill({});
+            for (auto& slot : bucket.slots) {
+               slot.key = Sentinel;
+            }
          }
       }
 
