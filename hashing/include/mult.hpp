@@ -34,12 +34,12 @@ struct MultiplicationHash {
    }
 };
 
-const char MULT_PRIME_32[] = "mult_prime32";
-const char MULT_FIBONNACI_32[] = "mult_fibonnaci32";
-const char MULT_FIBONNACI_PRIME_32[] = "mult_fibonnaci_prime32";
-const char MULT_PRIME_64[] = "mult_prime64";
-const char MULT_FIBONNACI_64[] = "mult_fibonnaci64";
-const char MULT_FIBONNACI_PRIME_64[] = "mult_fibonnaci_prime64";
+const char MULT_PRIME_32[] = "mult_prime";
+const char MULT_FIBONNACI_32[] = "mult_fibonnaci";
+const char MULT_FIBONNACI_PRIME_32[] = "mult_fibonnaci_prime";
+const char MULT_PRIME_64[] = "mult_prime";
+const char MULT_FIBONNACI_64[] = "mult_fibonnaci";
+const char MULT_FIBONNACI_PRIME_64[] = "mult_fibonnaci_prime";
 
 // TODO: see if there are "better" prime constants (if that is even possible). Especially investigate
 // TODO: (?) test performance for random, (likely) non prime constant as suggested in http://www.vldb.org/pvldb/vol9/p96-richter.pdf
