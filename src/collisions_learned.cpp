@@ -163,34 +163,34 @@ static void measure(const std::string& dataset_name, const std::vector<Data>& da
    }
 
    /// Epsrec 4
-   measure<PGMHash<Data, 256, 4>, Reduction::MinMaxCutoffFunc<size_t>>(dataset_name, dataset, sample, collision_counter,
-                                                                       sample_ns, prepare_ns, outfile, iomutex);
-   measure<PGMHash<Data, 64, 4>, Reduction::MinMaxCutoffFunc<size_t>>(dataset_name, dataset, sample, collision_counter,
-                                                                      sample_ns, prepare_ns, outfile, iomutex);
-   measure<PGMHash<Data, 16, 4>, Reduction::MinMaxCutoffFunc<size_t>>(dataset_name, dataset, sample, collision_counter,
-                                                                      sample_ns, prepare_ns, outfile, iomutex);
-   measure<PGMHash<Data, 4, 4>, Reduction::MinMaxCutoffFunc<size_t>>(dataset_name, dataset, sample, collision_counter,
-                                                                     sample_ns, prepare_ns, outfile, iomutex);
+   measure<PGMHash<Data, 256, 4>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, collision_counter,
+                                                                   sample_ns, prepare_ns, outfile, iomutex);
+   measure<PGMHash<Data, 64, 4>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, collision_counter,
+                                                                  sample_ns, prepare_ns, outfile, iomutex);
+   measure<PGMHash<Data, 16, 4>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, collision_counter,
+                                                                  sample_ns, prepare_ns, outfile, iomutex);
+   measure<PGMHash<Data, 4, 4>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, collision_counter,
+                                                                 sample_ns, prepare_ns, outfile, iomutex);
 
    /// Epsrec 1
-   measure<PGMHash<Data, 256, 1>, Reduction::MinMaxCutoffFunc<size_t>>(dataset_name, dataset, sample, collision_counter,
-                                                                       sample_ns, prepare_ns, outfile, iomutex);
-   measure<PGMHash<Data, 64, 1>, Reduction::MinMaxCutoffFunc<size_t>>(dataset_name, dataset, sample, collision_counter,
-                                                                      sample_ns, prepare_ns, outfile, iomutex);
-   measure<PGMHash<Data, 16, 1>, Reduction::MinMaxCutoffFunc<size_t>>(dataset_name, dataset, sample, collision_counter,
-                                                                      sample_ns, prepare_ns, outfile, iomutex);
-   measure<PGMHash<Data, 4, 1>, Reduction::MinMaxCutoffFunc<size_t>>(dataset_name, dataset, sample, collision_counter,
-                                                                     sample_ns, prepare_ns, outfile, iomutex);
+   measure<PGMHash<Data, 256, 1>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, collision_counter,
+                                                                   sample_ns, prepare_ns, outfile, iomutex);
+   measure<PGMHash<Data, 64, 1>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, collision_counter,
+                                                                  sample_ns, prepare_ns, outfile, iomutex);
+   measure<PGMHash<Data, 16, 1>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, collision_counter,
+                                                                  sample_ns, prepare_ns, outfile, iomutex);
+   measure<PGMHash<Data, 4, 1>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, collision_counter,
+                                                                 sample_ns, prepare_ns, outfile, iomutex);
 
    // Epsrec 0
-   measure<PGMHash<Data, 256, 0>, Reduction::MinMaxCutoffFunc<size_t>>(dataset_name, dataset, sample, collision_counter,
-                                                                       sample_ns, prepare_ns, outfile, iomutex);
-   measure<PGMHash<Data, 64, 0>, Reduction::MinMaxCutoffFunc<size_t>>(dataset_name, dataset, sample, collision_counter,
-                                                                      sample_ns, prepare_ns, outfile, iomutex);
-   measure<PGMHash<Data, 16, 0>, Reduction::MinMaxCutoffFunc<size_t>>(dataset_name, dataset, sample, collision_counter,
-                                                                      sample_ns, prepare_ns, outfile, iomutex);
-   measure<PGMHash<Data, 4, 0>, Reduction::MinMaxCutoffFunc<size_t>>(dataset_name, dataset, sample, collision_counter,
-                                                                     sample_ns, prepare_ns, outfile, iomutex);
+   measure<PGMHash<Data, 256, 0>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, collision_counter,
+                                                                   sample_ns, prepare_ns, outfile, iomutex);
+   measure<PGMHash<Data, 64, 0>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, collision_counter,
+                                                                  sample_ns, prepare_ns, outfile, iomutex);
+   measure<PGMHash<Data, 16, 0>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, collision_counter,
+                                                                  sample_ns, prepare_ns, outfile, iomutex);
+   measure<PGMHash<Data, 4, 0>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, collision_counter,
+                                                                 sample_ns, prepare_ns, outfile, iomutex);
 }
 
 int main(int argc, char* argv[]) {

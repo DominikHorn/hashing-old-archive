@@ -146,8 +146,8 @@ namespace Reduction {
    };
 
    template<typename T>
-   struct MinMaxCutoffFunc {
-      MinMaxCutoffFunc(const size_t& num_buckets) : N(num_buckets) {}
+   struct MinMaxCutoff {
+      MinMaxCutoff(const size_t& num_buckets) : N(num_buckets) {}
 
       static std::string name() {
          return "min_max_cutoff";
