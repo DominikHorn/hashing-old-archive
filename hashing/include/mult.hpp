@@ -1,95 +1,81 @@
 #pragma once
 
 #include <cassert>
+#include <string>
+
 #include <convenience.hpp>
 
 /**
- * ----------------------------
- *    Multiplicative Hashing
- * ----------------------------
+ * Multiplicative hashing, i.e., (x * constant % 2^w) >> (w - p)
+ *
+ * @tparam constant magic constant used to multiply
+ * @tparam p how many bits the result should have, i.e., result value \in [0, 2^p].
+ *   NOTE: 0 <= p <= sizeof(T)*8. Narrowing result to exactly the amount of required bits should
+ *   improve overall bit quality (avalanche)
  */
-struct MultHash {
-   /*
-    * TODO: for the prime constants, see if we can find better ones (if that is even possible). Especially investigate
-    *  0x238EF8E3lu, taken from commit c40d84d in:
-    *  https://github.com/peterboncz/bloomfilter-bsd/blob/c3d854c8c6b2fa7788af19c33fa804f80ac4f6cf/src/dtl/hash.hpp#L64
-    */
-
-   /*
-    * TODO: (?) test performance for random, (likely) non prime constant as suggested in
-    *  http://www.vldb.org/pvldb/vol9/p96-richter.pdf
-    */
-
-   /**
-    * hash = (value * a % 2^32) >> (32 - p)
-    * i.e., take the highest p bits from the 32-bit multiplication
-    * value * a (ignore overflow)
-    *
-    * @param value the value to hash
-    * @param p how many bits the result should have, i.e., result value \in [0, 2^p].
-    *   NOTE: 0 <= p <= 32
-    * @param a magic hash constant. You should choose a \in [0,2^32] and a is prime. Defaults to 0x238EF8E3lu
-    */
-   static constexpr forceinline HASH_32 mult32_hash(const HASH_32& value,
-                                                    const unsigned char p = 32,
-                                                    const HASH_32& a = static_cast<HASH_32>(0x238EF8E3LU)) {
-      assert(p >= 0 && p <= 32);
-      return (value * a) >> (32 - p);
+template<class T, const T constant, const char* base_name, const uint8_t p = sizeof(T) * 8>
+struct MultiplicationHash {
+   static std::string name() {
+      return base_name + (p < sizeof(T) * 8 ? "_shift" + std::to_string(sizeof(T) * 8 - p) + "_" : "") +
+         std::to_string(sizeof(T) * 8);
    }
 
    /**
-    * hash = (value * a % 2^64) >> (64 - p)
-    * i.e., take the highest p bits from the 64-bit multiplication
-    * value * a (ignore overflow)
+    * hash = (key * constant % 2^w) >> (w - p), where w = sizeof(T) * 8
+    * i.e., take the highest p bits from the w-bit multiplication
+    * key * constant (ignore overflow)
     *
-    * @param value the value to hash
-    * @param p hash value is \in [0, 2^p]. NOTE: 0 <= p <= 64
-    * @param a magic hash constant. You should choose a \in [0,2^64] and a is prime. Defaults to 0xC7455FEC83DD661F
+    * @param key the key to hash
     */
-   static constexpr forceinline HASH_64 mult64_hash(const HASH_64& value,
-                                                    const unsigned char p = 64,
-                                                    const HASH_64& a = static_cast<HASH_64>(0xC7455FEC83DD661FLLU)) {
-      assert(p >= 0 && p <= 64);
-      return (value * a) >> (64 - p);
-   }
-
-   /**
-    * mult32_hash with a = floor(((sqrt(5) - 1) / 2) * 2^32)
-    *
-    * @param value the value to hash
-    * @param p hash value is \in [0, 2^p]. NOTE: 0 <= p <= 32
-    */
-   static constexpr forceinline HASH_32 fibonacci32_hash(const HASH_32& value, const unsigned char p = 32) {
-      return mult32_hash(value, p, 0x9E3779B9LU);
-   }
-
-   /**
-    * mult64_hash with a = floor(((sqrt(5) - 1) / 2) * 2^64)
-    *
-    * @param value the value to hash
-    * @param p hash value is \in [0, 2^p]. NOTE: 0 <= p <= 64
-    */
-   static constexpr forceinline HASH_64 fibonacci64_hash(const HASH_64& value, const unsigned char p = 64) {
-      return mult64_hash(value, p, static_cast<HASH_64>(0x9E3779B97F4A7C15LLU));
-   }
-
-   /**
-    * mult32_hash with a = closest prime to floor(((sqrt(5) - 1) / 2) * 2^32)
-    *
-    * @param value the value to hash
-    * @param p hash value is \in [0, 2^p]. NOTE: 0 <= p <= 32
-    */
-   static constexpr forceinline HASH_32 fibonacci_prime32_hash(const HASH_32& value, const unsigned char p = 32) {
-      return mult32_hash(value, p, 0x9e3779b1LU);
-   }
-
-   /**
-    * mult64_hash with a = closest prime to floor(((sqrt(5) - 1) / 2) * 2^64)
-    *
-    * @param value the value to hash
-    * @param p hash value is \in [0, 2^p]. NOTE: 0 <= p <= 64
-    */
-   static constexpr forceinline HASH_64 fibonacci_prime64_hash(const HASH_64& value, const unsigned char p = 64) {
-      return mult64_hash(value, p, static_cast<HASH_64>(0x9E3779B97F4A7C55LLU));
+   constexpr forceinline T operator()(const T& key) const {
+      constexpr auto t = sizeof(T) * 8;
+      assert(p >= 0 && p <= t);
+      return (key * constant) >> (t - p);
    }
 };
+
+const char MULT_PRIME_32[] = "mult_prime";
+const char MULT_FIBONNACI_32[] = "mult_fibonnaci";
+const char MULT_FIBONNACI_PRIME_32[] = "mult_fibonnaci_prime";
+const char MULT_PRIME_64[] = "mult_prime";
+const char MULT_FIBONNACI_64[] = "mult_fibonnaci";
+const char MULT_FIBONNACI_PRIME_64[] = "mult_fibonnaci_prime";
+
+// TODO: see if there are "better" prime constants (if that is even possible). Especially investigate
+// TODO: (?) test performance for random, (likely) non prime constant as suggested in http://www.vldb.org/pvldb/vol9/p96-richter.pdf
+
+/// Multiplicative 32-bit hashing with prime constants
+using PrimeMultiplicationHash32 = MultiplicationHash<HASH_32, 0x238EF8E3LU, MULT_PRIME_32>;
+/// Multiplicative 64-bit hashing with prime constants
+using PrimeMultiplicationHash64 = MultiplicationHash<HASH_64, 0xC7455FEC83DD661FLLU, MULT_PRIME_64>;
+
+/// Multiplicative 32-bit hashing with constants derived from the golden ratio
+using FibonacciHash32 = MultiplicationHash<HASH_32, 0x9E3779B9LU, MULT_FIBONNACI_32>;
+/// Multiplicative 64-bit hashing with constants derived from the golden ratio
+using FibonacciHash64 = MultiplicationHash<HASH_64, 0x9E3779B97F4A7C15LLU, MULT_FIBONNACI_64>;
+
+/// Multiplicative 32-bit hashing with prime constants derived from the golden ratio
+using FibonnaciPrimeHash32 = MultiplicationHash<HASH_32, 0x9e3779b1LU, MULT_FIBONNACI_PRIME_32>;
+/// Multiplicative 64-bit hashing with prime constants derived from the golden ratio
+using FibonnaciPrimeHash64 = MultiplicationHash<HASH_64, 0x9E3779B97F4A7C55LLU, MULT_FIBONNACI_PRIME_64>;
+
+/// Multiplicative 32-bit hashing with prime constants
+template<const uint8_t p = sizeof(HASH_32) * 8>
+using PrimeMultiplicationShiftHash32 = MultiplicationHash<HASH_32, 0x238EF8E3LU, MULT_PRIME_32, p>;
+/// Multiplicative 64-bit hashing with prime constants
+template<const uint8_t p = sizeof(HASH_64) * 8>
+using PrimeMultiplicationShiftHash64 = MultiplicationHash<HASH_64, 0xC7455FEC83DD661FLLU, MULT_PRIME_64, p>;
+
+/// Multiplicative 32-bit hashing with constants derived from the golden ratio
+template<const uint8_t p = sizeof(HASH_32) * 8>
+using FibonacciShiftHash32 = MultiplicationHash<HASH_32, 0x9E3779B9LU, MULT_FIBONNACI_32, p>;
+/// Multiplicative 64-bit hashing with constants derived from the golden ratio
+template<const uint8_t p = sizeof(HASH_64) * 8>
+using FibonacciShiftHash64 = MultiplicationHash<HASH_64, 0x9E3779B97F4A7C15LLU, MULT_FIBONNACI_64, p>;
+
+/// Multiplicative 32-bit hashing with prime constants derived from the golden ratio
+template<const uint8_t p = sizeof(HASH_32) * 8>
+using FibonnaciPrimeShiftHash32 = MultiplicationHash<HASH_32, 0x9e3779b1LU, MULT_FIBONNACI_PRIME_32, p>;
+/// Multiplicative 64-bit hashing with prime constants derived from the golden ratio
+template<const uint8_t p = sizeof(HASH_64) * 8>
+using FibonnaciPrimeShiftHash64 = MultiplicationHash<HASH_64, 0x9E3779B97F4A7C55LLU, MULT_FIBONNACI_PRIME_64, p>;

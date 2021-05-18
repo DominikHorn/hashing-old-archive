@@ -11,15 +11,18 @@
  */
 template<typename T = uint64_t>
 struct RandomHash {
+   RandomHash(const T& seed = 0xC7455FEC83DD661FLLU) : gen(seed), dist(0, std::numeric_limits<T>::max()){};
+
+   static std::string name() {
+      return "random_hash";
+   }
+
+   forceinline T operator()(const T& key) {
+      UNUSED(key);
+      return dist(gen);
+   }
+
   private:
    std::default_random_engine gen;
    std::uniform_int_distribution<uint64_t> dist;
-
-  public:
-   RandomHash(const T& hashtable_size, const T& seed = 0xC7455FEC83DD661FLLU)
-      : gen(seed), dist(0, hashtable_size - 1){};
-
-   forceinline T next() {
-      return dist(gen);
-   }
 };

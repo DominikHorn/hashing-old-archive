@@ -30,14 +30,15 @@ namespace Benchmark {
     *
     * Does not actually perform hashtable insert/lookup!
     *
-    * @tparam HashFunction
-    * @tparam Reducer
+    * @tparam Hashfn
+    * @tparam Reducerfn
     */
-   template<unsigned int repeatCnt = 10, typename HashFunction, typename Reducer>
-   ThroughputStats measure_throughput(const std::vector<uint64_t>& dataset, const HashFunction& hashfn,
-                                      const Reducer& reduce) {
-      const auto n = static_cast<uint64_t>(dataset.size());
+   template<typename Hashfn, typename Reducefn, class Data, unsigned int repeatCnt = 10>
+   ThroughputStats measure_throughput(const std::vector<Data>& dataset, Hashfn hashfn = Hashfn()) {
       uint64_t avg = 0;
+
+      // For throughput experiment, assume load_factor = 1
+      Reducefn reducefn(dataset.size());
 
       for (unsigned int repetiton = 0; repetiton < repeatCnt; repetiton++) {
          const auto start_time = std::chrono::steady_clock::now();
@@ -47,11 +48,11 @@ namespace Benchmark {
             Perf::BlockCounter ctr(dataset.size());
 #endif
             for (const auto& key : dataset) {
-               const auto index = reduce(hashfn(key), n);
+               const auto probe_index = reducefn(hashfn(key));
 
                // Ensure the compiler does not simply remove the index
                // calculation during optimization.
-               Optimizer::DoNotEliminate(index);
+               Optimizer::DoNotEliminate(probe_index);
             }
 #ifdef MACOS
          }
@@ -93,29 +94,33 @@ namespace Benchmark {
     * @tparam HashFunction
     * @tparam Reducer
     */
-   template<typename HashFunction, typename Reducer>
-   CollisionStats<uint64_t, double> measure_collisions(const std::vector<uint64_t>& dataset,
-                                                       std::vector<uint32_t>& collision_counter,
-                                                       const HashFunction& hashfn, const Reducer& reduce) {
+   template<class Hashfn, class Reducerfn, class Data>
+   CollisionStats<uint64_t, double> measure_collisions(const std::vector<Data>& dataset,
+                                                       std::vector<size_t>& collision_counter,
+                                                       Hashfn hashfn = Hashfn()) {
       // Emulate hashtable with slots (we only care about amount of elements per bucket)
-      const auto n = collision_counter.size();
       std::fill(collision_counter.begin(), collision_counter.end(), 0);
 
       auto start_time = std::chrono::steady_clock::now();
-
+      Reducerfn reducefn(collision_counter.size());
 #ifdef MACOS
       {
          Perf::BlockCounter ctr(dataset.size());
 #endif
          // Hash each value and record entries per bucket
          for (const auto key : dataset) {
-            const auto hash = hashfn(key);
-            const auto index = reduce(hash, n);
-            collision_counter[index]++;
+            const auto ht_address = reducefn(hashfn(key));
+            collision_counter[ht_address]++;
 
-            // Our datasets are too small to ever cause unsigned int addition overflow
-            // therefore this check is redundant
-            //         assert(collision_counter[index] != 0);
+            // Our datasets are currently too small to ever cause unsigned int addition overflow
+            // therefore this check is redundant. Doesn't hurt in release mode however
+            assert(collision_counter[ht_address] != 0);
+
+            // Optimizer will never eliminate this (visible side effect in collision counter),
+            // however it might try to be clever about computing ht_address since it knows that
+            // we only really care about the correct values in collision_counter in the end. Therefore
+            // constrain optimizer to actually to proper insertions
+            Optimizer::DoNotEliminate(ht_address);
          }
 #ifdef MACOS
       }

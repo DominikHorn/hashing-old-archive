@@ -1,57 +1,82 @@
 #pragma once
 
+#include <string>
+
 #include <convenience.hpp>
 #include <thirdparty/xxhash.h>
 
+#ifndef __clang__
+   #warning "xxHash is supposedly faster with clang"
+#endif
+
+template<class T, const HASH_32 seed = 0>
+struct XXHash32 {
+   static std::string name() {
+      return "xxh32" + (seed != 0 ? "_seed_" + std::to_string(seed) : "");
+   }
+
+   forceinline HASH_32 operator()(const T& data) const {
+      return _XXHash::XXH32(&data, sizeof(T), seed);
+   }
+};
+
+template<class T, const HASH_32 seed = 0>
+struct XXHash64 {
+   static std::string name() {
+      return "xxh64" + (seed != 0 ? "_seed_" + std::to_string(seed) : "");
+   }
+
+   forceinline HASH_64 operator()(const T& data) const {
+      return _XXHash::XXH64(&data, sizeof(T), seed);
+   }
+};
+
+template<class T>
+struct XXHash3 {
+   static std::string name() {
+      return "xxh3";
+   }
+
+   forceinline HASH_64 operator()(const T& data) const {
+      return _XXHash::XXH3_64bits(&data, sizeof(T));
+   }
+};
+
 /**
- *
- * ----------------------------
- *           xxHash
- * ----------------------------
+ * XXH3 with seed, supposedly slower
+ * @tparam T
  */
-// TODO: benchmark with clang & gcc builds as clang supposedly improves xxHash performance
-struct XXHash {
-    template<typename T>
-    static constexpr forceinline HASH_32 XXH32_hash(const T& value) {
-        return _XXHash::XXH32(&value, sizeof(value), 0);
-    }
+template<class T, const HASH_64 seed>
+struct XXHash3Seeded {
+   static std::string name() {
+      return "xxh3_seed_" + std::to_string(seed);
+   }
 
-    template<typename T>
-    static constexpr forceinline HASH_32 XXH32_hash_withSeed(const T& value, HASH_32& seed) {
-        return _XXHash::XXH32(&value, sizeof(value), seed);
-    }
+   forceinline HASH_64 operator()(const T& data) const {
+      return _XXHash::XXH3_64bits_withSeed(&data, sizeof(T), seed);
+   }
+};
 
-    template<typename T>
-    static constexpr forceinline HASH_64 XXH64_hash(const T& value) {
-        return _XXHash::XXH64(&value, sizeof(value), 0);
-    }
+template<class T>
+struct XXHash3_128 {
+   static std::string name() {
+      return "xxh3_128";
+   }
 
-    template<typename T>
-    static constexpr forceinline HASH_64 XXH64_hash_withSeed(const T& value, HASH_64& seed) {
-        return _XXHash::XXH64(&value, sizeof(value), seed);
-    }
+   forceinline HASH_128 operator()(const T& data) const {
+      const auto val = _XXHash::XXH3_128bits(&data, sizeof(T));
+      return to_hash128(val.high64, val.low64);
+   }
+};
 
-    template<typename T>
-    static constexpr forceinline HASH_64 XXH3_hash(const T& value) {
-        return _XXHash::XXH3_64bits(&value, sizeof(T));
-    }
+template<class T, const HASH_64 seed>
+struct XXHash3_128Seeded {
+   static std::string name() {
+      return "xxh3_128_seed_" + std::to_string(seed);
+   }
 
-    template<typename T>
-    static constexpr forceinline HASH_64 XXH3_hash_withSeed(const T& value, HASH_64& seed) {
-        return _XXHash::XXH3_64bits_withSeed(&value, sizeof(T), seed);
-    }
-
-    template<typename T>
-    static forceinline HASH_128 XXH3_128_hash(const T& value) {
-        // TODO: is this the proper 128 bit XXH variant?
-        const auto val = _XXHash::XXH3_128bits(&value, sizeof(T));
-        return {val.low64, val.high64};
-    }
-
-    template<typename T>
-    static forceinline HASH_128 XXH3_128_hash_withSeed(const T& value, HASH_64& seed) {
-        // TODO: is this the proper 128 bit XXH variant?
-        const auto val = _XXHash::XXH3_128bits_withSeed(&value, sizeof(T), seed);
-        return {val.low64, val.high64};
-    }
+   forceinline HASH_128 operator()(const T& data) const {
+      const auto val = _XXHash::XXH3_128bits_withSeed(&data, sizeof(T), seed);
+      return to_hash128(val.high64, val.low64);
+   }
 };

@@ -30,19 +30,17 @@ namespace Hashtable {
 
    struct QuadraticProbingFunc {
      private:
-      const size_t directory_size;
-      const libdivide::divider<size_t> div;
+      const Reduction::FastModulo<size_t> fastmod;
 
      public:
-      QuadraticProbingFunc(const size_t& directory_size)
-         : directory_size(directory_size), div(Reduction::make_magic_divider(directory_size)) {}
+      QuadraticProbingFunc(const size_t& directory_size) : fastmod(directory_size) {}
 
       static std::string name() {
          return "quadratic";
       }
 
       forceinline size_t operator()(const size_t& index, const size_t& probing_step) const {
-         return Reduction::magic_modulo(index + probing_step * probing_step, directory_size, div);
+         return fastmod(index + probing_step * probing_step);
       }
    };
 
@@ -165,7 +163,7 @@ namespace Hashtable {
       }
 
       std::map<std::string, std::string> lookup_statistics(const std::vector<Key>& dataset) {
-         size_t min_psl, max_psl, total_psl = 0;
+         size_t min_psl = 0, max_psl = 0, total_psl = 0;
 
          for (const auto& key : dataset) {
             // Using template functor should successfully inline actual hash computation
@@ -394,7 +392,7 @@ namespace Hashtable {
       }
 
       std::map<std::string, std::string> lookup_statistics(const std::vector<Key>& dataset) {
-         size_t min_psl, max_psl, total_psl = 0;
+         size_t min_psl = 0, max_psl = 0, total_psl = 0;
 
          for (const auto& key : dataset) {
             // Using template functor should successfully inline actual hash computation
