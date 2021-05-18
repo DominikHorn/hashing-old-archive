@@ -68,9 +68,6 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
          return;
       }
 
-      // Allocate hashtable memory
-      hashtable.allocate();
-
       // Measure
       try {
          const auto stats = Benchmark::measure_hashtable(dataset, hashtable);

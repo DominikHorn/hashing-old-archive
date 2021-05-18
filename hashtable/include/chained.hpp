@@ -21,26 +21,13 @@ namespace Hashtable {
       const HashFn hashfn;
       const ReductionFn reductionfn;
       const size_t capacity;
-      bool allocated = false;
 
      public:
       explicit Chained(const size_t& capacity, const HashFn hashfn = HashFn())
-         : hashfn(hashfn), reductionfn(ReductionFn(directory_address_count(capacity))), capacity(capacity){};
+         : hashfn(hashfn), reductionfn(ReductionFn(directory_address_count(capacity))), capacity(capacity),
+           slots(directory_address_count(capacity)){};
 
       Chained(Chained&&) = default;
-
-      /**
-       * Allocates hashtable memory. For production use, we would presumably call this in the constructor,
-       * however this way we can save some time in case a measurement for this hashtable already exists.
-       */
-      void allocate() {
-         if (allocated)
-            return;
-         allocated = true;
-
-         slots.resize(directory_address_count(capacity));
-         clear();
-      }
 
       /**
        * Inserts a key, value/payload pair into the hashtable
@@ -223,7 +210,7 @@ namespace Hashtable {
      protected:
       struct Bucket {
          struct Slot {
-            Key key;
+            Key key = Sentinel;
             Payload payload;
          } packed;
 
@@ -232,7 +219,7 @@ namespace Hashtable {
       } packed;
 
       struct FirstLevelSlot {
-         Key key;
+         Key key = Sentinel;
          Payload payload;
          Bucket* buckets = nullptr;
       } packed;

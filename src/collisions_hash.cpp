@@ -135,7 +135,7 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
 
    measure64<PrimeMultiplicationHash64>(dataset_name, *dataset, collision_counter, outfile, iomutex);
    measure64<FibonacciHash64>(dataset_name, *dataset, collision_counter, outfile, iomutex);
-   measure64<FibonnaciPrimeHash64>(dataset_name, *dataset, collision_counter, outfile, iomutex);
+   measure64<FibonacciPrimeHash64>(dataset_name, *dataset, collision_counter, outfile, iomutex);
    measure64<MultAddHash64>(dataset_name, *dataset, collision_counter, outfile, iomutex);
 
    // More significant bits supposedly are of higher quality for multiplicative methods -> compute
@@ -143,7 +143,7 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
    constexpr auto p = (sizeof(Data) * 8) - __builtin_clzll(200000000 - 1);
    measure64<PrimeMultiplicationShiftHash64<p>>(dataset_name, *dataset, collision_counter, outfile, iomutex);
    measure64<FibonacciShiftHash64<p>>(dataset_name, *dataset, collision_counter, outfile, iomutex);
-   measure64<FibonnaciPrimeShiftHash64<p>>(dataset_name, *dataset, collision_counter, outfile, iomutex);
+   measure64<FibonacciPrimeShiftHash64<p>>(dataset_name, *dataset, collision_counter, outfile, iomutex);
    measure64<MultAddShiftHash64<p>>(dataset_name, *dataset, collision_counter, outfile, iomutex);
 
    // TODO: measure rotation instead of shift?

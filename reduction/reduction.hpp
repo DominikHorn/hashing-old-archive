@@ -6,7 +6,7 @@
    #error "Your compiler is not supported"
 #endif
 
-// TODO: utilize this for batching!
+// TODO(dominik): utilize this for batching!
 //#define LIBDIVIDE_SSE2
 //#define LIBDIVIDE_AVX2
 //#define LIBDIVIDE_AVX512
@@ -26,7 +26,7 @@ namespace Reduction {
     */
    template<class T>
    struct DoNothing {
-      DoNothing(const size_t& num_buckets) {
+      explicit DoNothing(const size_t& num_buckets) {
          UNUSED(num_buckets);
       }
 
@@ -51,7 +51,7 @@ namespace Reduction {
     */
    template<class T>
    struct Modulo {
-      Modulo(const size_t& num_buckets) : N(num_buckets) {}
+      explicit Modulo(const size_t& num_buckets) : N(num_buckets) {}
 
       static std::string name() {
          return "modulo";
@@ -72,16 +72,16 @@ namespace Reduction {
       const size_t N;
 
      public:
-      // TODO: similar to https://github.com/peterboncz/bloomfilter-bsd/blob/master/src/dtl/div.hpp,
+      // TODO(dominik): similar to https://github.com/peterboncz/bloomfilter-bsd/blob/master/src/dtl/div.hpp,
       //  we might want to filter out certain generated dividers to gain extra speed
-      FastModulo(const size_t& num_buckets) : magic_div({static_cast<T>(num_buckets)}), N(num_buckets) {}
+      explicit FastModulo(const size_t& num_buckets) : magic_div({static_cast<T>(num_buckets)}), N(num_buckets) {}
 
       static std::string name() {
          return "fast_modulo";
       }
 
       forceinline T operator()(const T& hash) const {
-         // TODO: investigate SIMD batching opportunities (see libdivide include for different options)
+         // TODO(dominik): investigate SIMD batching opportunities (see libdivide include for different options)
 
          const auto div = hash / magic_div; // Operator overloading ensures this is not an actual division
          const auto remainder = hash - div * N;
@@ -97,16 +97,17 @@ namespace Reduction {
       const size_t N;
 
      public:
-      // TODO: similar to https://github.com/peterboncz/bloomfilter-bsd/blob/master/src/dtl/div.hpp,
+      // TODO(dominik): similar to https://github.com/peterboncz/bloomfilter-bsd/blob/master/src/dtl/div.hpp,
       //  we might want to filter out certain generated dividers to gain extra speed
-      BranchlessFastModulo(const size_t& num_buckets) : magic_div({static_cast<T>(num_buckets)}), N(num_buckets) {}
+      explicit BranchlessFastModulo(const size_t& num_buckets)
+         : magic_div({static_cast<T>(num_buckets)}), N(num_buckets) {}
 
       static std::string name() {
          return "branchless_fast_modulo";
       }
 
       forceinline T operator()(const T& hash) const {
-         // TODO: investigate SIMD batching opportunities (see libdivide include for different options)
+         // TODO(dominik): investigate SIMD batching opportunities (see libdivide include for different options)
 
          const auto div = hash / magic_div; // Operator overloading ensures this is not an actual division
          const auto remainder = hash - div * N;
@@ -133,7 +134,7 @@ namespace Reduction {
     */
    template<class T>
    struct Fastrange {
-      Fastrange(const size_t& num_buckets) : N(num_buckets){};
+      explicit Fastrange(const size_t& num_buckets) : N(num_buckets){};
 
       static std::string name() {
          return "fastrange" + std::to_string(sizeof(T) * 8);
@@ -147,7 +148,7 @@ namespace Reduction {
 
    template<typename T>
    struct MinMaxCutoff {
-      MinMaxCutoff(const size_t& num_buckets) : N(num_buckets) {}
+      explicit MinMaxCutoff(const size_t& num_buckets) : N(num_buckets) {}
 
       static std::string name() {
          return "min_max_cutoff";

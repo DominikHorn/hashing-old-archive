@@ -164,7 +164,7 @@ namespace Benchmark {
          Perf::BlockCounter ctr(dataset.size());
 #endif
          for (const auto key : dataset) {
-            ht.insert(key, static_cast<typename Hashtable::PayloadType>(key) - 5);
+            ht.insert(key, typename Hashtable::PayloadType(key));
          }
 #ifdef MACOS
       }
@@ -184,7 +184,7 @@ namespace Benchmark {
             Optimizer::DoNotEliminate(payload);
             full_mem_barrier; // emulate doing something with payload by stalling at least until it arrives
             assert(payload);
-            assert(payload.value() == static_cast<typename Hashtable::PayloadType>(key) - 5);
+            assert(payload.value() == typename Hashtable::PayloadType(key));
          }
 #ifdef MACOS
       }

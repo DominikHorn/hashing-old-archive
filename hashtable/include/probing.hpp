@@ -61,29 +61,18 @@ namespace Hashtable {
       const ReductionFn reductionfn;
       const ProbingFn probingfn;
       const size_t capacity;
-      bool allocated = false;
 
      public:
       explicit Probing(const size_t& capacity, const HashFn hashfn = HashFn())
          : hashfn(hashfn), reductionfn(ReductionFn(directory_address_count(capacity))),
-           probingfn(ProbingFn(directory_address_count(capacity))), capacity(capacity){};
-
-      Probing(Probing&&) = default;
-
-      /**
-       * Allocates hashtable memory. For production use, we would presumably call this in the constructor,
-       * however this way we can save some time in case a measurement for this hashtable already exists.
-       */
-      void allocate() {
-         if (allocated)
-            return;
-         allocated = true;
-
+           probingfn(ProbingFn(directory_address_count(capacity))), capacity(capacity) {
          // Reserve required memory
          buckets.resize(directory_address_count(capacity));
          // Ensure all slots are in cleared state
          clear();
-      }
+      };
+
+      Probing(Probing&&) = default;
 
       /**
        * Inserts a key, value/payload pair into the hashtable
@@ -267,29 +256,18 @@ namespace Hashtable {
       const ReductionFn reductionfn;
       const ProbingFn probingfn;
       const size_t capacity;
-      bool allocated = false;
 
      public:
       explicit RobinhoodProbing(const size_t& capacity, const HashFn hashfn = HashFn())
          : hashfn(hashfn), reductionfn(ReductionFn(directory_address_count(capacity))),
-           probingfn(ProbingFn(directory_address_count(capacity))), capacity(capacity){};
-
-      RobinhoodProbing(RobinhoodProbing&&) = default;
-
-      /**
-       * Allocates hashtable memory. For production use, we would presumably call this in the constructor,
-       * however this way we can save some time in case a measurement for this hashtable already exists.
-       */
-      void allocate() {
-         if (allocated)
-            return;
-         allocated = true;
-
+           probingfn(ProbingFn(directory_address_count(capacity))), capacity(capacity) {
          // Reserve required memory
          buckets.resize(directory_address_count(capacity));
          // Ensure all slots are in cleared state
          clear();
-      }
+      };
+
+      RobinhoodProbing(RobinhoodProbing&&) = default;
 
       /**
        * Inserts a key, value/payload pair into the hashtable

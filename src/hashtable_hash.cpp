@@ -32,207 +32,248 @@ const std::vector<std::string> csv_columns = {
    //
 };
 
-template<class T>
-static void benchmark(const std::string& dataset_name, const std::shared_ptr<const std::vector<T>> dataset,
-                      const double load_factor, CSV& outfile, std::mutex& iomutex) {
-   // lambda to measure a given hash function with a given reducer. Will be entirely inlined by default
-   const auto measure = [&](auto hashtable) {
-      const auto hash_name = hashtable.hash_name();
-      const auto reducer_name = hashtable.reducer_name();
+template<class Hashtable, class Data>
+static void measure(const std::string& dataset_name, const std::vector<Data>& dataset, const double load_factor,
+                    CSV& outfile, std::mutex& iomutex) {
+   // Theoretical slot count of a hashtable on which we want to measure collisions
+   const auto ht_capacity =
+      static_cast<uint64_t>(static_cast<double>(dataset.size()) / static_cast<double>(load_factor));
+   Hashtable hashtable(ht_capacity);
 
-      const auto str = [](auto s) { return std::to_string(s); };
-      std::map<std::string, std::string> datapoint({
-         {"dataset", dataset_name},
-         {"numelements", str(dataset->size())},
-         {"load_factor", str(load_factor)},
-         {"bucket_size", str(hashtable.bucket_size())},
-         {"hashtable", hashtable.name()},
-         {"hash", hash_name},
-         {"reducer", reducer_name},
-      });
+   const auto hash_name = hashtable.hash_name();
+   const auto reducer_name = hashtable.reducer_name();
 
-      if (outfile.exists(datapoint)) {
-         std::unique_lock<std::mutex> lock(iomutex);
-         std::cout << "Skipping (";
-         auto iter = datapoint.begin();
-         while (iter != datapoint.end()) {
-            std::cout << iter->first << ": " << iter->second;
+   const auto str = [](auto s) { return std::to_string(s); };
+   std::map<std::string, std::string> datapoint({
+      {"dataset", dataset_name},
+      {"numelements", str(dataset.size())},
+      {"load_factor", str(load_factor)},
+      {"bucket_size", str(hashtable.bucket_size())},
+      {"hashtable", hashtable.name()},
+      {"hash", hash_name},
+      {"reducer", reducer_name},
+   });
 
-            iter++;
-            if (iter != datapoint.end())
-               std::cout << ", ";
-         }
-         std::cout << ") since it already exist" << std::endl;
-         return;
+   if (outfile.exists(datapoint)) {
+      std::unique_lock<std::mutex> lock(iomutex);
+      std::cout << "Skipping (";
+      auto iter = datapoint.begin();
+      while (iter != datapoint.end()) {
+         std::cout << iter->first << ": " << iter->second;
+
+         iter++;
+         if (iter != datapoint.end())
+            std::cout << ", ";
       }
+      std::cout << ") since it already exist" << std::endl;
+      return;
+   }
 
-      // Allocate hashtable memory
-      hashtable.allocate();
-
-      try {
-         // Measure
-         const auto stats = Benchmark::measure_hashtable(*dataset, hashtable);
+   try {
+      // Measure
+      const auto stats = Benchmark::measure_hashtable(dataset, hashtable);
 
 #ifdef VERBOSE
-         {
-            std::unique_lock<std::mutex> lock(iomutex);
-            std::cout << std::setw(55) << std::right << reducer_name + "(" + hash_name + ") insert took "
-                      << relative_to(stats.total_insert_ns, dataset->size()) << " ns/key ("
-                      << nanoseconds_to_seconds(stats.total_insert_ns) << " s total), lookup took "
-                      << relative_to(stats.total_lookup_ns, dataset->size()) << " ns/key ("
-                      << nanoseconds_to_seconds(stats.total_lookup_ns) << " s total)" << std::endl;
-         };
+      {
+         std::unique_lock<std::mutex> lock(iomutex);
+         std::cout << std::setw(55) << std::right << reducer_name + "(" + hash_name + ") insert took "
+                   << relative_to(stats.total_insert_ns, dataset.size()) << " ns/key ("
+                   << nanoseconds_to_seconds(stats.total_insert_ns) << " s total), lookup took "
+                   << relative_to(stats.total_lookup_ns, dataset.size()) << " ns/key ("
+                   << nanoseconds_to_seconds(stats.total_lookup_ns) << " s total)" << std::endl;
+      };
 #endif
 
-         datapoint.emplace("insert_nanoseconds_total", str(stats.total_insert_ns));
-         datapoint.emplace("insert_nanoseconds_per_key", str(relative_to(stats.total_insert_ns, dataset->size())));
-         datapoint.emplace("lookup_nanoseconds_total", str(stats.total_lookup_ns));
-         datapoint.emplace("lookup_nanoseconds_per_key", str(relative_to(stats.total_lookup_ns, dataset->size())));
+      datapoint.emplace("insert_nanoseconds_total", str(stats.total_insert_ns));
+      datapoint.emplace("insert_nanoseconds_per_key", str(relative_to(stats.total_insert_ns, dataset.size())));
+      datapoint.emplace("lookup_nanoseconds_total", str(stats.total_lookup_ns));
+      datapoint.emplace("lookup_nanoseconds_per_key", str(relative_to(stats.total_lookup_ns, dataset.size())));
 
-         // Make sure we collect more insight based on hashtable
-         for (const auto& stat : hashtable.lookup_statistics(*dataset)) {
-            datapoint.emplace(stat);
-         }
+      // Make sure we collect more insight based on hashtable
+      for (const auto& stat : hashtable.lookup_statistics(dataset)) {
+         datapoint.emplace(stat);
+      }
 
-         // Write to csv
-         outfile.write(datapoint);
-      } catch (const std::exception& e) {
-         std::unique_lock<std::mutex> lock(iomutex);
-         std::cout << std::setw(55) << std::right << reducer_name + "(" + hash_name + ") failed: " << e.what()
-                   << std::endl;
+      // Write to csv
+      outfile.write(datapoint);
+   } catch (const std::exception& e) {
+      std::unique_lock<std::mutex> lock(iomutex);
+      std::cout << std::setw(55) << std::right << reducer_name + "(" + hash_name + ") failed: " << e.what()
+                << std::endl;
+   }
+}
+
+template<class Hashfn, class Reducerfn, class Data>
+static void measure_chained(const std::string& dataset_name, const std::vector<Data>& dataset, const double load_factor,
+                            CSV& outfile, std::mutex& iomutex) {
+   struct Payload16 {
+      uint64_t a = 0, b = 0;
+      explicit Payload16(const Data& key) : a(key + 1), b(key + 2) {}
+      explicit Payload16() {}
+
+      bool operator==(const Payload16& other) {
+         return a == other.a && b == other.b;
       }
    };
 
-   // Theoretical slot count of a hashtable on which we want to measure collisions
-   const auto ht_capacity =
-      static_cast<uint64_t>(static_cast<double>(dataset->size()) / static_cast<double>(load_factor));
+   struct Payload64 {
+      uint64_t a = 0, b = 0, c = 0, d = 0;
+      explicit Payload64(const Data& key) : a(key - 2), b(key - 1), c(key + 1), d(key + 2) {}
+      explicit Payload64() {}
 
-   /**
-    * ===============
-    *    Chained
-    * ===============
-    */
+      bool operator==(const Payload64& other) {
+         return a == other.a && b == other.b && c == other.c && d == other.d;
+      }
+   };
 
-   /// mult
+   measure<Hashtable::Chained<Data, Payload16, 1, Hashfn, Reducerfn>>(dataset_name, dataset, load_factor, outfile,
+                                                                      iomutex);
+   measure<Hashtable::Chained<Data, Payload16, 1, Hashfn, Reducerfn>>(dataset_name, dataset, load_factor, outfile,
+                                                                      iomutex);
+   measure<Hashtable::Chained<Data, Payload16, 1, Hashfn, Reducerfn>>(dataset_name, dataset, load_factor, outfile,
+                                                                      iomutex);
+
+   measure<Hashtable::Chained<Data, Payload16, 4, Hashfn, Reducerfn>>(dataset_name, dataset, load_factor, outfile,
+                                                                      iomutex);
+   measure<Hashtable::Chained<Data, Payload16, 4, Hashfn, Reducerfn>>(dataset_name, dataset, load_factor, outfile,
+                                                                      iomutex);
+   measure<Hashtable::Chained<Data, Payload16, 4, Hashfn, Reducerfn>>(dataset_name, dataset, load_factor, outfile,
+                                                                      iomutex);
+
+   measure<Hashtable::Chained<Data, Payload64, 1, Hashfn, Reducerfn>>(dataset_name, dataset, load_factor, outfile,
+                                                                      iomutex);
+   measure<Hashtable::Chained<Data, Payload64, 1, Hashfn, Reducerfn>>(dataset_name, dataset, load_factor, outfile,
+                                                                      iomutex);
+   measure<Hashtable::Chained<Data, Payload64, 1, Hashfn, Reducerfn>>(dataset_name, dataset, load_factor, outfile,
+                                                                      iomutex);
+
+   measure<Hashtable::Chained<Data, Payload64, 4, Hashfn, Reducerfn>>(dataset_name, dataset, load_factor, outfile,
+                                                                      iomutex);
+   measure<Hashtable::Chained<Data, Payload64, 4, Hashfn, Reducerfn>>(dataset_name, dataset, load_factor, outfile,
+                                                                      iomutex);
+   measure<Hashtable::Chained<Data, Payload64, 4, Hashfn, Reducerfn>>(dataset_name, dataset, load_factor, outfile,
+                                                                      iomutex);
+}
+
+template<class Data>
+static void benchmark(const std::string& dataset_name, const std::vector<Data>& dataset, const double load_factor,
+                      CSV& outfile, std::mutex& iomutex) {
    using namespace Reduction;
-   measure(Hashtable::Chained<T, uint32_t, 1, PrimeMultiplicationHash64, Fastrange<HASH_32>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 1, PrimeMultiplicationHash64, Fastrange<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 1, PrimeMultiplicationHash64, FastModulo<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 2, PrimeMultiplicationHash64, Fastrange<HASH_32>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 2, PrimeMultiplicationHash64, Fastrange<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 2, PrimeMultiplicationHash64, FastModulo<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 4, PrimeMultiplicationHash64, Fastrange<HASH_32>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 4, PrimeMultiplicationHash64, Fastrange<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 4, PrimeMultiplicationHash64, FastModulo<HASH_64>>(ht_capacity));
 
-   /// mult-add
-   measure(Hashtable::Chained<T, uint32_t, 1, MultAddHash64, Fastrange<HASH_32>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 1, MultAddHash64, Fastrange<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 1, MultAddHash64, FastModulo<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 2, MultAddHash64, Fastrange<HASH_32>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 2, MultAddHash64, Fastrange<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 2, MultAddHash64, FastModulo<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 4, MultAddHash64, Fastrange<HASH_32>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 4, MultAddHash64, Fastrange<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 4, MultAddHash64, FastModulo<HASH_64>>(ht_capacity));
+   /// Chained
+   measure_chained<AquaHash<Data>, Fastrange<HASH_32>>(dataset_name, dataset, load_factor, outfile, iomutex);
+   measure_chained<AquaHash<Data>, Fastrange<HASH_64>>(dataset_name, dataset, load_factor, outfile, iomutex);
+   measure_chained<AquaHash<Data>, FastModulo<HASH_64>>(dataset_name, dataset, load_factor, outfile, iomutex);
 
-   /// murmur3 finalizer
-   measure(Hashtable::Chained<T, uint32_t, 1, MurmurFinalizer<HASH_64>, Fastrange<HASH_32>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 1, MurmurFinalizer<HASH_64>, Fastrange<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 1, MurmurFinalizer<HASH_64>, FastModulo<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 2, MurmurFinalizer<HASH_64>, Fastrange<HASH_32>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 2, MurmurFinalizer<HASH_64>, Fastrange<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 2, MurmurFinalizer<HASH_64>, FastModulo<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 4, MurmurFinalizer<HASH_64>, Fastrange<HASH_32>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 4, MurmurFinalizer<HASH_64>, Fastrange<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 4, MurmurFinalizer<HASH_64>, FastModulo<HASH_64>>(ht_capacity));
+   measure_chained<MeowHash64<Data>, Fastrange<HASH_32>>(dataset_name, dataset, load_factor, outfile, iomutex);
+   measure_chained<MeowHash64<Data>, Fastrange<HASH_64>>(dataset_name, dataset, load_factor, outfile, iomutex);
+   measure_chained<MeowHash64<Data>, FastModulo<HASH_64>>(dataset_name, dataset, load_factor, outfile, iomutex);
 
-   /// aquahash
-   measure(Hashtable::Chained<T, uint32_t, 1, AquaHash<HASH_64>, Fastrange<HASH_32>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 1, AquaHash<HASH_64>, Fastrange<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 1, AquaHash<HASH_64>, FastModulo<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 2, AquaHash<HASH_64>, Fastrange<HASH_32>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 2, AquaHash<HASH_64>, Fastrange<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 2, AquaHash<HASH_64>, FastModulo<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 4, AquaHash<HASH_64>, Fastrange<HASH_32>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 4, AquaHash<HASH_64>, Fastrange<HASH_64>>(ht_capacity));
-   measure(Hashtable::Chained<T, uint32_t, 4, AquaHash<HASH_64>, FastModulo<HASH_64>>(ht_capacity));
+   measure_chained<CityHash64<Data>, Fastrange<HASH_32>>(dataset_name, dataset, load_factor, outfile, iomutex);
+   measure_chained<CityHash64<Data>, Fastrange<HASH_64>>(dataset_name, dataset, load_factor, outfile, iomutex);
+   measure_chained<CityHash64<Data>, FastModulo<HASH_64>>(dataset_name, dataset, load_factor, outfile, iomutex);
 
-   /**
-    * ===============
-    *    Probing
-    * ===============
-    */
+   measure_chained<LargeTabulationHash<Data>, Fastrange<HASH_32>>(dataset_name, dataset, load_factor, outfile, iomutex);
+   measure_chained<LargeTabulationHash<Data>, Fastrange<HASH_64>>(dataset_name, dataset, load_factor, outfile, iomutex);
+   measure_chained<LargeTabulationHash<Data>, FastModulo<HASH_64>>(dataset_name, dataset, load_factor, outfile,
+                                                                   iomutex);
 
-   /// Linear Murmur finalizer
-   measure(Hashtable::Probing<T, uint32_t, MurmurFinalizer<HASH_64>, Fastrange<HASH_32>, Hashtable::LinearProbingFunc>(
-      ht_capacity));
-   measure(Hashtable::Probing<T, uint32_t, MurmurFinalizer<HASH_64>, Fastrange<HASH_64>, Hashtable::LinearProbingFunc>(
-      ht_capacity));
-   measure(Hashtable::Probing<T, uint32_t, MurmurFinalizer<HASH_64>, FastModulo<HASH_64>, Hashtable::LinearProbingFunc>(
-      ht_capacity));
+   measure_chained<MurmurFinalizer<Data>, Fastrange<HASH_32>>(dataset_name, dataset, load_factor, outfile, iomutex);
+   measure_chained<MurmurFinalizer<Data>, Fastrange<HASH_64>>(dataset_name, dataset, load_factor, outfile, iomutex);
+   measure_chained<MurmurFinalizer<Data>, FastModulo<HASH_64>>(dataset_name, dataset, load_factor, outfile, iomutex);
 
-   /// Quadratic Murmur finalizer
-   measure(
-      Hashtable::Probing<T, uint32_t, MurmurFinalizer<HASH_64>, Fastrange<HASH_32>, Hashtable::QuadraticProbingFunc>(
-         ht_capacity));
-   measure(
-      Hashtable::Probing<T, uint32_t, MurmurFinalizer<HASH_64>, Fastrange<HASH_64>, Hashtable::QuadraticProbingFunc>(
-         ht_capacity));
-   measure(
-      Hashtable::Probing<T, uint32_t, MurmurFinalizer<HASH_64>, FastModulo<HASH_64>, Hashtable::QuadraticProbingFunc>(
-         ht_capacity));
+   measure_chained<PrimeMultiplicationHash64, Fastrange<HASH_32>>(dataset_name, dataset, load_factor, outfile, iomutex);
+   measure_chained<PrimeMultiplicationHash64, Fastrange<HASH_64>>(dataset_name, dataset, load_factor, outfile, iomutex);
+   measure_chained<PrimeMultiplicationHash64, FastModulo<HASH_64>>(dataset_name, dataset, load_factor, outfile,
+                                                                   iomutex);
 
-   /**
-    * ==============
-    *   Robin Hood
-    * ==============
-    */
-   /// Linear Murmur finalizer
-   measure(Hashtable::RobinhoodProbing<T, uint32_t, MurmurFinalizer<HASH_64>, Fastrange<HASH_32>,
-                                       Hashtable::LinearProbingFunc>(ht_capacity));
-   measure(Hashtable::RobinhoodProbing<T, uint32_t, MurmurFinalizer<HASH_64>, Fastrange<HASH_64>,
-                                       Hashtable::LinearProbingFunc>(ht_capacity));
-   measure(Hashtable::RobinhoodProbing<T, uint32_t, MurmurFinalizer<HASH_64>, FastModulo<HASH_64>,
-                                       Hashtable::LinearProbingFunc>(ht_capacity));
+   measure_chained<MultAddHash64, Fastrange<HASH_32>>(dataset_name, dataset, load_factor, outfile, iomutex);
+   measure_chained<MultAddHash64, Fastrange<HASH_64>>(dataset_name, dataset, load_factor, outfile, iomutex);
+   measure_chained<MultAddHash64, FastModulo<HASH_64>>(dataset_name, dataset, load_factor, outfile, iomutex);
 
-   /// Quadratic Murmur finalizer
-   measure(Hashtable::RobinhoodProbing<T, uint32_t, MurmurFinalizer<HASH_64>, Fastrange<HASH_32>,
-                                       Hashtable::QuadraticProbingFunc>(ht_capacity));
-   measure(Hashtable::RobinhoodProbing<T, uint32_t, MurmurFinalizer<HASH_64>, Fastrange<HASH_64>,
-                                       Hashtable::QuadraticProbingFunc>(ht_capacity));
-   measure(Hashtable::RobinhoodProbing<T, uint32_t, MurmurFinalizer<HASH_64>, FastModulo<HASH_64>,
-                                       Hashtable::QuadraticProbingFunc>(ht_capacity));
+   measure_chained<FibonacciHash64, Fastrange<HASH_32>>(dataset_name, dataset, load_factor, outfile, iomutex);
+   measure_chained<FibonacciHash64, Fastrange<HASH_64>>(dataset_name, dataset, load_factor, outfile, iomutex);
+   measure_chained<FibonacciHash64, FastModulo<HASH_64>>(dataset_name, dataset, load_factor, outfile, iomutex);
 
-   /**
-    * ===============
-    *     Cuckoo
-    * ===============
-    */
+   measure_chained<XXHash3<Data>, Fastrange<HASH_32>>(dataset_name, dataset, load_factor, outfile, iomutex);
+   measure_chained<XXHash3<Data>, Fastrange<HASH_64>>(dataset_name, dataset, load_factor, outfile, iomutex);
+   measure_chained<XXHash3<Data>, FastModulo<HASH_64>>(dataset_name, dataset, load_factor, outfile, iomutex);
 
-   /// Balanced Cuckoo murmur + murmur(xor) -> Stanford implementation
-   measure(Hashtable::Cuckoo<T, uint32_t, 8, MurmurFinalizer<HASH_64>, Murmur3FinalizerCuckoo2Func, Fastrange<HASH_32>,
-                             Fastrange<HASH_32>, Hashtable::BalancedKicking>(ht_capacity));
-   measure(Hashtable::Cuckoo<T, uint32_t, 8, MurmurFinalizer<HASH_64>, Murmur3FinalizerCuckoo2Func, Fastrange<HASH_64>,
-                             Fastrange<HASH_64>, Hashtable::BalancedKicking>(ht_capacity));
-   measure(Hashtable::Cuckoo<T, uint32_t, 8, MurmurFinalizer<HASH_64>, Murmur3FinalizerCuckoo2Func, FastModulo<HASH_64>,
-                             FastModulo<HASH_64>, Hashtable::BalancedKicking>(ht_capacity));
-
-   /// Unbiased Cuckoo murmur + murmur(xor) -> Stanford implementation
-   measure(Hashtable::Cuckoo<T, uint32_t, 8, MurmurFinalizer<HASH_64>, Murmur3FinalizerCuckoo2Func, Fastrange<HASH_32>,
-                             Fastrange<HASH_32>, Hashtable::UnbiasedKicking>(ht_capacity));
-   measure(Hashtable::Cuckoo<T, uint32_t, 8, MurmurFinalizer<HASH_64>, Murmur3FinalizerCuckoo2Func, Fastrange<HASH_64>,
-                             Fastrange<HASH_64>, Hashtable::UnbiasedKicking>(ht_capacity));
-   measure(Hashtable::Cuckoo<T, uint32_t, 8, MurmurFinalizer<HASH_64>, Murmur3FinalizerCuckoo2Func, FastModulo<HASH_64>,
-                             FastModulo<HASH_64>, Hashtable::UnbiasedKicking>(ht_capacity));
-
-   /// Biases_10% Cuckoo murmur + murmur(xor) -> Stanford implementation
-   measure(Hashtable::Cuckoo<T, uint32_t, 8, MurmurFinalizer<HASH_64>, Murmur3FinalizerCuckoo2Func, Fastrange<HASH_32>,
-                             Fastrange<HASH_32>, Hashtable::BiasedKicking<26>>(ht_capacity));
-   measure(Hashtable::Cuckoo<T, uint32_t, 8, MurmurFinalizer<HASH_64>, Murmur3FinalizerCuckoo2Func, Fastrange<HASH_64>,
-                             Fastrange<HASH_64>, Hashtable::BiasedKicking<26>>(ht_capacity));
-   measure(Hashtable::Cuckoo<T, uint32_t, 8, MurmurFinalizer<HASH_64>, Murmur3FinalizerCuckoo2Func, FastModulo<HASH_64>,
-                             FastModulo<HASH_64>, Hashtable::BiasedKicking<26>>(ht_capacity));
+   //   /**
+   //    * ===============
+   //    *    Probing
+   //    * ===============
+   //    */
+   //
+   //   /// Linear Murmur finalizer
+   //   measure(Hashtable::Probing<Data, uint32_t, MurmurFinalizer<HASH_64>, Fastrange<HASH_32>, Hashtable::LinearProbingFunc>(
+   //      ht_capacity));
+   //   measure(Hashtable::Probing<Data, uint32_t, MurmurFinalizer<HASH_64>, Fastrange<HASH_64>, Hashtable::LinearProbingFunc>(
+   //      ht_capacity));
+   //   measure(Hashtable::Probing<Data, uint32_t, MurmurFinalizer<HASH_64>, FastModulo<HASH_64>, Hashtable::LinearProbingFunc>(
+   //      ht_capacity));
+   //
+   //   /// Quadratic Murmur finalizer
+   //   measure(
+   //      Hashtable::Probing<Data, uint32_t, MurmurFinalizer<HASH_64>, Fastrange<HASH_32>, Hashtable::QuadraticProbingFunc>(
+   //         ht_capacity));
+   //   measure(
+   //      Hashtable::Probing<Data, uint32_t, MurmurFinalizer<HASH_64>, Fastrange<HASH_64>, Hashtable::QuadraticProbingFunc>(
+   //         ht_capacity));
+   //   measure(
+   //      Hashtable::Probing<Data, uint32_t, MurmurFinalizer<HASH_64>, FastModulo<HASH_64>, Hashtable::QuadraticProbingFunc>(
+   //         ht_capacity));
+   //
+   //   /**
+   //    * ==============
+   //    *   Robin Hood
+   //    * ==============
+   //    */
+   //   /// Linear Murmur finalizer
+   //   measure(Hashtable::RobinhoodProbing<Data, uint32_t, MurmurFinalizer<HASH_64>, Fastrange<HASH_32>,
+   //                                       Hashtable::LinearProbingFunc>(ht_capacity));
+   //   measure(Hashtable::RobinhoodProbing<Data, uint32_t, MurmurFinalizer<HASH_64>, Fastrange<HASH_64>,
+   //                                       Hashtable::LinearProbingFunc>(ht_capacity));
+   //   measure(Hashtable::RobinhoodProbing<Data, uint32_t, MurmurFinalizer<HASH_64>, FastModulo<HASH_64>,
+   //                                       Hashtable::LinearProbingFunc>(ht_capacity));
+   //
+   //   /// Quadratic Murmur finalizer
+   //   measure(Hashtable::RobinhoodProbing<Data, uint32_t, MurmurFinalizer<HASH_64>, Fastrange<HASH_32>,
+   //                                       Hashtable::QuadraticProbingFunc>(ht_capacity));
+   //   measure(Hashtable::RobinhoodProbing<Data, uint32_t, MurmurFinalizer<HASH_64>, Fastrange<HASH_64>,
+   //                                       Hashtable::QuadraticProbingFunc>(ht_capacity));
+   //   measure(Hashtable::RobinhoodProbing<Data, uint32_t, MurmurFinalizer<HASH_64>, FastModulo<HASH_64>,
+   //                                       Hashtable::QuadraticProbingFunc>(ht_capacity));
+   //
+   //   /**
+   //    * ===============
+   //    *     Cuckoo
+   //    * ===============
+   //    */
+   //
+   //   /// Balanced Cuckoo murmur + murmur(xor) -> Stanford implementation
+   //   measure(Hashtable::Cuckoo<Data, uint32_t, 8, MurmurFinalizer<HASH_64>, Murmur3FinalizerCuckoo2Func, Fastrange<HASH_32>,
+   //                             Fastrange<HASH_32>, Hashtable::BalancedKicking>(ht_capacity));
+   //   measure(Hashtable::Cuckoo<Data, uint32_t, 8, MurmurFinalizer<HASH_64>, Murmur3FinalizerCuckoo2Func, Fastrange<HASH_64>,
+   //                             Fastrange<HASH_64>, Hashtable::BalancedKicking>(ht_capacity));
+   //   measure(Hashtable::Cuckoo<Data, uint32_t, 8, MurmurFinalizer<HASH_64>, Murmur3FinalizerCuckoo2Func, FastModulo<HASH_64>,
+   //                             FastModulo<HASH_64>, Hashtable::BalancedKicking>(ht_capacity));
+   //
+   //   /// Unbiased Cuckoo murmur + murmur(xor) -> Stanford implementation
+   //   measure(Hashtable::Cuckoo<Data, uint32_t, 8, MurmurFinalizer<HASH_64>, Murmur3FinalizerCuckoo2Func, Fastrange<HASH_32>,
+   //                             Fastrange<HASH_32>, Hashtable::UnbiasedKicking>(ht_capacity));
+   //   measure(Hashtable::Cuckoo<Data, uint32_t, 8, MurmurFinalizer<HASH_64>, Murmur3FinalizerCuckoo2Func, Fastrange<HASH_64>,
+   //                             Fastrange<HASH_64>, Hashtable::UnbiasedKicking>(ht_capacity));
+   //   measure(Hashtable::Cuckoo<Data, uint32_t, 8, MurmurFinalizer<HASH_64>, Murmur3FinalizerCuckoo2Func, FastModulo<HASH_64>,
+   //                             FastModulo<HASH_64>, Hashtable::UnbiasedKicking>(ht_capacity));
+   //
+   //   /// Biases_10% Cuckoo murmur + murmur(xor) -> Stanford implementation
+   //   measure(Hashtable::Cuckoo<Data, uint32_t, 8, MurmurFinalizer<HASH_64>, Murmur3FinalizerCuckoo2Func, Fastrange<HASH_32>,
+   //                             Fastrange<HASH_32>, Hashtable::BiasedKicking<26>>(ht_capacity));
+   //   measure(Hashtable::Cuckoo<Data, uint32_t, 8, MurmurFinalizer<HASH_64>, Murmur3FinalizerCuckoo2Func, Fastrange<HASH_64>,
+   //                             Fastrange<HASH_64>, Hashtable::BiasedKicking<26>>(ht_capacity));
+   //   measure(Hashtable::Cuckoo<Data, uint32_t, 8, MurmurFinalizer<HASH_64>, Murmur3FinalizerCuckoo2Func, FastModulo<HASH_64>,
+   //                             FastModulo<HASH_64>, Hashtable::BiasedKicking<26>>(ht_capacity));
 }
 
 int main(int argc, char* argv[]) {
@@ -277,11 +318,12 @@ int main(int argc, char* argv[]) {
       std::mutex iomutex;
       CSV outfile(args.outfile, csv_columns);
 
+#warning "Make hashtable experiment multithreaded"
       for (const auto& it : args.datasets) {
          const auto dataset_ptr = std::make_shared<const std::vector<uint64_t>>(it.load(iomutex));
 
          for (auto load_factor : args.load_factors) {
-            benchmark(it.name(), dataset_ptr, load_factor, outfile, iomutex);
+            benchmark(it.name(), *dataset_ptr, load_factor, outfile, iomutex);
          }
       }
    } catch (const std::exception& ex) {

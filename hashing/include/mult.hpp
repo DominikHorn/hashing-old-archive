@@ -35,11 +35,11 @@ struct MultiplicationHash {
 };
 
 const char MULT_PRIME_32[] = "mult_prime";
-const char MULT_FIBONNACI_32[] = "mult_fibonnaci";
-const char MULT_FIBONNACI_PRIME_32[] = "mult_fibonnaci_prime";
+const char MULT_FIBONACCI_32[] = "mult_fibonacci";
+const char MULT_FIBONACCI_PRIME_32[] = "mult_fibonacci_prime";
 const char MULT_PRIME_64[] = "mult_prime";
-const char MULT_FIBONNACI_64[] = "mult_fibonnaci";
-const char MULT_FIBONNACI_PRIME_64[] = "mult_fibonnaci_prime";
+const char MULT_FIBONACCI_64[] = "mult_fibonacci";
+const char MULT_FIBONACCI_PRIME_64[] = "mult_fibonacci_prime";
 
 // TODO: see if there are "better" prime constants (if that is even possible). Especially investigate
 // TODO: (?) test performance for random, (likely) non prime constant as suggested in http://www.vldb.org/pvldb/vol9/p96-richter.pdf
@@ -50,14 +50,14 @@ using PrimeMultiplicationHash32 = MultiplicationHash<HASH_32, 0x238EF8E3LU, MULT
 using PrimeMultiplicationHash64 = MultiplicationHash<HASH_64, 0xC7455FEC83DD661FLLU, MULT_PRIME_64>;
 
 /// Multiplicative 32-bit hashing with constants derived from the golden ratio
-using FibonacciHash32 = MultiplicationHash<HASH_32, 0x9E3779B9LU, MULT_FIBONNACI_32>;
+using FibonacciHash32 = MultiplicationHash<HASH_32, 0x9E3779B9LU, MULT_FIBONACCI_32>;
 /// Multiplicative 64-bit hashing with constants derived from the golden ratio
-using FibonacciHash64 = MultiplicationHash<HASH_64, 0x9E3779B97F4A7C15LLU, MULT_FIBONNACI_64>;
+using FibonacciHash64 = MultiplicationHash<HASH_64, 0x9E3779B97F4A7C15LLU, MULT_FIBONACCI_64>;
 
 /// Multiplicative 32-bit hashing with prime constants derived from the golden ratio
-using FibonnaciPrimeHash32 = MultiplicationHash<HASH_32, 0x9e3779b1LU, MULT_FIBONNACI_PRIME_32>;
+using FibonacciPrimeHash32 = MultiplicationHash<HASH_32, 0x9e3779b1LU, MULT_FIBONACCI_PRIME_32>;
 /// Multiplicative 64-bit hashing with prime constants derived from the golden ratio
-using FibonnaciPrimeHash64 = MultiplicationHash<HASH_64, 0x9E3779B97F4A7C55LLU, MULT_FIBONNACI_PRIME_64>;
+using FibonacciPrimeHash64 = MultiplicationHash<HASH_64, 0x9E3779B97F4A7C55LLU, MULT_FIBONACCI_PRIME_64>;
 
 /// Multiplicative 32-bit hashing with prime constants
 template<const uint8_t p = sizeof(HASH_32) * 8>
@@ -68,14 +68,14 @@ using PrimeMultiplicationShiftHash64 = MultiplicationHash<HASH_64, 0xC7455FEC83D
 
 /// Multiplicative 32-bit hashing with constants derived from the golden ratio
 template<const uint8_t p = sizeof(HASH_32) * 8>
-using FibonacciShiftHash32 = MultiplicationHash<HASH_32, 0x9E3779B9LU, MULT_FIBONNACI_32, p>;
+using FibonacciShiftHash32 = MultiplicationHash<HASH_32, 0x9E3779B9LU, MULT_FIBONACCI_32, p>;
 /// Multiplicative 64-bit hashing with constants derived from the golden ratio
 template<const uint8_t p = sizeof(HASH_64) * 8>
-using FibonacciShiftHash64 = MultiplicationHash<HASH_64, 0x9E3779B97F4A7C15LLU, MULT_FIBONNACI_64, p>;
+using FibonacciShiftHash64 = MultiplicationHash<HASH_64, 0x9E3779B97F4A7C15LLU, MULT_FIBONACCI_64, p>;
 
 /// Multiplicative 32-bit hashing with prime constants derived from the golden ratio
 template<const uint8_t p = sizeof(HASH_32) * 8>
-using FibonnaciPrimeShiftHash32 = MultiplicationHash<HASH_32, 0x9e3779b1LU, MULT_FIBONNACI_PRIME_32, p>;
+using FibonacciPrimeShiftHash32 = MultiplicationHash<HASH_32, 0x9e3779b1LU, MULT_FIBONACCI_PRIME_32, p>;
 /// Multiplicative 64-bit hashing with prime constants derived from the golden ratio
 template<const uint8_t p = sizeof(HASH_64) * 8>
-using FibonnaciPrimeShiftHash64 = MultiplicationHash<HASH_64, 0x9E3779B97F4A7C55LLU, MULT_FIBONNACI_PRIME_64, p>;
+using FibonacciPrimeShiftHash64 = MultiplicationHash<HASH_64, 0x9E3779B97F4A7C55LLU, MULT_FIBONACCI_PRIME_64, p>;

@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
             */
             measure64<PrimeMultiplicationHash64>(name, dataset, outfile, iomutex);
             measure64<FibonacciHash64>(name, dataset, outfile, iomutex);
-            measure64<FibonnaciPrimeHash64>(name, dataset, outfile, iomutex);
+            measure64<FibonacciPrimeHash64>(name, dataset, outfile, iomutex);
             measure64<MultAddHash64>(name, dataset, outfile, iomutex);
 
             // More significant bits supposedly are of higher quality for multiplicative methods -> compute
@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
             constexpr auto p = (sizeof(Data) * 8) - __builtin_clzll(200000000 - 1);
             measure64<PrimeMultiplicationShiftHash64<p>>(name, dataset, outfile, iomutex);
             measure64<FibonacciShiftHash64<p>>(name, dataset, outfile, iomutex);
-            measure64<FibonnaciPrimeShiftHash64<p>>(name, dataset, outfile, iomutex);
+            measure64<FibonacciPrimeShiftHash64<p>>(name, dataset, outfile, iomutex);
             measure64<MultAddShiftHash64<p>>(name, dataset, outfile, iomutex);
 
             // TODO: measure rotation instead of shift?

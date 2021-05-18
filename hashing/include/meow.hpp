@@ -724,7 +724,7 @@ struct MeowHash64 : private MeowHash {
     * @param seed
     * @return
     */
-   forceinline HASH_64 operator()(const T& data) {
+   forceinline HASH_64 operator()(const T& data) const {
       return Reduction::extract_64<select>(hash(data));
    }
 };
