@@ -6,10 +6,10 @@ cd "$(dirname "$0")"
 
 # Guarantee clean slate to start
 mkdir -p benchmark
-find . -name "CMakeCache.txt" -type f | xargs rm
+find . -name "CMakeCache.txt" -type f | xargs rm -rf
 
 # Build with various compilers. SET THIS ACCORDING TO YOUR SYSTEM CONFIG
-for c in clang,clang++ gcc-10,g++-10
+for c in clang,clang++ gcc,g++
 do
   _IFS=$IFS
   IFS=","
