@@ -200,7 +200,9 @@ namespace Reduction {
          return Hashfn::name() + "_low";
       }
 
-      forceinline HASH_64 operator()(const HASH_128& value) const {
+      template<class Data>
+      forceinline HASH_64 operator()(const Data& key) const {
+         const HASH_128 value = hashfn(key);
          return lower(value);
       }
 
@@ -223,7 +225,9 @@ namespace Reduction {
          return Hashfn::name() + "_upp";
       }
 
-      forceinline HASH_64 operator()(const HASH_128& value) const {
+      template<class Data>
+      forceinline HASH_64 operator()(const Data& key) const {
+         const HASH_128 value = hashfn(key);
          return higher(value);
       }
 
@@ -246,7 +250,9 @@ namespace Reduction {
          return Hashfn::name() + "_xor";
       }
 
-      forceinline HASH_64 operator()(const HASH_128& value) const {
+      template<class Data>
+      forceinline HASH_64 operator()(const Data& key) const {
+         const HASH_128 value = hashfn(key);
          return xor_both(value);
       }
 
@@ -296,7 +302,9 @@ namespace Reduction {
          return Hashfn::name() + "_city";
       }
 
-      forceinline HASH_64 operator()(const HASH_128& value) const {
+      template<class Data>
+      forceinline HASH_64 operator()(const Data& key) const {
+         const HASH_128 value = hashfn(key);
          return hash_128_to_64(value);
       }
 
