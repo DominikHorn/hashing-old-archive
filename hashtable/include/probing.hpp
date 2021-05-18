@@ -163,7 +163,7 @@ namespace Hashtable {
       }
 
       std::map<std::string, std::string> lookup_statistics(const std::vector<Key>& dataset) {
-         size_t min_psl, max_psl, total_psl = 0;
+         size_t min_psl = 0, max_psl = 0, total_psl = 0;
 
          for (const auto& key : dataset) {
             // Using template functor should successfully inline actual hash computation
@@ -392,7 +392,7 @@ namespace Hashtable {
       }
 
       std::map<std::string, std::string> lookup_statistics(const std::vector<Key>& dataset) {
-         size_t min_psl, max_psl, total_psl = 0;
+         size_t min_psl = 0, max_psl = 0, total_psl = 0;
 
          for (const auto& key : dataset) {
             // Using template functor should successfully inline actual hash computation
