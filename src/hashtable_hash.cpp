@@ -114,6 +114,7 @@ static void benchmark(const std::string& dataset_name, const std::shared_ptr<con
     */
 
    /// mult
+   using namespace Reduction;
    measure(Hashtable::Chained<T, uint32_t, 1, PrimeMultiplicationHash64, Fastrange<HASH_32>>(ht_capacity));
    measure(Hashtable::Chained<T, uint32_t, 1, PrimeMultiplicationHash64, Fastrange<HASH_64>>(ht_capacity));
    measure(Hashtable::Chained<T, uint32_t, 1, PrimeMultiplicationHash64, FastModulo<HASH_64>>(ht_capacity));
@@ -248,18 +249,19 @@ int main(int argc, char* argv[]) {
          for (const auto& load_fac : args.load_factors) {
             const auto ht_capacity = static_cast<double>(dataset_elem_count) / load_fac;
 
-            using Chained = Hashtable::Chained<uint64_t, uint32_t, 4, PrimeMultiplicationHash64, Fastrange<HASH_64>>;
+            using Chained =
+               Hashtable::Chained<uint64_t, uint32_t, 4, PrimeMultiplicationHash64, Reduction::Fastrange<HASH_64>>;
             // Directory size + all keys go to one bucket chain
             const auto wc_chaining = Chained::directory_address_count(ht_capacity) * Chained::slot_byte_size() +
                ((dataset_elem_count - 1) / Chained::bucket_size()) * Chained::bucket_byte_size();
 
-            using Probing = Hashtable::Probing<uint64_t, uint32_t, PrimeMultiplicationHash64, Fastrange<HASH_64>,
-                                               Hashtable::LinearProbingFunc>;
+            using Probing = Hashtable::Probing<uint64_t, uint32_t, PrimeMultiplicationHash64,
+                                               Reduction::Fastrange<HASH_64>, Hashtable::LinearProbingFunc>;
             const auto wc_probing = Probing::bucket_byte_size() * Probing::directory_address_count(ht_capacity);
 
-            using Cuckoo =
-               Hashtable::Cuckoo<uint64_t, uint32_t, 8, PrimeMultiplicationHash64, PrimeMultiplicationHash64,
-                                 Fastrange<HASH_64>, Fastrange<HASH_64>, Hashtable::UnbiasedKicking>;
+            using Cuckoo = Hashtable::Cuckoo<uint64_t, uint32_t, 8, PrimeMultiplicationHash64,
+                                             PrimeMultiplicationHash64, Reduction::Fastrange<HASH_64>,
+                                             Reduction::Fastrange<HASH_64>, Hashtable::UnbiasedKicking>;
             const auto wc_cuckoo = Cuckoo::bucket_byte_size() * Cuckoo::directory_address_count(ht_capacity);
 
             exec_mem.emplace_back(dataset_size + varmax(wc_chaining, wc_probing, wc_cuckoo));

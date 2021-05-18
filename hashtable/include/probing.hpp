@@ -30,19 +30,17 @@ namespace Hashtable {
 
    struct QuadraticProbingFunc {
      private:
-      const size_t directory_size;
-      const libdivide::divider<size_t> div;
+      const Reduction::FastModulo<size_t> fastmod;
 
      public:
-      QuadraticProbingFunc(const size_t& directory_size)
-         : directory_size(directory_size), div(Reduction::make_magic_divider(directory_size)) {}
+      QuadraticProbingFunc(const size_t& directory_size) : fastmod(directory_size) {}
 
       static std::string name() {
          return "quadratic";
       }
 
       forceinline size_t operator()(const size_t& index, const size_t& probing_step) const {
-         return Reduction::magic_modulo(index + probing_step * probing_step, directory_size, div);
+         return fastmod(index + probing_step * probing_step);
       }
    };
 
