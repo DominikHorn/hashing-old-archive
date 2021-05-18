@@ -55,9 +55,10 @@ namespace Hashtable {
 
          const auto victim_bucket = rand_() & 0x1 ? b1 : b2;
          const size_t victim_index = rand_() % BucketSize; // TODO: fast modulo
-         auto victim_data = victim_bucket->slots[victim_index];
+         Key victim_key = victim_bucket->slots[victim_index].key;
+         Payload victim_payload = victim_bucket->slots[victim_index].payload;
          victim_bucket->slots[victim_index] = {.key = key, .payload = payload};
-         return std::make_optional(std::make_pair(victim_data.key, victim_data.payload));
+         return std::make_optional(std::make_pair(victim_key, victim_payload));
       };
    };
 
@@ -101,9 +102,10 @@ namespace Hashtable {
 
          const auto victim_bucket = (rng & 0xFF) <= Bias ? b1 : b2;
          const size_t victim_index = rng % BucketSize;
-         auto victim_data = victim_bucket->slots[victim_index];
+         Key victim_key = victim_bucket->slots[victim_index].key;
+         Payload victim_payload = victim_bucket->slots[victim_index].payload;
          victim_bucket->slots[victim_index] = {.key = key, .payload = payload};
-         return std::make_optional(std::make_pair(victim_data.key, victim_data.payload));
+         return std::make_optional(std::make_pair(victim_key, victim_payload));
       };
    };
 
@@ -182,7 +184,8 @@ namespace Hashtable {
          Bucket* b1 = &buckets_[i1];
          for (size_t i = 0; i < BucketSize; i++) {
             if (b1->slots[i].key == key) {
-               return std::make_optional(b1->slots[i].payload);
+               Payload payload = b1->slots[i].payload;
+               return std::make_optional(payload);
             }
          }
 
@@ -194,7 +197,8 @@ namespace Hashtable {
          Bucket* b2 = &buckets_[i2];
          for (size_t i = 0; i < BucketSize; i++) {
             if (b2->slots[i].key == key) {
-               return std::make_optional(b2->slots[i].payload);
+               Payload payload = b2->slots[i].payload;
+               return std::make_optional(payload);
             }
          }
 

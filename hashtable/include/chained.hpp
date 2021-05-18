@@ -123,8 +123,10 @@ namespace Hashtable {
          Bucket* bucket = slot.buckets;
          while (bucket != nullptr) {
             for (size_t i = 0; i < BucketSize; i++) {
-               if (bucket->slots[i].key == key)
-                  return std::make_optional(bucket->slots[i].payload);
+               if (bucket->slots[i].key == key) {
+                  Payload payload = bucket->slots[i].payload;
+                  return std::make_optional(payload);
+               }
 
                if (bucket->slots[i].key == Sentinel)
                   return std::nullopt;
