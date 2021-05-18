@@ -25,8 +25,8 @@ struct MultiplicationAddHash {
    }
 };
 
-const char MA32[] = "mult_add32";
-const char MA64[] = "mult_add64";
+const char MA32[] = "mult_add";
+const char MA64[] = "mult_add";
 
 /// 32-bit MultAdd hashing
 using MultAddHash32 = MultiplicationAddHash<HASH_32, HASH_64, 0xC16FD7EEC0213493LLU, 0xA501000042C9A6E3LLU, MA32>;
