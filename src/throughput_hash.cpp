@@ -140,9 +140,9 @@ int main(int argc, char* argv[]) {
             measure64<XXHash3<Data>>(name, dataset, outfile, iomutex);
             measure128<XXHash3_128<Data>>(name, dataset, outfile, iomutex);
 
-            measure64<SmallTabulationTable<Data>>(name, dataset, outfile, iomutex);
-            measure64<MediumTabulationTable<Data>>(name, dataset, outfile, iomutex);
-            measure64<LargeTabulationTable<Data>>(name, dataset, outfile, iomutex);
+            measure64<SmallTabulationHash<Data>>(name, dataset, outfile, iomutex);
+            measure64<MediumTabulationHash<Data>>(name, dataset, outfile, iomutex);
+            measure64<LargeTabulationHash<Data>>(name, dataset, outfile, iomutex);
 
             measure64<CityHash64<Data>>(name, dataset, outfile, iomutex);
             measure128<CityHash128<Data>>(name, dataset, outfile, iomutex);

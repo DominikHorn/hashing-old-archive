@@ -82,16 +82,16 @@ struct _TabulationHashImplementation {
  * Small tabulation hash, i.e., single column
  */
 template<class T, const T seed = 0>
-using SmallTabulationTable = _TabulationHashImplementation<T, seed, 1, 0xFF>;
+using SmallTabulationHash = _TabulationHashImplementation<T, seed, 1, 0xFF>;
 
 /**
  * Medium tabulation hash, i.e., four columns
  */
 template<class T, const T seed = 0>
-using MediumTabulationTable = _TabulationHashImplementation<T, seed, 4, 0xFF>;
+using MediumTabulationHash = _TabulationHashImplementation<T, seed, 4, 0xFF>;
 
 /**
  * Large tabulation hash, i.e., eight columns
  */
 template<class T, const T seed = 0>
-using LargeTabulationTable = _TabulationHashImplementation<T, seed, 8, 0xFF>;
+using LargeTabulationHash = _TabulationHashImplementation<T, seed, 8, 0xFF>;
