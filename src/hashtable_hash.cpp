@@ -17,8 +17,8 @@ using Args = BenchmarkArgs::HashCollisionArgs;
 
 const std::vector<std::string> csv_columns = {
    // General statistics
-   "dataset", "numelements", "load_factor", "bucket_size", "hashtable", "hash", "reducer", "insert_nanoseconds_total",
-   "insert_nanoseconds_per_key", "lookup_nanoseconds_total", "lookup_nanoseconds_per_key",
+   "dataset", "numelements", "load_factor", "bucket_size", "hashtable", "hash", "reducer", "payload",
+   "insert_nanoseconds_total", "insert_nanoseconds_per_key", "lookup_nanoseconds_total", "lookup_nanoseconds_per_key",
 
    // Cuckoo custom statistics
    "primary_key_ratio",
@@ -50,6 +50,7 @@ static void measure(const std::string& dataset_name, const std::vector<Data>& da
       {"load_factor", str(load_factor)},
       {"bucket_size", str(hashtable.bucket_size())},
       {"hashtable", hashtable.name()},
+      {"payload", str(sizeof(typename Hashtable::PayloadType) * 8)},
       {"hash", hash_name},
       {"reducer", reducer_name},
    });
@@ -114,7 +115,7 @@ static void measure_chained(const std::string& dataset_name, const std::vector<D
       bool operator==(const Payload16& other) {
          return a == other.a && b == other.b;
       }
-   };
+   } packed;
 
    struct Payload64 {
       uint64_t a = 0, b = 0, c = 0, d = 0;
@@ -124,7 +125,7 @@ static void measure_chained(const std::string& dataset_name, const std::vector<D
       bool operator==(const Payload64& other) {
          return a == other.a && b == other.b && c == other.c && d == other.d;
       }
-   };
+   } packed;
 
    measure<Hashtable::Chained<Data, Payload16, 1, Hashfn, Reducerfn>>(dataset_name, dataset, load_factor, outfile,
                                                                       iomutex);
@@ -199,12 +200,7 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
    measure_chained<XXHash3<Data>, Fastrange<HASH_64>>(dataset_name, dataset, load_factor, outfile, iomutex);
    measure_chained<XXHash3<Data>, FastModulo<HASH_64>>(dataset_name, dataset, load_factor, outfile, iomutex);
 
-   //   /**
-   //    * ===============
-   //    *    Probing
-   //    * ===============
-   //    */
-   //
+   /// Probing
    //   /// Linear Murmur finalizer
    //   measure(Hashtable::Probing<Data, uint32_t, MurmurFinalizer<HASH_64>, Fastrange<HASH_32>, Hashtable::LinearProbingFunc>(
    //      ht_capacity));
