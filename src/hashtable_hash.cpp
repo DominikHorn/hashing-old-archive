@@ -334,22 +334,43 @@ int main(int argc, char* argv[]) {
       }
 
       std::sort(exec_mem.rbegin(), exec_mem.rend());
-      max_bytes += exec_mem[0];
+
+      for (size_t i = 0; i < args.max_threads && i < exec_mem.size(); i++) {
+         max_bytes += exec_mem[i];
+      }
 
       std::cout << "Will consume max <= " << max_bytes / (std::pow(1024, 3)) << " GB of ram" << std::endl;
 #endif
 
-      std::mutex iomutex;
       CSV outfile(args.outfile, csv_columns);
 
-#warning "Make hashtable experiment multithreaded"
+      std::mutex iomutex;
+      std::counting_semaphore cpu_blocker(args.max_threads);
+      std::vector<std::thread> threads{};
+
       for (const auto& it : args.datasets) {
          const auto dataset_ptr = std::make_shared<const std::vector<uint64_t>>(it.load(iomutex));
 
          for (auto load_factor : args.load_factors) {
-            benchmark(it.name(), *dataset_ptr, load_factor, outfile, iomutex);
+            threads.emplace_back(std::thread([&, dataset_ptr, load_factor] {
+               cpu_blocker.aquire();
+               benchmark(it.name(), *dataset_ptr, load_factor, outfile, iomutex);
+               cpu_blocker.release();
+            }));
          }
+#ifdef LOW_MEMORY
+         for (auto& t : threads) {
+            t.join();
+         }
+         threads.clear();
       }
+#else
+      }
+      for (auto& t : threads) {
+         t.join();
+      }
+      threads.clear();
+#endif
    } catch (const std::exception& ex) {
       std::cerr << ex.what() << std::endl;
       return -1;
