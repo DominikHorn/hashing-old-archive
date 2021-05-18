@@ -114,7 +114,7 @@ namespace Benchmark {
 
             // Our datasets are currently too small to ever cause unsigned int addition overflow
             // therefore this check is redundant. Doesn't hurt in release mode however
-            assert(collision_counter[index] != 0);
+            assert(collision_counter[ht_address] != 0);
 
             // Optimizer will never eliminate this (visible side effect in collision counter),
             // however it might try to be clever about computing ht_address since it knows that
