@@ -57,7 +57,7 @@ namespace Hashtable {
          }
 
          // Using template functor should successfully inline actual hash computation
-         Slot& slot = slots[reductionfn(hashfn(key))];
+         FirstLevelSlot& slot = slots[reductionfn(hashfn(key))];
 
          // Store directly in slot if possible
          if (slot.key == Sentinel) {
@@ -70,8 +70,7 @@ namespace Hashtable {
          Bucket* bucket = slot.buckets;
          if (bucket == nullptr) {
             auto b = new Bucket();
-            b->keys[0] = key;
-            b->payloads[0] = payload;
+            b->slots[0] = {.key = key, .payload = payload};
             slot.buckets = b;
             return true;
          }
@@ -81,11 +80,10 @@ namespace Hashtable {
             // Find suitable empty entry place. Note that deletions with holes will require
             // searching entire bucket to deal with duplicate keys!
             for (size_t i = 0; i < BucketSize; i++) {
-               if (bucket->keys[i] == Sentinel) {
-                  bucket->keys[i] = key;
-                  bucket->payloads[i] = payload;
+               if (bucket->slots[i].key == Sentinel) {
+                  bucket->slots[i] = {.key = key, .payload = payload};
                   return true;
-               } else if (bucket->keys[i] == key) {
+               } else if (bucket->slots[i].key == key) {
                   // key already exists
                   return false;
                }
@@ -98,8 +96,7 @@ namespace Hashtable {
 
          // Append a new bucket to the chain and add element there
          auto b = new Bucket();
-         b->keys[0] = key;
-         b->payloads[0] = payload;
+         b->slots[0] = {.key = key, .payload = payload};
          bucket->next = b;
          return true;
       }
@@ -117,7 +114,7 @@ namespace Hashtable {
          }
 
          // Using template functor should successfully inline actual hash computation
-         const Slot& slot = slots[reductionfn(hashfn(key))];
+         const FirstLevelSlot& slot = slots[reductionfn(hashfn(key))];
 
          if (slot.key == key) {
             return std::make_optional(slot.payload);
@@ -126,10 +123,10 @@ namespace Hashtable {
          Bucket* bucket = slot.buckets;
          while (bucket != nullptr) {
             for (size_t i = 0; i < BucketSize; i++) {
-               if (bucket->keys[i] == key)
-                  return std::make_optional(bucket->payloads[i]);
+               if (bucket->slots[i].key == key)
+                  return std::make_optional(bucket->slots[i].payload);
 
-               if (bucket->keys[i] == Sentinel)
+               if (bucket->slots[i].key == Sentinel)
                   return std::nullopt;
             }
             bucket = bucket->next;
@@ -175,7 +172,7 @@ namespace Hashtable {
       }
 
       static constexpr forceinline size_t slot_byte_size() {
-         return sizeof(Slot);
+         return sizeof(FirstLevelSlot);
       }
 
       static forceinline std::string name() {
@@ -223,18 +220,22 @@ namespace Hashtable {
 
      protected:
       struct Bucket {
-         std::array<Key, BucketSize> keys /*__attribute((aligned(sizeof(Key) * 8)))*/;
-         std::array<Payload, BucketSize> payloads;
+         struct Slot {
+            Key key;
+            Payload payload;
+         } packed;
+
+         std::array<Slot, BucketSize> slots /*__attribute((aligned(sizeof(Key) * 8)))*/;
          Bucket* next = nullptr;
       } packed;
 
-      struct Slot {
+      struct FirstLevelSlot {
          Key key;
          Payload payload;
          Bucket* buckets = nullptr;
       } packed;
 
       // First bucket is always inline in the slot
-      std::vector<Slot> slots;
+      std::vector<FirstLevelSlot> slots;
    };
 } // namespace Hashtable
