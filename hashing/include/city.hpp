@@ -502,7 +502,7 @@ struct CityHash32 : private CityHash {
 
    forceinline HASH_32 operator()(const T& key) const {
       auto* s = reinterpret_cast<const char*>(&key);
-      size_t len = sizeof(T) * 8;
+      size_t len = sizeof(T);
 
       if (len <= 24) {
          return len <= 12 ? (len <= 4 ? Hash32Len0to4(s, len) : Hash32Len5to12(s, len)) : Hash32Len13to24(s, len);
@@ -583,7 +583,7 @@ struct CityHash64 : private CityHash {
 
    forceinline HASH_64 operator()(const T& key) const {
       auto s = reinterpret_cast<const char*>(&key);
-      size_t len = sizeof(T) * 8;
+      size_t len = sizeof(T);
 
       if (len <= 32) {
          if (len <= 16) {
@@ -673,7 +673,7 @@ struct CityHash128 : private CityHash {
 
    forceinline HASH_128 operator()(const T& key) const {
       const auto* s = reinterpret_cast<const char*>(&key);
-      size_t len = sizeof(T) * 8;
+      size_t len = sizeof(T);
 
       return len >= 16 ? CityHash128WithSeed(s + 16, len - 16, to_hash128(Fetch64(s), Fetch64(s + 8) + k0)) :
                          CityHash128WithSeed(s, len, to_hash128(k0, k1));
@@ -693,7 +693,7 @@ struct CityHash128Seed : private CityHash {
 
    forceinline HASH_64 operator()(const T& key) const {
       const auto* s = reinterpret_cast<const char*>(&key);
-      size_t len = sizeof(T) * 8;
+      size_t len = sizeof(T);
 
       return CityHash128WithSeed(s, len, seed);
    }
@@ -714,7 +714,7 @@ struct CityHashCrc256 : private CityHash {
 
    forceinline HASH_256 operator()(const T& key) const {
       const auto* s = reinterpret_cast<const char*>(&key);
-      size_t len = sizeof(T) * 8;
+      size_t len = sizeof(T);
 
       HASH_256 result;
       if (likely(len >= 240)) {
@@ -738,7 +738,7 @@ struct CityHashCrc128 : private CityHash {
    }
 
    forceinline HASH_128 operator()(const T& key) {
-      size_t len = sizeof(T) * 8;
+      size_t len = sizeof(T);
 
       if (len <= 900) {
          CityHash128<T> hash;
@@ -765,7 +765,7 @@ struct CityHashCrc128Seed : private CityHash {
 
    forceinline HASH_128 operator()(const T& key) {
       const auto* s = reinterpret_cast<const char*>(&key);
-      size_t len = sizeof(T) * 8;
+      size_t len = sizeof(T);
 
       if (len <= 900) {
          return CityHash128WithSeed(s, len, seed);
