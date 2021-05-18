@@ -11,8 +11,7 @@
  */
 template<typename T = uint64_t>
 struct RandomHash {
-   RandomHash(const T& hashtable_size, const T& seed = 0xC7455FEC83DD661FLLU)
-      : gen(seed), dist(0, hashtable_size - 1){};
+   RandomHash(const T& seed = 0xC7455FEC83DD661FLLU) : gen(seed), dist(0, std::numeric_limits<T>::max()){};
 
    static std::string name() {
       return "random_hash";
