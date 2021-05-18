@@ -67,6 +67,7 @@ static void measure64(const std::string& dataset_name, const Dataset& dataset, C
    measure<Hashfn, DoNothing<HASH_64>>(dataset_name, dataset, outfile, iomutex);
    measure<Hashfn, Fastrange<HASH_32>>(dataset_name, dataset, outfile, iomutex);
    measure<Hashfn, Fastrange<HASH_64>>(dataset_name, dataset, outfile, iomutex);
+   measure<Hashfn, Modulo<HASH_64>>(dataset_name, dataset, outfile, iomutex);
    measure<Hashfn, FastModulo<HASH_64>>(dataset_name, dataset, outfile, iomutex);
    measure<Hashfn, BranchlessFastModulo<HASH_64>>(dataset_name, dataset, outfile, iomutex);
 }
