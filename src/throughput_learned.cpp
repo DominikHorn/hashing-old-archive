@@ -101,12 +101,11 @@ static void measure(const std::string& dataset_name, const std::vector<Data>& da
 template<class Data>
 static void benchmark(const std::string& dataset_name, const std::vector<Data>& dataset, const double sample_size,
                       CSV& outfile, std::mutex& iomutex) {
-   uint64_t sample_ns, prepare_ns;
-
-   const auto sample_n = static_cast<size_t>(sample_size * static_cast<long double>(dataset.size()));
-   std::vector<uint64_t> sample;
+   uint64_t sample_ns = 0, prepare_ns = 0;
 
    // Take a random sample
+   const auto sample_n = static_cast<size_t>(sample_size * static_cast<long double>(dataset.size()));
+   std::vector<uint64_t> sample;
    {
       auto start_time = std::chrono::steady_clock::now();
       if (sample_n == dataset.size()) {

@@ -54,14 +54,6 @@ struct _TabulationHashImplementation {
    std::array<std::array<T, ROWS>, COLUMNS> table;
 
    void print_table() {
-      const auto print_column = [](const std::array<T, ROWS>& column) {
-         std::cout << "col ";
-         for (auto& r : column) {
-            std::cout << std::hex << r << ", ";
-         }
-         std::cout << std::endl;
-      };
-
       std::cout << "addr\t";
       for (size_t c = 0; c < COLUMNS; c++) {
          std::cout << "col " << c << "\t";
