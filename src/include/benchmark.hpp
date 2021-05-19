@@ -198,7 +198,11 @@ namespace Benchmark {
          probe_times.emplace_back(
             static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count()));
       }
-      uint64_t avg_total_lookup_ns = std::accumulate(probe_times.begin(), probe_times.end(), 0) / lookupRepeatCount;
+      uint64_t avg_total_lookup_ns;
+      for (const auto& probe_time : probe_times) {
+         avg_total_lookup_ns += probe_time;
+      }
+      avg_total_lookup_ns /= lookupRepeatCount;
 
       // This is a really slow median finding algorithm but fine since we only ever have 5 elements
       std::sort(probe_times.begin(), probe_times.end());
