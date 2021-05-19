@@ -15,7 +15,7 @@
 #include "include/csv.hpp"
 #include "include/functors/hash_functors.hpp"
 
-using Args = BenchmarkArgs::HashCollisionArgs;
+using Args = BenchmarkArgs::LearnedHashtableArgs;
 
 const std::vector<std::string> csv_columns = {
    // General statistics

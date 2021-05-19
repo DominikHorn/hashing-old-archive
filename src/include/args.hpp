@@ -272,6 +272,7 @@ namespace BenchmarkArgs {
       std::string outfile;
       std::vector<double> load_factors;
       std::vector<Dataset> datasets;
+      unsigned int max_threads;
 
       HashHashtableArgs(int argc, char* argv[]) {
          const std::vector<std::string> required{outfile_key, datasets_key};
@@ -284,6 +285,10 @@ namespace BenchmarkArgs {
                (outfile_key,
                 "path to output file for storing results as csv. NOTE: file will always be overwritten",
                 cxxopts::value<std::string>()) //
+               (max_threads_key,
+                "maximum amount of threads to concurrently execute. NOTE: more threads may be created but only " +
+                   max_threads_key + " will actually execute at the same time.",
+                cxxopts::value<unsigned int>()->default_value(std::to_string(std::thread::hardware_concurrency()))) //
                (load_factors_key,
                 "comma separated list of load factors, i.e., percentage floating point values",
                 cxxopts::value<std::vector<double>>()->default_value("1.0")) //
@@ -314,6 +319,7 @@ namespace BenchmarkArgs {
 
             // Extract
             outfile = result[outfile_key].as<std::string>();
+            max_threads = result[max_threads_key].as<unsigned int>();
             load_factors = result[load_factors_key].as<std::vector<double>>();
             datasets = result[datasets_key].as<std::vector<Dataset>>();
          } catch (const std::exception& ex) {

@@ -13,7 +13,7 @@
 #include "include/csv.hpp"
 #include "include/functors/hash_functors.hpp"
 
-using Args = BenchmarkArgs::HashCollisionArgs;
+using Args = BenchmarkArgs::HashHashtableArgs;
 
 const std::vector<std::string> csv_columns = {
    // General statistics
@@ -288,16 +288,18 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
 
    /// Cuckoo TODO(dominik)
 
-   /// Probing
-   measure_probing<AquaHash<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
-   measure_probing<MeowHash64<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
-   measure_probing<CityHash64<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
-   measure_probing<LargeTabulationHash<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
-   measure_probing<MurmurFinalizer<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
-   measure_probing<PrimeMultiplicationHash64>(dataset_name, dataset, load_factor, outfile, iomutex);
-   measure_probing<MultAddHash64>(dataset_name, dataset, load_factor, outfile, iomutex);
-   measure_probing<FibonacciHash64>(dataset_name, dataset, load_factor, outfile, iomutex);
-   measure_probing<XXHash3<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
+   /// Probing (only measure when every element can actually fit!)
+   if (load_factor <= 1.0) {
+      measure_probing<AquaHash<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_probing<MeowHash64<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_probing<CityHash64<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_probing<LargeTabulationHash<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_probing<MurmurFinalizer<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_probing<PrimeMultiplicationHash64>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_probing<MultAddHash64>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_probing<FibonacciHash64>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_probing<XXHash3<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
+   }
 }
 
 int main(int argc, char* argv[]) {
@@ -349,12 +351,11 @@ int main(int argc, char* argv[]) {
       std::vector<std::thread> threads{};
 
       for (const auto& it : args.datasets) {
-         const auto dataset_ptr = std::make_shared<const std::vector<uint64_t>>(it.load(iomutex));
-
+         const auto dataset = it.load(iomutex);
          for (auto load_factor : args.load_factors) {
-            threads.emplace_back(std::thread([&, dataset_ptr, load_factor] {
+            threads.emplace_back(std::thread([&, it, dataset, load_factor] {
                cpu_blocker.aquire();
-               benchmark(it.name(), *dataset_ptr, load_factor, outfile, iomutex);
+               benchmark(it.name(), dataset, load_factor, outfile, iomutex);
                cpu_blocker.release();
             }));
          }
