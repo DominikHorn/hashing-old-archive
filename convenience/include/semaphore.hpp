@@ -31,7 +31,8 @@ namespace std {
          }
 
          counter += update;
-         condition_variable.notify_one();
+         for (auto i = update; i > 0; i--)
+            condition_variable.notify_one();
       }
 
       /**
