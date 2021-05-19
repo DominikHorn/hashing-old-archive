@@ -148,7 +148,7 @@ namespace Hashtable {
 
      public:
       Cuckoo(const size_t& capacity, const HashFn1 hashfn1 = HashFn1(), const HashFn2 hashfn2 = HashFn2())
-         : MaxKickCycleLength(capacity / 2), hashfn1(hashfn1), hashfn2(hashfn2),
+         : MaxKickCycleLength(4096), hashfn1(hashfn1), hashfn2(hashfn2),
            reductionfn1(ReductionFn1(directory_address_count(capacity))),
            reductionfn2(ReductionFn2(directory_address_count(capacity))), kickingfn(KickingFn()),
            buckets(directory_address_count(capacity)) {}
