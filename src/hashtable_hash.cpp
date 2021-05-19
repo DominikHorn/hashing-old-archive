@@ -347,7 +347,7 @@ int main(int argc, char* argv[]) {
       CSV outfile(args.outfile, csv_columns);
 
       std::mutex iomutex;
-      std::counting_semaphore cpu_blocker(args.max_threads);
+      std::counting_semaphore cpu_blocker(args.max_threads, 0);
       std::vector<std::thread> threads{};
 
       for (const auto& it : args.datasets) {
@@ -359,19 +359,12 @@ int main(int argc, char* argv[]) {
                cpu_blocker.release();
             }));
          }
-#ifdef LOW_MEMORY
-         for (auto& t : threads) {
-            t.join();
-         }
-         threads.clear();
       }
-#else
-      }
+      cpu_blocker.release(args.max_threads);
       for (auto& t : threads) {
          t.join();
       }
       threads.clear();
-#endif
    } catch (const std::exception& ex) {
       std::cerr << ex.what() << std::endl;
       return -1;
