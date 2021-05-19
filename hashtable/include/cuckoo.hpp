@@ -67,16 +67,18 @@ namespace Hashtable {
     * else if secondary bucket has space, place entry in there
     * else kick a random entry from the primary bucket with chance
     *
-    * @tparam Bias chance = Bias / 255, i.e., Bias 255 -> 100% chance that kicking happens in primary bucket
+    * @tparam Bias chance that element is kicked from second bucket in percent (i.e., value of 10 -> 10%)
     */
    template<uint8_t Bias>
    struct BiasedKicking {
      private:
       std::mt19937 rand_;
+      double chance = static_cast<double>(Bias) / 100.0;
+      uint_fast32_t threshold_ = std::numeric_limits<uint_fast32_t>::max() * chance;
 
      public:
       static std::string name() {
-         return "biased_kicking_" + std::to_string(static_cast<int>(100.0 * static_cast<double>(Bias) / 255.0));
+         return "biased_kicking_" + std::to_string(Bias);
       }
 
       template<class Bucket, class Key, class Payload, size_t BucketSize, Key Sentinel>
@@ -99,8 +101,7 @@ namespace Hashtable {
          }
 
          const auto rng = rand_();
-
-         const auto victim_bucket = (rng & 0xFF) <= Bias ? b1 : b2;
+         const auto victim_bucket = rng > threshold_ ? b1 : b2;
          const size_t victim_index = rng % BucketSize;
          Key victim_key = victim_bucket->slots[victim_index].key;
          Payload victim_payload = victim_bucket->slots[victim_index].payload;
@@ -114,7 +115,7 @@ namespace Hashtable {
     * else if secondary bucket has space, place entry in there
     * else kick a random entry from the primary bucket and place entry in primary bucket
     */
-   using UnbiasedKicking = BiasedKicking<255>;
+   using UnbiasedKicking = BiasedKicking<0>;
 
    template<class Key, class Payload, size_t BucketSize, class HashFn1, class HashFn2, class ReductionFn1,
             class ReductionFn2, class KickingFn, Key Sentinel = std::numeric_limits<Key>::max()>
