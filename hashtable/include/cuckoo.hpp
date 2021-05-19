@@ -223,7 +223,7 @@ namespace Hashtable {
       }
 
       static forceinline std::string name() {
-         return "cuckoo_" + KickingFn::name();
+         return "cuckoo_" + std::to_string(BucketSize) + "_" + KickingFn::name();
       }
 
       static forceinline std::string hash_name() {
