@@ -198,7 +198,7 @@ namespace Benchmark {
          probe_times.emplace_back(
             static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count()));
       }
-      uint64_t avg_total_lookup_ns;
+      uint64_t avg_total_lookup_ns = 0;
       for (const auto& probe_time : probe_times) {
          avg_total_lookup_ns += probe_time;
       }
