@@ -302,13 +302,15 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
    //   measure_chained<XXHash3<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
 
    /// Cuckoo
-   measure_cuckoo<AquaHash<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
+   measure_cuckoo<AquaHash<Data>, Murmur3FinalizerCuckoo2Func>(dataset_name, dataset, load_factor, outfile, iomutex);
    //   measure_cuckoo<MeowHash64<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
    //   measure_cuckoo<CityHash64<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
    //   measure_cuckoo<LargeTabulationHash<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
-   measure_cuckoo<MurmurFinalizer<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
-   measure_cuckoo<PrimeMultiplicationHash64>(dataset_name, dataset, load_factor, outfile, iomutex);
-   measure_cuckoo<MultAddHash64>(dataset_name, dataset, load_factor, outfile, iomutex);
+   measure_cuckoo<MurmurFinalizer<Data>, Murmur3FinalizerCuckoo2Func>(dataset_name, dataset, load_factor, outfile,
+                                                                      iomutex);
+   measure_cuckoo<PrimeMultiplicationHash64, Murmur3FinalizerCuckoo2Func>(dataset_name, dataset, load_factor, outfile,
+                                                                          iomutex);
+   measure_cuckoo<MultAddHash64, Murmur3FinalizerCuckoo2Func>(dataset_name, dataset, load_factor, outfile, iomutex);
    //   measure_cuckoo<FibonacciHash64>(dataset_name, dataset, load_factor, outfile, iomutex);
    //   measure_cuckoo<XXHash3<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
 

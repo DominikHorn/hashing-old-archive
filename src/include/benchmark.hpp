@@ -2,6 +2,7 @@
 #include <cassert>
 #include <chrono>
 #include <cmath>
+#include <numeric>
 #include <vector>
 
 #ifdef __APPLE__

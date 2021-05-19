@@ -53,8 +53,9 @@ namespace Hashtable {
             return std::nullopt;
          }
 
-         const auto victim_bucket = rand_() & 0x1 ? b1 : b2;
-         const size_t victim_index = rand_() % BucketSize; // TODO: fast modulo
+         const auto rng = rand_();
+         const auto victim_bucket = rng & 0x1 ? b1 : b2;
+         const size_t victim_index = rng % BucketSize;
          Key victim_key = victim_bucket->slots[victim_index].key;
          Payload victim_payload = victim_bucket->slots[victim_index].payload;
          victim_bucket->slots[victim_index] = {.key = key, .payload = payload};
@@ -141,8 +142,7 @@ namespace Hashtable {
          std::array<Slot, BucketSize> slots;
       } packed;
 
-      Bucket* buckets_;
-      size_t num_buckets_; // Total number of buckets
+      std::vector<Bucket> buckets;
 
       std::mt19937 rand_; // RNG for moving items around
 
@@ -151,25 +151,13 @@ namespace Hashtable {
          : MaxKickCycleLength(4096), hashfn1(hashfn1), hashfn2(hashfn2),
            reductionfn1(ReductionFn1(directory_address_count(capacity))),
            reductionfn2(ReductionFn2(directory_address_count(capacity))), kickingfn(KickingFn()),
-           num_buckets_(directory_address_count(capacity)) {
-         // Allocate memory
-         int r = posix_memalign(reinterpret_cast<void**>(&buckets_), sizeof(Bucket), num_buckets_ * sizeof(Bucket));
-         if (r != 0)
-            throw std::runtime_error("Could not memalign allocate for cuckoo hash map");
-
-         // Ensure all slots are in cleared state
-         clear();
-      }
-
-      ~Cuckoo() {
-         free(buckets_);
-      }
+           buckets(directory_address_count(capacity)) {}
 
       std::optional<Payload> lookup(const Key& key) const {
          const auto h1 = hashfn1(key);
          const auto i1 = reductionfn1(h1);
 
-         Bucket* b1 = &buckets_[i1];
+         const Bucket* b1 = &buckets[i1];
          for (size_t i = 0; i < BucketSize; i++) {
             if (b1->slots[i].key == key) {
                Payload payload = b1->slots[i].payload;
@@ -179,10 +167,10 @@ namespace Hashtable {
 
          auto i2 = reductionfn2(hashfn2(key, h1));
          if (i2 == i1) {
-            i2 = (i1 == num_buckets_ - 1) ? 0 : i1 + 1;
+            i2 = (i1 == buckets.size() - 1) ? 0 : i1 + 1;
          }
 
-         Bucket* b2 = &buckets_[i2];
+         const Bucket* b2 = &buckets[i2];
          for (size_t i = 0; i < BucketSize; i++) {
             if (b2->slots[i].key == key) {
                Payload payload = b2->slots[i].payload;
@@ -193,19 +181,17 @@ namespace Hashtable {
          return std::nullopt;
       }
 
-      std::map<std::string, std::string> lookup_statistics(const std::vector<Key>& dataset) {
+      std::map<std::string, std::string> lookup_statistics(const std::vector<Key>& dataset) const {
          size_t primary_key_cnt = 0;
 
          for (const auto& key : dataset) {
             const auto h1 = hashfn1(key);
             const auto i1 = reductionfn1(h1);
 
-            Bucket* b1 = &buckets_[i1];
-            for (size_t i = 0; i < BucketSize; i++) {
-               if (b1->slots[i].key == key) {
+            const Bucket* b1 = &buckets[i1];
+            for (size_t i = 0; i < BucketSize; i++)
+               if (b1->slots[i].key == key)
                   primary_key_cnt++;
-               }
-            }
          }
 
          return {
@@ -243,13 +229,14 @@ namespace Hashtable {
       }
 
       void clear() {
-         for (size_t i = 0; i < num_buckets_; i++) {
-            buckets_->slots.fill({});
-         }
+         for (auto& bucket : buckets)
+            for (auto& slot : bucket.slots)
+               slot.key = Sentinel;
       }
 
      private:
-      void insert(const Key& key, const Payload& value, size_t kick_count) {
+      void insert(Key key, Payload payload, size_t kick_count) {
+      start:
          // TODO: track max kick_count for result graphs
          if (kick_count > MaxKickCycleLength) {
             throw std::runtime_error("maximum kick cycle length (" + std::to_string(MaxKickCycleLength) + ") reached");
@@ -260,28 +247,31 @@ namespace Hashtable {
          auto i2 = reductionfn2(hashfn2(key, h1));
 
          if (unlikely(i2 == i1)) {
-            i2 = (i1 == num_buckets_ - 1) ? 0 : i1 + 1;
+            i2 = (i1 == buckets.size() - 1) ? 0 : i1 + 1;
          }
 
-         Bucket* b1 = &buckets_[i1];
-         Bucket* b2 = &buckets_[i2];
+         Bucket* b1 = &buckets[i1];
+         Bucket* b2 = &buckets[i2];
 
          // Update old value if the key is already in the table
          for (size_t i = 0; i < BucketSize; i++) {
             if (b1->slots[i].key == key) {
-               b1->slots[i].payload = value;
+               b1->slots[i].payload = payload;
                return;
             }
             if (b2->slots[i].key == key) {
-               b2->slots[i].payload = value;
+               b2->slots[i].payload = payload;
                return;
             }
          }
 
          // Way to go Mr. Stroustrup
          if (const auto kicked =
-                kickingfn.template operator()<Bucket, Key, Payload, BucketSize, Sentinel>(b1, b2, key, value)) {
-            insert(kicked.value().first, kicked.value().second, kick_count + 1);
+                kickingfn.template operator()<Bucket, Key, Payload, BucketSize, Sentinel>(b1, b2, key, payload)) {
+            key = kicked.value().first;
+            payload = kicked.value().second;
+            kick_count++;
+            goto start;
          }
       }
    };
