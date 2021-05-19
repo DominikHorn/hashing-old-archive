@@ -75,7 +75,7 @@ namespace Hashtable {
      private:
       std::mt19937 rand_;
       double chance = static_cast<double>(Bias) / 100.0;
-      uint_fast32_t threshold_ = std::numeric_limits<uint_fast32_t>::max() * chance;
+      uint32_t threshold_ = static_cast<uint32_t>(static_cast<double>(std::numeric_limits<uint32_t>::max()) * chance);
 
      public:
       static std::string name() {
