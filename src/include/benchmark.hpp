@@ -149,10 +149,12 @@ namespace Benchmark {
 
    struct HashtableStats {
       uint64_t total_insert_ns;
-      uint64_t total_lookup_ns;
+
+      uint64_t avg_total_lookup_ns;
+      uint64_t median_total_lookup_ns;
    };
 
-   template<typename Hashtable>
+   template<typename Hashtable, unsigned int lookupRepeatCount = 5>
    HashtableStats measure_hashtable(const std::vector<typename Hashtable::KeyType>& dataset, Hashtable& ht) {
       // Ensure hashtable is empty when we begin
       ht.clear();
@@ -173,26 +175,36 @@ namespace Benchmark {
       uint64_t total_insert_ns =
          static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
 
-      // Lookup every key
-      start_time = std::chrono::steady_clock::now();
+      std::vector<uint64_t> probe_times;
+      for (auto i = lookupRepeatCount; i > 0; i--) {
+         // Lookup every key
+         start_time = std::chrono::steady_clock::now();
 #ifdef MACOS
-      {
-         Perf::BlockCounter ctr(dataset.size());
+         {
+            Perf::BlockCounter ctr(dataset.size());
 #endif
-         for (const auto& key : dataset) {
-            const auto payload = ht.lookup(key);
-            Optimizer::DoNotEliminate(payload);
-            full_mem_barrier; // emulate doing something with payload by stalling at least until it arrives
-            assert(payload);
-            assert(payload.value() == typename Hashtable::PayloadType(key));
+            for (const auto& key : dataset) {
+               const auto payload = ht.lookup(key);
+               Optimizer::DoNotEliminate(payload);
+               full_mem_barrier; // emulate doing something with payload by stalling at least until it arrives
+               assert(payload);
+               assert(payload.value() == typename Hashtable::PayloadType(key));
+            }
+#ifdef MACOS
          }
-#ifdef MACOS
-      }
 #endif
-      end_time = std::chrono::steady_clock::now();
-      uint64_t total_lookup_ns =
-         static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
+         end_time = std::chrono::steady_clock::now();
+         probe_times.emplace_back(
+            static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count()));
+      }
+      uint64_t avg_total_lookup_ns = std::accumulate(probe_times.begin(), probe_times.end(), 0) / lookupRepeatCount;
 
-      return {total_insert_ns, total_lookup_ns};
+      // This is a really slow median finding algorithm but fine since we only ever have 5 elements
+      std::sort(probe_times.begin(), probe_times.end());
+      uint64_t median_total_lookup_ns = probe_times[probe_times.size() / 2];
+
+      return {.total_insert_ns = total_insert_ns,
+              .avg_total_lookup_ns = avg_total_lookup_ns,
+              .median_total_lookup_ns = median_total_lookup_ns};
    }
 } // namespace Benchmark

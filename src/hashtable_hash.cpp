@@ -18,7 +18,8 @@ using Args = BenchmarkArgs::HashHashtableArgs;
 const std::vector<std::string> csv_columns = {
    // General statistics
    "dataset", "numelements", "load_factor", "bucket_size", "hashtable", "hash", "reducer", "payload",
-   "insert_nanoseconds_total", "insert_nanoseconds_per_key", "lookup_nanoseconds_total", "lookup_nanoseconds_per_key",
+   "insert_nanoseconds_total", "insert_nanoseconds_per_key", "avg_lookup_nanoseconds_total",
+   "avg_lookup_nanoseconds_per_key", "median_lookup_nanoseconds_total", "median_lookup_nanoseconds_per_key",
 
    // Cuckoo custom statistics
    "primary_key_ratio",
@@ -80,15 +81,18 @@ static void measure(const std::string& dataset_name, const std::vector<Data>& da
          std::cout << std::setw(55) << std::right << reducer_name + "(" + hash_name + ") insert took "
                    << relative_to(stats.total_insert_ns, dataset.size()) << " ns/key ("
                    << nanoseconds_to_seconds(stats.total_insert_ns) << " s total), lookup took "
-                   << relative_to(stats.total_lookup_ns, dataset.size()) << " ns/key ("
-                   << nanoseconds_to_seconds(stats.total_lookup_ns) << " s total)" << std::endl;
+                   << relative_to(stats.median_total_lookup_ns, dataset.size()) << " ns/key ("
+                   << nanoseconds_to_seconds(stats.median_total_lookup_ns) << " s total)" << std::endl;
       };
 #endif
 
       datapoint.emplace("insert_nanoseconds_total", str(stats.total_insert_ns));
       datapoint.emplace("insert_nanoseconds_per_key", str(relative_to(stats.total_insert_ns, dataset.size())));
-      datapoint.emplace("lookup_nanoseconds_total", str(stats.total_lookup_ns));
-      datapoint.emplace("lookup_nanoseconds_per_key", str(relative_to(stats.total_lookup_ns, dataset.size())));
+      datapoint.emplace("avg_lookup_nanoseconds_total", str(stats.avg_total_lookup_ns));
+      datapoint.emplace("avg_lookup_nanoseconds_per_key", str(relative_to(stats.avg_total_lookup_ns, dataset.size())));
+      datapoint.emplace("median_lookup_nanoseconds_total", str(stats.median_total_lookup_ns));
+      datapoint.emplace("median_lookup_nanoseconds_per_key",
+                        str(relative_to(stats.median_total_lookup_ns, dataset.size())));
 
       // Make sure we collect more insight based on hashtable
       for (const auto& stat : hashtable.lookup_statistics(dataset)) {
