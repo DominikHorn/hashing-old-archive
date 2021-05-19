@@ -27,7 +27,7 @@ def gen_colors(max=40.0, s_sawtooth_min=0.7, s_sawtooth_max=0.9, s_sawtooth_step
             v_next = v_sawtooth_min
 
 
-compilers = ["g++"]  # , "clang++", "g++-10"]
+compilers = ["g++", "clang++"]
 _csv = pandas.read_csv(f"throughput_learned-{compilers[0]}.csv")
 dataset_names = sorted(set(_csv['dataset']))
 models = list(
