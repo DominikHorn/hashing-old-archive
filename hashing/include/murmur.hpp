@@ -111,7 +111,7 @@ struct Murmur3Hash32 {
 template<const HASH_64 seed = 0xC7455FEC83DD661FLLU>
 struct Murmur3Hash128 {
    static std::string name() {
-      return "nurmur3_128";
+      return "murmur3_128";
    }
 
    constexpr forceinline HASH_128 operator()(const HASH_64& key) const {
