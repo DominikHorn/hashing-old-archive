@@ -235,7 +235,7 @@
 template<class T, const int select = 0>
 struct AquaHash {
    static std::string name() {
-      return "aqua" + std::to_string(sizeof(T) * 8);
+      return "aqua" + std::to_string(select) + "_" + std::to_string(sizeof(T) * 8);
    }
 
    forceinline T operator()(const T& value, const __m128i seed = _mm_setzero_si128()) const;
