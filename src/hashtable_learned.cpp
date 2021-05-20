@@ -20,7 +20,8 @@ using Args = BenchmarkArgs::LearnedHashtableArgs;
 const std::vector<std::string> csv_columns = {
    // General statistics
    "dataset", "numelements", "load_factor", "sample_size", "bucket_size", "hashtable", "model", "reducer", "payload",
-   "insert_nanoseconds_total", "insert_nanoseconds_per_key", "lookup_nanoseconds_total", "lookup_nanoseconds_per_key",
+   "insert_nanoseconds_total", "insert_nanoseconds_per_key", "avg_lookup_nanoseconds_total",
+   "avg_lookup_nanoseconds_per_key", "median_lookup_nanoseconds_total", "median_lookup_nanoseconds_per_key",
 
    // Cuckoo custom statistics
    "primary_key_ratio",
