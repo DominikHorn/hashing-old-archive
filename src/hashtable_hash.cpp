@@ -268,7 +268,7 @@ static void measure_cuckoo(const std::string& dataset_name, const std::vector<Da
    //   measure<Hashtable::Cuckoo<Data, Payload64<Data>, 8, Hashfn1, Hashfn2, FastModulo<HASH_64>, FastModulo<HASH_64>,
    //                             Hashtable::UnbiasedKicking>>(dataset_name, dataset, load_factor, outfile, iomutex);
 
-   /// Unbiased kicking (place in primary bucket first & kick from secondary bucket with 10% chance)
+   /// Biased kicking (place in primary bucket first & kick from secondary bucket with 10% chance)
    //   measure<Hashtable::Cuckoo<Data, Payload16<Data>, 8, Hashfn1, Hashfn2, Fastrange<HASH_32>, Fastrange<HASH_32>,
    //                             Hashtable::BiasedKicking<10>>>(dataset_name, dataset, load_factor, outfile, iomutex);
    //   measure<Hashtable::Cuckoo<Data, Payload64<Data>, 8, Hashfn1, Hashfn2, Fastrange<HASH_32>, Fastrange<HASH_32>,

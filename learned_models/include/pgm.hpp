@@ -6,7 +6,11 @@
 
 #include "pgm/include/pgm/pgm_index.hpp"
 
-template<typename T, size_t Epsilon, size_t EpsilonRecursive, typename Floating = float>
+template<typename T,
+         size_t Epsilon,
+         size_t EpsilonRecursive,
+         const size_t MaxModels = std::numeric_limits<size_t>::max(),
+         typename Floating = float>
 struct PGMHash : public pgm::PGMIndex<T, Epsilon, EpsilonRecursive, Floating> {
   private:
    using Parent = pgm::PGMIndex<T, Epsilon, EpsilonRecursive, Floating>;
@@ -26,7 +30,12 @@ struct PGMHash : public pgm::PGMIndex<T, Epsilon, EpsilonRecursive, Floating> {
    template<typename RandomIt>
    PGMHash(const RandomIt& sample_begin, const RandomIt& sample_end, const size_t full_size)
       : Parent(sample_begin, sample_end), first_key(*sample_begin),
-        sample_size(std::distance(sample_begin, sample_end)), N(full_size) {}
+        sample_size(std::distance(sample_begin, sample_end)), N(full_size) {
+      if (this->segments.size() > MaxModels) {
+         throw std::runtime_error("PGM " + name() + " had more models than allowed: " +
+                                  std::to_string(this->segments.size()) + " > " + std::to_string(MaxModels));
+      }
+   }
 
    /**
     * Human readable name useful, e.g., to log measured results

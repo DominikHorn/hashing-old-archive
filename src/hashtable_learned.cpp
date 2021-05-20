@@ -19,7 +19,7 @@ using Args = BenchmarkArgs::LearnedHashtableArgs;
 
 const std::vector<std::string> csv_columns = {
    // General statistics
-   "dataset", "numelements", "load_factor", "sample_size", "bucket_size", "hashtable", "model", "reducer",
+   "dataset", "numelements", "load_factor", "sample_size", "bucket_size", "hashtable", "model", "reducer", "payload",
    "insert_nanoseconds_total", "insert_nanoseconds_per_key", "lookup_nanoseconds_total", "lookup_nanoseconds_per_key",
 
    // Cuckoo custom statistics
@@ -34,80 +34,183 @@ const std::vector<std::string> csv_columns = {
    //
 };
 
-template<class Data>
-static void benchmark(const std::string& dataset_name, const std::vector<Data>& dataset, const double load_factor,
-                      CSV& outfile, std::mutex& iomutex) {
-   const auto measure = [&](auto hashtable, const auto& sample_size) {
-      const auto hash_name = hashtable.hash_name();
-      const auto reducer_name = hashtable.reducer_name();
+template<class Hashfn, class Hashtable, class Data>
+static void measure(const std::string& dataset_name, const std::vector<Data>& dataset, const double load_factor,
+                    const std::vector<Data>& sample, CSV& outfile, std::mutex& iomutex) {
+   const auto str = [](auto s) { return std::to_string(s); };
+   std::map<std::string, std::string> datapoint({
+      {"dataset", dataset_name},
+      {"numelements", str(dataset.size())},
+      {"load_factor", str(load_factor)},
+      {"bucket_size", str(Hashtable::bucket_size())},
+      {"hashtable", Hashtable::name()},
+      {"payload", str(sizeof(typename Hashtable::PayloadType))},
+      {"model", Hashtable::hash_name()},
+      {"reducer", Hashtable::reducer_name()},
+   });
 
-      const auto str = [](auto s) { return std::to_string(s); };
-      std::map<std::string, std::string> datapoint({
-         {"dataset", dataset_name},
-         {"numelements", str(dataset.size())},
-         {"load_factor", str(load_factor)},
-         {"sample_size", str(sample_size)},
-         {"bucket_size", str(hashtable.bucket_size())},
-         {"hashtable", hashtable.name()},
-         {"model", hash_name},
-         {"reducer", reducer_name},
-      });
+   if (outfile.exists(datapoint)) {
+      std::unique_lock<std::mutex> lock(iomutex);
+      std::cout << "Skipping (";
+      auto iter = datapoint.begin();
+      while (iter != datapoint.end()) {
+         std::cout << iter->first << ": " << iter->second;
 
-      if (outfile.exists(datapoint)) {
-         std::unique_lock<std::mutex> lock(iomutex);
-         std::cout << "Skipping (";
-         auto iter = datapoint.begin();
-         while (iter != datapoint.end()) {
-            std::cout << iter->first << ": " << iter->second;
-
-            iter++;
-            if (iter != datapoint.end())
-               std::cout << ", ";
-         }
-         std::cout << ") since it already exist" << std::endl;
-         return;
+         iter++;
+         if (iter != datapoint.end())
+            std::cout << ", ";
       }
+      std::cout << ") since it already exist" << std::endl;
+      return;
+   }
 
+   // Theoretical slot count of a hashtable on which we want to measure collisions
+   const auto ht_capacity =
+      static_cast<uint64_t>(static_cast<double>(dataset.size()) / static_cast<double>(load_factor));
+   Hashtable hashtable(ht_capacity,
+                       Hashfn(sample.begin(), sample.end(), Hashtable::directory_address_count(ht_capacity)));
+   try {
       // Measure
-      try {
-         const auto stats = Benchmark::measure_hashtable(dataset, hashtable);
+      const auto stats = Benchmark::measure_hashtable(dataset, hashtable);
 
 #ifdef VERBOSE
-         {
-            std::unique_lock<std::mutex> lock(iomutex);
-            std::cout << std::setw(55) << std::right << reducer_name + "(" + hash_name + ") insert took "
-                      << relative_to(stats.total_insert_ns, dataset.size()) << " ns/key ("
-                      << nanoseconds_to_seconds(stats.total_insert_ns) << " s total), lookup took "
-                      << relative_to(stats.total_lookup_ns, dataset.size()) << " ns/key ("
-                      << nanoseconds_to_seconds(stats.total_lookup_ns) << " s total)" << std::endl;
-         };
+      {
+         std::unique_lock<std::mutex> lock(iomutex);
+         std::cout << std::setw(55) << std::right
+                   << Hashtable::reducer_name() + "(" + Hashtable::hash_name() + ") insert took "
+                   << relative_to(stats.total_insert_ns, dataset.size()) << " ns/key ("
+                   << nanoseconds_to_seconds(stats.total_insert_ns) << " s total), lookup took "
+                   << relative_to(stats.median_total_lookup_ns, dataset.size()) << " ns/key ("
+                   << nanoseconds_to_seconds(stats.median_total_lookup_ns) << " s total)" << std::endl;
+      };
 #endif
 
-         datapoint.emplace("insert_nanoseconds_total", str(stats.total_insert_ns));
-         datapoint.emplace("insert_nanoseconds_per_key", str(relative_to(stats.total_insert_ns, dataset.size())));
-         datapoint.emplace("lookup_nanoseconds_total", str(stats.total_lookup_ns));
-         datapoint.emplace("lookup_nanoseconds_per_key", str(relative_to(stats.total_lookup_ns, dataset.size())));
+      datapoint.emplace("insert_nanoseconds_total", str(stats.total_insert_ns));
+      datapoint.emplace("insert_nanoseconds_per_key", str(relative_to(stats.total_insert_ns, dataset.size())));
+      datapoint.emplace("avg_lookup_nanoseconds_total", str(stats.avg_total_lookup_ns));
+      datapoint.emplace("avg_lookup_nanoseconds_per_key", str(relative_to(stats.avg_total_lookup_ns, dataset.size())));
+      datapoint.emplace("median_lookup_nanoseconds_total", str(stats.median_total_lookup_ns));
+      datapoint.emplace("median_lookup_nanoseconds_per_key",
+                        str(relative_to(stats.median_total_lookup_ns, dataset.size())));
 
-         // Make sure we collect more insight based on hashtable
-         for (const auto& stat : hashtable.lookup_statistics(dataset)) {
-            datapoint.emplace(stat);
-         }
-
-         // Write to csv
-         outfile.write(datapoint);
-      } catch (const std::exception& e) {
-         std::unique_lock<std::mutex> lock(iomutex);
-         std::cout << std::setw(55) << std::right << reducer_name + "(" + hash_name + ") failed: " << e.what()
-                   << std::endl;
+      // Make sure we collect more insight based on hashtable
+      for (const auto& stat : hashtable.lookup_statistics(dataset)) {
+         datapoint.emplace(stat);
       }
-   };
 
-   /**
-    * ====================================
-    *        Learned Indices
-    * ====================================
-    */
+      // Write to csv
+      outfile.write(datapoint);
+   } catch (const std::exception& e) {
+      std::unique_lock<std::mutex> lock(iomutex);
+      std::cout << std::setw(55) << std::right
+                << Hashtable::reducer_name() + "(" + Hashtable::hash_name() + ") failed: " << e.what() << std::endl;
+   }
+}
 
+template<class Data>
+struct Payload16 {
+   uint64_t q0 = 0, q1 = 0;
+   explicit Payload16(const Data& key) : q0(key + 1), q1(key + 2) {}
+   explicit Payload16() {}
+
+   bool operator==(const Payload16& other) {
+      return q0 == other.q0 && q1 == other.q1;
+   }
+} packed;
+
+template<class Data>
+struct Payload64 {
+   uint64_t q0 = 0, q1 = 0, q2 = 0, q3 = 0, q4 = 0, q5 = 0, q6 = 0, q7 = 0;
+   explicit Payload64(const Data& key)
+      : q0(key - 4), q1(key - 3), q2(key - 2), q3(key - 1), q4(key + 1), q5(key + 2), q6(key + 3), q7(key + 4) {}
+   explicit Payload64() {}
+
+   bool operator==(const Payload64& other) {
+      return q0 == other.q0 && q1 == other.q1 && q2 == other.q2 && q3 == other.q3 && q4 == other.q4 && q5 == other.q5 &&
+         q6 == other.q6 && q7 == other.q7;
+   }
+} packed;
+
+template<class Hashfn, class Data>
+static void measure_chained(const std::string& dataset_name, const std::vector<Data>& dataset, const double load_factor,
+                            const std::vector<Data>& sample, CSV& outfile, std::mutex& iomutex) {
+   using namespace Reduction;
+   measure<Hashfn, Hashtable::Chained<Data, Payload16<Data>, 1, Hashfn, Clamp<HASH_64>>>(dataset_name, dataset,
+                                                                                         load_factor, sample, outfile,
+                                                                                         iomutex);
+   measure<Hashfn, Hashtable::Chained<Data, Payload64<Data>, 1, Hashfn, Clamp<HASH_64>>>(dataset_name, dataset,
+                                                                                         load_factor, sample, outfile,
+                                                                                         iomutex);
+
+   measure<Hashfn, Hashtable::Chained<Data, Payload16<Data>, 4, Hashfn, Clamp<HASH_64>>>(dataset_name, dataset,
+                                                                                         load_factor, sample, outfile,
+                                                                                         iomutex);
+   measure<Hashfn, Hashtable::Chained<Data, Payload64<Data>, 4, Hashfn, Clamp<HASH_64>>>(dataset_name, dataset,
+                                                                                         load_factor, sample, outfile,
+                                                                                         iomutex);
+}
+
+template<class Hashfn, class Data>
+static void measure_probing(const std::string& dataset_name, const std::vector<Data>& dataset, const double load_factor,
+                            const std::vector<Data>& sample, CSV& outfile, std::mutex& iomutex) {
+   using namespace Reduction;
+
+   /// Standard probing
+   measure<Hashfn, Hashtable::Probing<Data, Payload16<Data>, Hashfn, Clamp<HASH_64>, Hashtable::LinearProbingFunc>>(
+      dataset_name, dataset, load_factor, sample, outfile, iomutex);
+   measure<Hashfn, Hashtable::Probing<Data, Payload64<Data>, Hashfn, Clamp<HASH_64>, Hashtable::LinearProbingFunc>>(
+      dataset_name, dataset, load_factor, sample, outfile, iomutex);
+
+   measure<Hashfn, Hashtable::Probing<Data, Payload16<Data>, Hashfn, Clamp<HASH_64>, Hashtable::QuadraticProbingFunc>>(
+      dataset_name, dataset, load_factor, sample, outfile, iomutex);
+   measure<Hashfn, Hashtable::Probing<Data, Payload64<Data>, Hashfn, Clamp<HASH_64>, Hashtable::QuadraticProbingFunc>>(
+      dataset_name, dataset, load_factor, sample, outfile, iomutex);
+
+   /// Robin Hood
+   measure<Hashfn,
+           Hashtable::RobinhoodProbing<Data, Payload16<Data>, Hashfn, Clamp<HASH_64>, Hashtable::LinearProbingFunc>>(
+      dataset_name, dataset, load_factor, sample, outfile, iomutex);
+   measure<Hashfn,
+           Hashtable::RobinhoodProbing<Data, Payload64<Data>, Hashfn, Clamp<HASH_64>, Hashtable::LinearProbingFunc>>(
+      dataset_name, dataset, load_factor, sample, outfile, iomutex);
+
+   measure<Hashfn,
+           Hashtable::RobinhoodProbing<Data, Payload16<Data>, Hashfn, Clamp<HASH_64>, Hashtable::QuadraticProbingFunc>>(
+      dataset_name, dataset, load_factor, sample, outfile, iomutex);
+   measure<Hashfn,
+           Hashtable::RobinhoodProbing<Data, Payload64<Data>, Hashfn, Clamp<HASH_64>, Hashtable::QuadraticProbingFunc>>(
+      dataset_name, dataset, load_factor, sample, outfile, iomutex);
+}
+
+template<class Hashfn, class Data>
+static void measure_cuckoo(const std::string& dataset_name, const std::vector<Data>& dataset, const double load_factor,
+                           const std::vector<Data>& sample, CSV& outfile, std::mutex& iomutex) {
+   using namespace Reduction;
+
+   /// Balanced kicking (insert into bucket with more free space, if both are full kick with 50% chance from either)
+   measure<Hashfn,
+           Hashtable::Cuckoo<Data, Payload16<Data>, 8, Hashfn, Murmur3FinalizerCuckoo2Func, Clamp<HASH_64>,
+                             FastModulo<HASH_64>, Hashtable::BalancedKicking>>(dataset_name, dataset, load_factor,
+                                                                               sample, outfile, iomutex);
+   measure<Hashfn,
+           Hashtable::Cuckoo<Data, Payload64<Data>, 8, Hashfn, Murmur3FinalizerCuckoo2Func, Clamp<HASH_64>,
+                             FastModulo<HASH_64>, Hashtable::BalancedKicking>>(dataset_name, dataset, load_factor,
+                                                                               sample, outfile, iomutex);
+
+   /// Biased kicking (place in primary bucket first & kick from secondary bucket with 10% chance)
+   measure<Hashfn,
+           Hashtable::Cuckoo<Data, Payload16<Data>, 8, Hashfn, Murmur3FinalizerCuckoo2Func, Clamp<HASH_64>,
+                             FastModulo<HASH_64>, Hashtable::BiasedKicking<10>>>(dataset_name, dataset, load_factor,
+                                                                                 sample, outfile, iomutex);
+   measure<Hashfn,
+           Hashtable::Cuckoo<Data, Payload64<Data>, 8, Hashfn, Murmur3FinalizerCuckoo2Func, Clamp<HASH_64>,
+                             FastModulo<HASH_64>, Hashtable::BiasedKicking<10>>>(dataset_name, dataset, load_factor,
+                                                                                 sample, outfile, iomutex);
+}
+
+template<class Data>
+static void benchmark(const std::string& dataset_name, const std::vector<Data>& dataset, CSV& outfile,
+                      std::mutex& iomutex) {
    // Take a sample
    const double sample_size = 0.01; // Fix this for now at 0.01
    const auto sample_n = static_cast<size_t>(sample_size * static_cast<long double>(dataset.size()));
@@ -138,236 +241,140 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
    auto sample = pgm_sample_fn();
    sort_prepare(sample);
 
-   const auto ht_capacity =
-      static_cast<uint64_t>(static_cast<double>(dataset.size()) / static_cast<double>(load_factor));
+   /// Chained
+   for (const auto load_factor : {1. / 0.75, 1. / 1., 1. / 1.25}) {
+      try {
+         measure_chained<PGMHash<Data, 128, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+      } catch (const std::exception& e) {
+         try {
+            measure_chained<PGMHash<Data, 256, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+         } catch (const std::exception& e) {
+            try {
+               measure_chained<PGMHash<Data, 512, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile,
+                                                            iomutex);
+            } catch (const std::exception& e) {
+               try {
+                  measure_chained<PGMHash<Data, 1024, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile,
+                                                                iomutex);
+               } catch (const std::exception& e) {
+                  std::unique_lock<std::mutex> lock(iomutex);
+                  std::cerr << "Failed to find viable epsrec0 configuration for " << dataset_name << std::endl;
+               }
+            }
+         }
+      }
 
-   /**
-    * ========================================================
-    *  Chained, 64-bit key, 32-bit payload, 1 slots per bucket
-    * ========================================================
-    */
-   using namespace Reduction;
-   {
-      // pgm_hash_eps256_epsrec0
-      using HT = Hashtable::Chained<Data, uint32_t, 1, PGMHash<HASH_64, 256, 0>, Clamp<HASH_64>>;
-      measure(HT(ht_capacity,
-                 PGMHash<HASH_64, 256, 0>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
-              sample_size);
-   }
-   {
-      // pgm_hash_eps128_epsrec4
-      using HT = Hashtable::Chained<Data, uint32_t, 1, PGMHash<HASH_64, 128, 4>, Clamp<HASH_64>>;
-      measure(HT(ht_capacity,
-                 PGMHash<HASH_64, 128, 4>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
-              sample_size);
-   }
-   {
-      // pgm_hash_eps64_epsrec1
-      using HT = Hashtable::Chained<Data, uint32_t, 1, PGMHash<HASH_64, 64, 1>, Clamp<HASH_64>>;
-      measure(HT(ht_capacity,
-                 PGMHash<HASH_64, 64, 1>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
-              sample_size);
-   }
-   {
-      // pgm_hash_eps4_epsrec4
-      using HT = Hashtable::Chained<Data, uint32_t, 1, PGMHash<HASH_64, 4, 4>, Clamp<HASH_64>>;
-      measure(HT(ht_capacity,
-                 PGMHash<HASH_64, 4, 4>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
-              sample_size);
-   }
-
-   /**
-    * ========================================================
-    *  Cuckoo, 64-bit key, 32-bit payload, 8 slots per bucket
-    * ========================================================
-    */
-   /// Balanced
-   {
-      // pgm_hash_eps256_epsrec0
-      using HT = Hashtable::Cuckoo<Data, uint32_t, 8, PGMHash<HASH_64, 256, 0>, Murmur3FinalizerCuckoo2Func,
-                                   Clamp<HASH_64>, FastModulo<HASH_64>, Hashtable::BalancedKicking>;
-      measure(HT(ht_capacity,
-                 PGMHash<HASH_64, 256, 0>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
-              sample_size);
-   }
-   {
-      // pgm_hash_eps128_epsrec4
-      using HT = Hashtable::Cuckoo<Data, uint32_t, 8, PGMHash<HASH_64, 128, 4>, Murmur3FinalizerCuckoo2Func,
-                                   Clamp<HASH_64>, FastModulo<HASH_64>, Hashtable::BalancedKicking>;
-      measure(HT(ht_capacity,
-                 PGMHash<HASH_64, 128, 4>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
-              sample_size);
-   }
-   {
-      // pgm_hash_eps64_epsrec1
-      using HT = Hashtable::Cuckoo<Data, uint32_t, 8, PGMHash<HASH_64, 64, 1>, Murmur3FinalizerCuckoo2Func,
-                                   Clamp<HASH_64>, FastModulo<HASH_64>, Hashtable::BalancedKicking>;
-      measure(HT(ht_capacity,
-                 PGMHash<HASH_64, 64, 1>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
-              sample_size);
-   }
-   {
-      // pgm_hash_eps4_epsrec4
-      using HT = Hashtable::Cuckoo<Data, uint32_t, 8, PGMHash<HASH_64, 4, 4>, Murmur3FinalizerCuckoo2Func,
-                                   Clamp<HASH_64>, FastModulo<HASH_64>, Hashtable::BalancedKicking>;
-      measure(HT(ht_capacity,
-                 PGMHash<HASH_64, 4, 4>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
-              sample_size);
+      try {
+         measure_chained<PGMHash<Data, 128, 4, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+      } catch (const std::exception& e) {
+         try {
+            measure_chained<PGMHash<Data, 256, 4, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+         } catch (const std::exception& e) {
+            try {
+               measure_chained<PGMHash<Data, 512, 4, 1000>>(dataset_name, dataset, load_factor, sample, outfile,
+                                                            iomutex);
+            } catch (const std::exception& e) {
+               try {
+                  measure_chained<PGMHash<Data, 1024, 4, 1000>>(dataset_name, dataset, load_factor, sample, outfile,
+                                                                iomutex);
+               } catch (const std::exception& e) {
+                  std::unique_lock<std::mutex> lock(iomutex);
+                  std::cerr << "Failed to find viable epsrec0 configuration for " << dataset_name << std::endl;
+               }
+            }
+         }
+      }
    }
 
-   /// Biased (~10% secondary bucket kicking)
-   {
-      // pgm_hash_eps256_epsrec0
-      using HT = Hashtable::Cuckoo<Data, uint32_t, 8, PGMHash<HASH_64, 256, 0>, Murmur3FinalizerCuckoo2Func,
-                                   Clamp<HASH_64>, FastModulo<HASH_64>, Hashtable::BiasedKicking<26>>;
-      measure(HT(ht_capacity,
-                 PGMHash<HASH_64, 256, 0>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
-              sample_size);
-   }
-   {
-      // pgm_hash_eps128_epsrec4
-      using HT = Hashtable::Cuckoo<Data, uint32_t, 8, PGMHash<HASH_64, 128, 4>, Murmur3FinalizerCuckoo2Func,
-                                   Clamp<HASH_64>, FastModulo<HASH_64>, Hashtable::BiasedKicking<26>>;
-      measure(HT(ht_capacity,
-                 PGMHash<HASH_64, 128, 4>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
-              sample_size);
-   }
-   {
-      // pgm_hash_eps64_epsrec1
-      using HT = Hashtable::Cuckoo<Data, uint32_t, 8, PGMHash<HASH_64, 64, 1>, Murmur3FinalizerCuckoo2Func,
-                                   Clamp<HASH_64>, FastModulo<HASH_64>, Hashtable::BiasedKicking<26>>;
-      measure(HT(ht_capacity,
-                 PGMHash<HASH_64, 64, 1>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
-              sample_size);
-   }
-   {
-      // pgm_hash_eps4_epsrec4
-      using HT = Hashtable::Cuckoo<Data, uint32_t, 8, PGMHash<HASH_64, 4, 4>, Murmur3FinalizerCuckoo2Func,
-                                   Clamp<HASH_64>, FastModulo<HASH_64>, Hashtable::BiasedKicking<26>>;
-      measure(HT(ht_capacity,
-                 PGMHash<HASH_64, 4, 4>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
-              sample_size);
-   }
+   /// Cuckoo
+   for (const auto load_factor : {0.98, 0.95}) {
+      try {
+         measure_cuckoo<PGMHash<Data, 128, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+      } catch (const std::exception& e) {
+         try {
+            measure_cuckoo<PGMHash<Data, 256, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+         } catch (const std::exception& e) {
+            try {
+               measure_cuckoo<PGMHash<Data, 512, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile,
+                                                           iomutex);
+            } catch (const std::exception& e) {
+               try {
+                  measure_cuckoo<PGMHash<Data, 1024, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile,
+                                                               iomutex);
+               } catch (const std::exception& e) {
+                  std::unique_lock<std::mutex> lock(iomutex);
+                  std::cerr << "Failed to find viable epsrec0 configuration for " << dataset_name << std::endl;
+               }
+            }
+         }
+      }
 
-   /// Unbiased (100% kick from primary bucket)
-   {
-      // pgm_hash_eps256_epsrec0
-      using HT = Hashtable::Cuckoo<Data, uint32_t, 8, PGMHash<HASH_64, 256, 0>, Murmur3FinalizerCuckoo2Func,
-                                   Clamp<HASH_64>, FastModulo<HASH_64>, Hashtable::UnbiasedKicking>;
-      measure(HT(ht_capacity,
-                 PGMHash<HASH_64, 256, 0>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
-              sample_size);
-   }
-   {
-      // pgm_hash_eps128_epsrec4
-      using HT = Hashtable::Cuckoo<Data, uint32_t, 8, PGMHash<HASH_64, 128, 4>, Murmur3FinalizerCuckoo2Func,
-                                   Clamp<HASH_64>, FastModulo<HASH_64>, Hashtable::UnbiasedKicking>;
-      measure(HT(ht_capacity,
-                 PGMHash<HASH_64, 128, 4>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
-              sample_size);
-   }
-   {
-      // pgm_hash_eps64_epsrec1
-      using HT = Hashtable::Cuckoo<Data, uint32_t, 8, PGMHash<HASH_64, 64, 1>, Murmur3FinalizerCuckoo2Func,
-                                   Clamp<HASH_64>, FastModulo<HASH_64>, Hashtable::UnbiasedKicking>;
-      measure(HT(ht_capacity,
-                 PGMHash<HASH_64, 64, 1>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
-              sample_size);
-   }
-   {
-      // pgm_hash_eps4_epsrec4
-      using HT = Hashtable::Cuckoo<Data, uint32_t, 8, PGMHash<HASH_64, 4, 4>, Murmur3FinalizerCuckoo2Func,
-                                   Clamp<HASH_64>, FastModulo<HASH_64>, Hashtable::UnbiasedKicking>;
-      measure(HT(ht_capacity,
-                 PGMHash<HASH_64, 4, 4>(sample.begin(), sample.end(), HT::directory_address_count(ht_capacity))),
-              sample_size);
+      try {
+         measure_cuckoo<PGMHash<Data, 128, 4, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+      } catch (const std::exception& e) {
+         try {
+            measure_cuckoo<PGMHash<Data, 256, 4, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+         } catch (const std::exception& e) {
+            try {
+               measure_cuckoo<PGMHash<Data, 512, 4, 1000>>(dataset_name, dataset, load_factor, sample, outfile,
+                                                           iomutex);
+            } catch (const std::exception& e) {
+               try {
+                  measure_cuckoo<PGMHash<Data, 1024, 4, 1000>>(dataset_name, dataset, load_factor, sample, outfile,
+                                                               iomutex);
+               } catch (const std::exception& e) {
+                  std::unique_lock<std::mutex> lock(iomutex);
+                  std::cerr << "Failed to find viable epsrec0 configuration for " << dataset_name << std::endl;
+               }
+            }
+         }
+      }
    }
 
-   /**
-    * ========================================================
-    *           Probing, 64-bit key, 32-bit value
-    * ========================================================
-    */
+   /// Probing
+   for (const auto load_factor : {1.0 / 1.25, 1.0 / 1.5}) {
+      try {
+         measure_probing<PGMHash<Data, 128, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+      } catch (const std::exception& e) {
+         try {
+            measure_probing<PGMHash<Data, 256, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+         } catch (const std::exception& e) {
+            try {
+               measure_probing<PGMHash<Data, 512, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile,
+                                                            iomutex);
+            } catch (const std::exception& e) {
+               try {
+                  measure_probing<PGMHash<Data, 1024, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile,
+                                                                iomutex);
+               } catch (const std::exception& e) {
+                  std::unique_lock<std::mutex> lock(iomutex);
+                  std::cerr << "Failed to find viable epsrec0 configuration for " << dataset_name << std::endl;
+               }
+            }
+         }
+      }
 
-   const auto prob_directory_address_count =
-      Hashtable::Probing<Data, uint32_t, PGMHash<HASH_64, 256, 0>, Clamp<HASH_64>,
-                         Hashtable::LinearProbingFunc>::directory_address_count(ht_capacity);
-
-   /// Linear
-   measure(Hashtable::Probing<Data, uint32_t, PGMHash<HASH_64, 256, 0>, Clamp<HASH_64>, Hashtable::LinearProbingFunc>(
-              ht_capacity, PGMHash<HASH_64, 256, 0>(sample.begin(), sample.end(), prob_directory_address_count)),
-           sample_size);
-   measure(Hashtable::Probing<Data, uint32_t, PGMHash<HASH_64, 128, 4>, Clamp<HASH_64>, Hashtable::LinearProbingFunc>(
-              ht_capacity, PGMHash<HASH_64, 128, 4>(sample.begin(), sample.end(), prob_directory_address_count)),
-           sample_size);
-   measure(Hashtable::Probing<Data, uint32_t, PGMHash<HASH_64, 64, 1>, Clamp<HASH_64>, Hashtable::LinearProbingFunc>(
-              ht_capacity, PGMHash<HASH_64, 64, 1>(sample.begin(), sample.end(), prob_directory_address_count)),
-           sample_size);
-   measure(Hashtable::Probing<Data, uint32_t, PGMHash<HASH_64, 4, 4>, Clamp<HASH_64>, Hashtable::LinearProbingFunc>(
-              ht_capacity, PGMHash<HASH_64, 4, 4>(sample.begin(), sample.end(), prob_directory_address_count)),
-           sample_size);
-
-   /// Quadratic
-   measure(
-      Hashtable::Probing<Data, uint32_t, PGMHash<HASH_64, 256, 0>, Clamp<HASH_64>, Hashtable::QuadraticProbingFunc>(
-         ht_capacity, PGMHash<HASH_64, 256, 0>(sample.begin(), sample.end(), prob_directory_address_count)),
-      sample_size);
-   measure(
-      Hashtable::Probing<Data, uint32_t, PGMHash<HASH_64, 128, 4>, Clamp<HASH_64>, Hashtable::QuadraticProbingFunc>(
-         ht_capacity, PGMHash<HASH_64, 128, 4>(sample.begin(), sample.end(), prob_directory_address_count)),
-      sample_size);
-   measure(Hashtable::Probing<Data, uint32_t, PGMHash<HASH_64, 64, 1>, Clamp<HASH_64>, Hashtable::QuadraticProbingFunc>(
-              ht_capacity, PGMHash<HASH_64, 64, 1>(sample.begin(), sample.end(), prob_directory_address_count)),
-           sample_size);
-   measure(Hashtable::Probing<Data, uint32_t, PGMHash<HASH_64, 4, 4>, Clamp<HASH_64>, Hashtable::QuadraticProbingFunc>(
-              ht_capacity, PGMHash<HASH_64, 4, 4>(sample.begin(), sample.end(), prob_directory_address_count)),
-           sample_size);
-
-   /**
-    * ========================================================
-    *          Robin Hood, 64-bit key, 32-bit value
-    * ========================================================
-    */
-
-   const auto robin_directory_address_count =
-      Hashtable::RobinhoodProbing<Data, uint32_t, PGMHash<HASH_64, 256, 0>, Clamp<HASH_64>,
-                                  Hashtable::LinearProbingFunc>::directory_address_count(ht_capacity);
-
-   /// Linear
-   measure(Hashtable::RobinhoodProbing<Data, uint32_t, PGMHash<HASH_64, 256, 0>, Clamp<HASH_64>,
-                                       Hashtable::LinearProbingFunc>(
-              ht_capacity, PGMHash<HASH_64, 256, 0>(sample.begin(), sample.end(), robin_directory_address_count)),
-           sample_size);
-   measure(Hashtable::RobinhoodProbing<Data, uint32_t, PGMHash<HASH_64, 128, 4>, Clamp<HASH_64>,
-                                       Hashtable::LinearProbingFunc>(
-              ht_capacity, PGMHash<HASH_64, 128, 4>(sample.begin(), sample.end(), robin_directory_address_count)),
-           sample_size);
-   measure(Hashtable::RobinhoodProbing<Data, uint32_t, PGMHash<HASH_64, 64, 1>, Clamp<HASH_64>,
-                                       Hashtable::LinearProbingFunc>(
-              ht_capacity, PGMHash<HASH_64, 64, 1>(sample.begin(), sample.end(), robin_directory_address_count)),
-           sample_size);
-   measure(
-      Hashtable::RobinhoodProbing<Data, uint32_t, PGMHash<HASH_64, 4, 4>, Clamp<HASH_64>, Hashtable::LinearProbingFunc>(
-         ht_capacity, PGMHash<HASH_64, 4, 4>(sample.begin(), sample.end(), robin_directory_address_count)),
-      sample_size);
-
-   /// Quadratic
-   measure(Hashtable::RobinhoodProbing<Data, uint32_t, PGMHash<HASH_64, 256, 0>, Clamp<HASH_64>,
-                                       Hashtable::QuadraticProbingFunc>(
-              ht_capacity, PGMHash<HASH_64, 256, 0>(sample.begin(), sample.end(), robin_directory_address_count)),
-           sample_size);
-   measure(Hashtable::RobinhoodProbing<Data, uint32_t, PGMHash<HASH_64, 128, 4>, Clamp<HASH_64>,
-                                       Hashtable::QuadraticProbingFunc>(
-              ht_capacity, PGMHash<HASH_64, 128, 4>(sample.begin(), sample.end(), robin_directory_address_count)),
-           sample_size);
-   measure(Hashtable::RobinhoodProbing<Data, uint32_t, PGMHash<HASH_64, 64, 1>, Clamp<HASH_64>,
-                                       Hashtable::QuadraticProbingFunc>(
-              ht_capacity, PGMHash<HASH_64, 64, 1>(sample.begin(), sample.end(), robin_directory_address_count)),
-           sample_size);
-   measure(Hashtable::RobinhoodProbing<Data, uint32_t, PGMHash<HASH_64, 4, 4>, Clamp<HASH_64>,
-                                       Hashtable::QuadraticProbingFunc>(
-              ht_capacity, PGMHash<HASH_64, 4, 4>(sample.begin(), sample.end(), robin_directory_address_count)),
-           sample_size);
+      try {
+         measure_probing<PGMHash<Data, 128, 4, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+      } catch (const std::exception& e) {
+         try {
+            measure_probing<PGMHash<Data, 256, 4, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+         } catch (const std::exception& e) {
+            try {
+               measure_probing<PGMHash<Data, 512, 4, 1000>>(dataset_name, dataset, load_factor, sample, outfile,
+                                                            iomutex);
+            } catch (const std::exception& e) {
+               try {
+                  measure_probing<PGMHash<Data, 1024, 4, 1000>>(dataset_name, dataset, load_factor, sample, outfile,
+                                                                iomutex);
+               } catch (const std::exception& e) {
+                  std::unique_lock<std::mutex> lock(iomutex);
+                  std::cerr << "Failed to find viable epsrec0 configuration for " << dataset_name << std::endl;
+               }
+            }
+         }
+      }
+   }
 }
 
 int main(int argc, char* argv[]) {
@@ -421,13 +428,8 @@ int main(int argc, char* argv[]) {
       std::mutex iomutex;
 
       for (const auto& it : args.datasets) {
-         // TODO: once we have more RAM we maybe should load the dataset per thread (prevent cache conflicts)
-         //  and purely operate on thread local data. i.e. move this load into threads after aquire()
-         const auto dataset_ptr = std::make_shared<const std::vector<uint64_t>>(it.load(iomutex));
-
-         for (auto load_factor : args.load_factors) {
-            benchmark(it.name(), *dataset_ptr, load_factor, outfile, iomutex);
-         }
+         const auto dataset = it.load(iomutex);
+         benchmark(it.name(), dataset, outfile, iomutex);
       }
    } catch (const std::exception& ex) {
       std::cerr << ex.what() << std::endl;
