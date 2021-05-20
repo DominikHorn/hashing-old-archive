@@ -129,8 +129,9 @@ namespace Hashtable {
 
          size_t max_chain_length = 0;
          size_t min_chain_length = std::numeric_limits<size_t>::max();
-         size_t total_chain_ctr = 0;
          size_t empty_buckets = 0;
+         size_t additional_buckets = 0;
+         size_t empty_additional_slots = 0;
 
          for (const auto& slot : slots) {
             if (slot.key == Sentinel) {
@@ -142,10 +143,14 @@ namespace Hashtable {
             Bucket* b = slot.buckets;
             while (b != nullptr) {
                chain_length++;
+               additional_buckets++;
+
+               for (const auto& s : b->slots)
+                  empty_additional_slots += s.key == Sentinel ? 1 : 0;
+
                b = b->next;
             }
 
-            total_chain_ctr += chain_length;
             min_chain_length = std::min(min_chain_length, chain_length);
             max_chain_length = std::max(max_chain_length, chain_length);
          }
@@ -153,7 +158,8 @@ namespace Hashtable {
          return {{"empty_buckets", std::to_string(empty_buckets)},
                  {"min_chain_length", std::to_string(min_chain_length)},
                  {"max_chain_length", std::to_string(max_chain_length)},
-                 {"total_chain_pointer_count", std::to_string(total_chain_ctr)}};
+                 {"additional_buckets", std::to_string(additional_buckets)},
+                 {"empty_additional_slots", std::to_string(empty_additional_slots)}};
       }
 
       static constexpr forceinline size_t bucket_byte_size() {

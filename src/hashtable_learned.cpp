@@ -26,7 +26,7 @@ const std::vector<std::string> csv_columns = {
    "primary_key_ratio",
 
    // Chained custom statistics
-   "empty_buckets", "min_chain_length", "max_chain_length", "total_chain_pointer_count",
+   "empty_buckets", "min_chain_length", "max_chain_length", "additional_buckets", "empty_additional_slots",
 
    // Probing custom statistics
    "min_psl", "max_psl", "total_psl"
