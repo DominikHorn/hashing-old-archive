@@ -147,15 +147,15 @@ namespace Reduction {
    };
 
    template<typename T>
-   struct MinMaxCutoff {
-      explicit MinMaxCutoff(const size_t& num_buckets) : N(num_buckets) {}
+   struct Clamp {
+      explicit Clamp(const size_t& num_buckets) : N(num_buckets) {}
 
       static std::string name() {
-         return "min_max_cutoff";
+         return "clamp";
       }
 
       /**
-       * min/max clamps the value. Optimized for values that are very likely inside of bounds
+       * clamps the value. Optimized for values that are very likely inside of bounds
        * @tparam T
        * @param value
        * @param N

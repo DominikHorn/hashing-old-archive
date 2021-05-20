@@ -134,35 +134,39 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
          std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start_time).count());
    }
 
-   /// Epsrec 4
-   measure<PGMHash<Data, 256, 4>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
-                                                                   outfile, iomutex);
-   measure<PGMHash<Data, 64, 4>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
-                                                                  outfile, iomutex);
-   measure<PGMHash<Data, 16, 4>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
-                                                                  outfile, iomutex);
-   measure<PGMHash<Data, 4, 4>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
-                                                                 outfile, iomutex);
+   /// RMI
+   measure<rmi::RMIHash<Data, 1000>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
+                                                               outfile, iomutex);
 
-   /// Epsrec 1
-   measure<PGMHash<Data, 256, 1>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
-                                                                   outfile, iomutex);
-   measure<PGMHash<Data, 64, 1>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
-                                                                  outfile, iomutex);
-   measure<PGMHash<Data, 16, 1>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
-                                                                  outfile, iomutex);
-   measure<PGMHash<Data, 4, 1>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
-                                                                 outfile, iomutex);
-
-   // Epsrec 0
-   measure<PGMHash<Data, 256, 0>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
-                                                                   outfile, iomutex);
-   measure<PGMHash<Data, 64, 0>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
-                                                                  outfile, iomutex);
-   measure<PGMHash<Data, 16, 0>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
-                                                                  outfile, iomutex);
-   measure<PGMHash<Data, 4, 0>, Reduction::MinMaxCutoff<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
-                                                                 outfile, iomutex);
+   //   /// Epsrec 4
+   //   measure<PGMHash<Data, 256, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
+   //                                                                   outfile, iomutex);
+   //   measure<PGMHash<Data, 64, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
+   //                                                                  outfile, iomutex);
+   //   measure<PGMHash<Data, 16, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
+   //                                                                  outfile, iomutex);
+   //   measure<PGMHash<Data, 4, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
+   //                                                                 outfile, iomutex);
+   //
+   //   /// Epsrec 1
+   //   measure<PGMHash<Data, 256, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
+   //                                                                   outfile, iomutex);
+   //   measure<PGMHash<Data, 64, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
+   //                                                                  outfile, iomutex);
+   //   measure<PGMHash<Data, 16, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
+   //                                                                  outfile, iomutex);
+   //   measure<PGMHash<Data, 4, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
+   //                                                                 outfile, iomutex);
+   //
+   //   // Epsrec 0
+   //   measure<PGMHash<Data, 256, 0>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
+   //                                                                   outfile, iomutex);
+   //   measure<PGMHash<Data, 64, 0>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
+   //                                                                  outfile, iomutex);
+   //   measure<PGMHash<Data, 16, 0>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
+   //                                                                  outfile, iomutex);
+   //   measure<PGMHash<Data, 4, 0>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
+   //                                                                 outfile, iomutex);
 }
 
 int main(int argc, char* argv[]) {
