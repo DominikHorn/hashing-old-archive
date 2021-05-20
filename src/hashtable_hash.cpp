@@ -36,24 +36,16 @@ const std::vector<std::string> csv_columns = {
 template<class Hashtable, class Data>
 static void measure(const std::string& dataset_name, const std::vector<Data>& dataset, const double load_factor,
                     CSV& outfile, std::mutex& iomutex) {
-   // Theoretical slot count of a hashtable on which we want to measure collisions
-   const auto ht_capacity =
-      static_cast<uint64_t>(static_cast<double>(dataset.size()) / static_cast<double>(load_factor));
-   Hashtable hashtable(ht_capacity);
-
-   const auto hash_name = hashtable.hash_name();
-   const auto reducer_name = hashtable.reducer_name();
-
    const auto str = [](auto s) { return std::to_string(s); };
    std::map<std::string, std::string> datapoint({
       {"dataset", dataset_name},
       {"numelements", str(dataset.size())},
       {"load_factor", str(load_factor)},
-      {"bucket_size", str(hashtable.bucket_size())},
-      {"hashtable", hashtable.name()},
+      {"bucket_size", str(Hashtable::bucket_size())},
+      {"hashtable", Hashtable::name()},
       {"payload", str(sizeof(typename Hashtable::PayloadType))},
-      {"hash", hash_name},
-      {"reducer", reducer_name},
+      {"hash", Hashtable::hash_name()},
+      {"reducer", Hashtable::reducer_name()},
    });
 
    if (outfile.exists(datapoint)) {
@@ -72,13 +64,19 @@ static void measure(const std::string& dataset_name, const std::vector<Data>& da
    }
 
    try {
+      // Theoretical slot count of a hashtable on which we want to measure collisions
+      const auto ht_capacity =
+         static_cast<uint64_t>(static_cast<double>(dataset.size()) / static_cast<double>(load_factor));
+      Hashtable hashtable(ht_capacity);
+
       // Measure
       const auto stats = Benchmark::measure_hashtable(dataset, hashtable);
 
 #ifdef VERBOSE
       {
          std::unique_lock<std::mutex> lock(iomutex);
-         std::cout << std::setw(55) << std::right << reducer_name + "(" + hash_name + ") insert took "
+         std::cout << std::setw(55) << std::right
+                   << Hashtable::reducer_name() + "(" + Hashtable::hash_name() + ") insert took "
                    << relative_to(stats.total_insert_ns, dataset.size()) << " ns/key ("
                    << nanoseconds_to_seconds(stats.total_insert_ns) << " s total), lookup took "
                    << relative_to(stats.median_total_lookup_ns, dataset.size()) << " ns/key ("
@@ -103,8 +101,8 @@ static void measure(const std::string& dataset_name, const std::vector<Data>& da
       outfile.write(datapoint);
    } catch (const std::exception& e) {
       std::unique_lock<std::mutex> lock(iomutex);
-      std::cout << std::setw(55) << std::right << reducer_name + "(" + hash_name + ") failed: " << e.what()
-                << std::endl;
+      std::cout << std::setw(55) << std::right
+                << Hashtable::reducer_name() + "(" + Hashtable::hash_name() + ") failed: " << e.what() << std::endl;
    }
 }
 
