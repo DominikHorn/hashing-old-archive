@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cmath>
 #include <numeric>
+#include <random>
 #include <vector>
 
 #ifdef __APPLE__
@@ -155,8 +156,11 @@ namespace Benchmark {
       uint64_t median_total_lookup_ns;
    };
 
-   template<typename Hashtable, unsigned int lookupRepeatCount = 5>
+   template<const uint32_t UnsuccessfulLookupPercent = 0, typename Hashtable, const unsigned int LookupRepeatCount = 5>
    HashtableStats measure_hashtable(const std::vector<typename Hashtable::KeyType>& dataset, Hashtable& ht) {
+      // Random generator
+      std::mt19937 rng;
+
       // Ensure hashtable is empty when we begin
       ht.clear();
 
@@ -166,8 +170,18 @@ namespace Benchmark {
       {
          Perf::BlockCounter ctr(dataset.size());
 #endif
-         for (const auto key : dataset) {
-            ht.insert(key, typename Hashtable::PayloadType(key));
+         // previous path, i.e., fast path
+         if (UnsuccessfulLookupPercent == 0) {
+            for (const auto key : dataset) {
+               ht.insert(key, typename Hashtable::PayloadType(key));
+            }
+         } else {
+            // This is slower and adds overhead depending on speed of rand(), i.e., insert numbers should be taken with
+            // a grain of salt
+            for (const auto key : dataset) {
+               if (rng() >= UnsuccessfulLookupPercent)
+                  ht.insert(key, typename Hashtable::PayloadType(key));
+            }
          }
 #ifdef MACOS
       }
@@ -177,7 +191,7 @@ namespace Benchmark {
          static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
 
       std::vector<uint64_t> probe_times;
-      for (auto i = lookupRepeatCount; i > 0; i--) {
+      for (auto i = LookupRepeatCount; i > 0; i--) {
          // Lookup every key
          start_time = std::chrono::steady_clock::now();
 #ifdef MACOS
@@ -202,7 +216,7 @@ namespace Benchmark {
       for (const auto& probe_time : probe_times) {
          avg_total_lookup_ns += probe_time;
       }
-      avg_total_lookup_ns /= lookupRepeatCount;
+      avg_total_lookup_ns /= LookupRepeatCount;
 
       // This is a really slow median finding algorithm but fine since we only ever have 5 elements
       std::sort(probe_times.begin(), probe_times.end());

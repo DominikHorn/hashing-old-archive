@@ -20,6 +20,7 @@ const std::vector<std::string> csv_columns = {
    "dataset", "numelements", "load_factor", "bucket_size", "hashtable", "hash", "reducer", "payload",
    "insert_nanoseconds_total", "insert_nanoseconds_per_key", "avg_lookup_nanoseconds_total",
    "avg_lookup_nanoseconds_per_key", "median_lookup_nanoseconds_total", "median_lookup_nanoseconds_per_key",
+   "unsuccessful_lookup_percent"
 
    // Cuckoo custom statistics
    "primary_key_ratio",
@@ -33,20 +34,50 @@ const std::vector<std::string> csv_columns = {
    //
 };
 
-template<class Hashtable, class Data>
+template<class Data>
+struct Payload16 {
+   uint64_t q0 = 0, q1 = 0;
+   explicit Payload16(const Data& key) : q0(key + 1), q1(key + 2) {}
+   explicit Payload16() {}
+
+   bool operator==(const Payload16& other) {
+      return q0 == other.q0 && q1 == other.q1;
+   }
+} packed;
+
+template<class Data>
+struct Payload64 {
+   uint64_t q0 = 0, q1 = 0, q2 = 0, q3 = 0, q4 = 0, q5 = 0, q6 = 0, q7 = 0;
+   explicit Payload64(const Data& key)
+      : q0(key - 4), q1(key - 3), q2(key - 2), q3(key - 1), q4(key + 1), q5(key + 2), q6(key + 3), q7(key + 4) {}
+   explicit Payload64() {}
+
+   bool operator==(const Payload64& other) {
+      return q0 == other.q0 && q1 == other.q1 && q2 == other.q2 && q3 == other.q3 && q4 == other.q4 && q5 == other.q5 &&
+         q6 == other.q6 && q7 == other.q7;
+   }
+} packed;
+
+static const auto UNSUCCESSFUL_0_PERCENT = 0;
+static const auto UNSUCCESSFUL_25_PERCENT = std::numeric_limits<uint32_t>::max() / 4;
+static const auto UNSUCCESSFUL_50_PERCENT = UNSUCCESSFUL_25_PERCENT * 2;
+static const auto UNSUCCESSFUL_75_PERCENT = UNSUCCESSFUL_25_PERCENT * 3;
+
+template<class Hashtable, const uint32_t UnsuccessfulLookupPercent = UNSUCCESSFUL_0_PERCENT, class Data>
 static void measure(const std::string& dataset_name, const std::vector<Data>& dataset, const double load_factor,
                     CSV& outfile, std::mutex& iomutex) {
    const auto str = [](auto s) { return std::to_string(s); };
-   std::map<std::string, std::string> datapoint({
-      {"dataset", dataset_name},
-      {"numelements", str(dataset.size())},
-      {"load_factor", str(load_factor)},
-      {"bucket_size", str(Hashtable::bucket_size())},
-      {"hashtable", Hashtable::name()},
-      {"payload", str(sizeof(typename Hashtable::PayloadType))},
-      {"hash", Hashtable::hash_name()},
-      {"reducer", Hashtable::reducer_name()},
-   });
+   std::map<std::string, std::string> datapoint(
+      {{"dataset", dataset_name},
+       {"numelements", str(dataset.size())},
+       {"load_factor", str(load_factor)},
+       {"bucket_size", str(Hashtable::bucket_size())},
+       {"hashtable", Hashtable::name()},
+       {"payload", str(sizeof(typename Hashtable::PayloadType))},
+       {"hash", Hashtable::hash_name()},
+       {"reducer", Hashtable::reducer_name()},
+       {"unsuccessful_lookup_percent",
+        str(relative_to(UnsuccessfulLookupPercent, std::numeric_limits<uint32_t>::max()))}});
 
    if (outfile.exists(datapoint)) {
       std::unique_lock<std::mutex> lock(iomutex);
@@ -65,12 +96,14 @@ static void measure(const std::string& dataset_name, const std::vector<Data>& da
 
    try {
       // Theoretical slot count of a hashtable on which we want to measure collisions
-      const auto ht_capacity =
-         static_cast<uint64_t>(static_cast<double>(dataset.size()) / static_cast<double>(load_factor));
+      const double unsuccessful_perc = relative_to(UnsuccessfulLookupPercent, std::numeric_limits<uint32_t>::max());
+      const auto ht_capacity = static_cast<uint64_t>(static_cast<double>(dataset.size()) * unsuccessful_perc /
+                                                     static_cast<double>(load_factor));
+
       Hashtable hashtable(ht_capacity);
 
       // Measure
-      const auto stats = Benchmark::measure_hashtable(dataset, hashtable);
+      const auto stats = Benchmark::measure_hashtable<UnsuccessfulLookupPercent>(dataset, hashtable);
 
 #ifdef VERBOSE
       {
@@ -106,30 +139,6 @@ static void measure(const std::string& dataset_name, const std::vector<Data>& da
    outfile.write(datapoint);
 }
 
-template<class Data>
-struct Payload16 {
-   uint64_t q0 = 0, q1 = 0;
-   explicit Payload16(const Data& key) : q0(key + 1), q1(key + 2) {}
-   explicit Payload16() {}
-
-   bool operator==(const Payload16& other) {
-      return q0 == other.q0 && q1 == other.q1;
-   }
-} packed;
-
-template<class Data>
-struct Payload64 {
-   uint64_t q0 = 0, q1 = 0, q2 = 0, q3 = 0, q4 = 0, q5 = 0, q6 = 0, q7 = 0;
-   explicit Payload64(const Data& key)
-      : q0(key - 4), q1(key - 3), q2(key - 2), q3(key - 1), q4(key + 1), q5(key + 2), q6(key + 3), q7(key + 4) {}
-   explicit Payload64() {}
-
-   bool operator==(const Payload64& other) {
-      return q0 == other.q0 && q1 == other.q1 && q2 == other.q2 && q3 == other.q3 && q4 == other.q4 && q5 == other.q5 &&
-         q6 == other.q6 && q7 == other.q7;
-   }
-} packed;
-
 template<class Hashfn, class Data>
 static void measure_chained(const std::string& dataset_name, const std::vector<Data>& dataset, const double load_factor,
                             CSV& outfile, std::mutex& iomutex) {
@@ -163,76 +172,76 @@ static void measure_chained(const std::string& dataset_name, const std::vector<D
                                                                                       load_factor, outfile, iomutex);
 }
 
-template<class Hashfn, class Data>
+template<class Hashfn, const uint32_t UnsuccessfulLookupPercent = UNSUCCESSFUL_0_PERCENT, class Data>
 static void measure_probing(const std::string& dataset_name, const std::vector<Data>& dataset, const double load_factor,
                             CSV& outfile, std::mutex& iomutex) {
    using namespace Reduction;
 
    /// Standard probing
-   //   measure<Hashtable::Probing<Data, Payload16<Data>, Hashfn, Fastrange<HASH_32>, Hashtable::LinearProbingFunc>>(
+   //   measure<Hashtable::Probing<Data, Payload16<Data>, Hashfn, Fastrange<HASH_32>, Hashtable::LinearProbingFunc>, UnsuccessfulLookupPercent>(
    //      dataset_name, dataset, load_factor, outfile, iomutex);
-   //   measure<Hashtable::Probing<Data, Payload16<Data>, Hashfn, Fastrange<HASH_64>, Hashtable::LinearProbingFunc>>(
+   //   measure<Hashtable::Probing<Data, Payload16<Data>, Hashfn, Fastrange<HASH_64>, Hashtable::LinearProbingFunc>, UnsuccessfulLookupPercent>(
    //      dataset_name, dataset, load_factor, outfile, iomutex);
-   measure<Hashtable::Probing<Data, Payload16<Data>, Hashfn, FastModulo<HASH_64>, Hashtable::LinearProbingFunc>>(
-      dataset_name, dataset, load_factor, outfile, iomutex);
-   //   measure<Hashtable::Probing<Data, Payload64<Data>, Hashfn, Fastrange<HASH_32>, Hashtable::LinearProbingFunc>>(
+   measure<Hashtable::Probing<Data, Payload16<Data>, Hashfn, FastModulo<HASH_64>, Hashtable::LinearProbingFunc>,
+           UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //   measure<Hashtable::Probing<Data, Payload64<Data>, Hashfn, Fastrange<HASH_32>, Hashtable::LinearProbingFunc>, UnsuccessfulLookupPercent>(
    //      dataset_name, dataset, load_factor, outfile, iomutex);
-   //   measure<Hashtable::Probing<Data, Payload64<Data>, Hashfn, Fastrange<HASH_64>, Hashtable::LinearProbingFunc>>(
+   //   measure<Hashtable::Probing<Data, Payload64<Data>, Hashfn, Fastrange<HASH_64>, Hashtable::LinearProbingFunc>, UnsuccessfulLookupPercent>(
    //      dataset_name, dataset, load_factor, outfile, iomutex);
-   measure<Hashtable::Probing<Data, Payload64<Data>, Hashfn, FastModulo<HASH_64>, Hashtable::LinearProbingFunc>>(
-      dataset_name, dataset, load_factor, outfile, iomutex);
+   measure<Hashtable::Probing<Data, Payload64<Data>, Hashfn, FastModulo<HASH_64>, Hashtable::LinearProbingFunc>,
+           UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, outfile, iomutex);
 
-   //   measure<Hashtable::Probing<Data, Payload16<Data>, Hashfn, Fastrange<HASH_32>, Hashtable::QuadraticProbingFunc>>(
+   //   measure<Hashtable::Probing<Data, Payload16<Data>, Hashfn, Fastrange<HASH_32>, Hashtable::QuadraticProbingFunc>, UnsuccessfulLookupPercent>(
    //      dataset_name, dataset, load_factor, outfile, iomutex);
-   //   measure<Hashtable::Probing<Data, Payload16<Data>, Hashfn, Fastrange<HASH_64>, Hashtable::QuadraticProbingFunc>>(
+   //   measure<Hashtable::Probing<Data, Payload16<Data>, Hashfn, Fastrange<HASH_64>, Hashtable::QuadraticProbingFunc>, UnsuccessfulLookupPercent>(
    //      dataset_name, dataset, load_factor, outfile, iomutex);
-   measure<Hashtable::Probing<Data, Payload16<Data>, Hashfn, FastModulo<HASH_64>, Hashtable::QuadraticProbingFunc>>(
-      dataset_name, dataset, load_factor, outfile, iomutex);
-   //   measure<Hashtable::Probing<Data, Payload64<Data>, Hashfn, Fastrange<HASH_32>, Hashtable::QuadraticProbingFunc>>(
+   measure<Hashtable::Probing<Data, Payload16<Data>, Hashfn, FastModulo<HASH_64>, Hashtable::QuadraticProbingFunc>,
+           UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //   measure<Hashtable::Probing<Data, Payload64<Data>, Hashfn, Fastrange<HASH_32>, Hashtable::QuadraticProbingFunc>, UnsuccessfulLookupPercent>(
    //      dataset_name, dataset, load_factor, outfile, iomutex);
-   //   measure<Hashtable::Probing<Data, Payload64<Data>, Hashfn, Fastrange<HASH_64>, Hashtable::QuadraticProbingFunc>>(
+   //   measure<Hashtable::Probing<Data, Payload64<Data>, Hashfn, Fastrange<HASH_64>, Hashtable::QuadraticProbingFunc>, UnsuccessfulLookupPercent>(
    //      dataset_name, dataset, load_factor, outfile, iomutex);
-   measure<Hashtable::Probing<Data, Payload64<Data>, Hashfn, FastModulo<HASH_64>, Hashtable::QuadraticProbingFunc>>(
-      dataset_name, dataset, load_factor, outfile, iomutex);
+   measure<Hashtable::Probing<Data, Payload64<Data>, Hashfn, FastModulo<HASH_64>, Hashtable::QuadraticProbingFunc>,
+           UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, outfile, iomutex);
 
    /// Robin Hood
    //   measure<
-   //      Hashtable::RobinhoodProbing<Data, Payload16<Data>, Hashfn, Fastrange<HASH_32>, Hashtable::LinearProbingFunc>>(
+   //      Hashtable::RobinhoodProbing<Data, Payload16<Data>, Hashfn, Fastrange<HASH_32>, Hashtable::LinearProbingFunc>, UnsuccessfulLookupPercent>(
    //      dataset_name, dataset, load_factor, outfile, iomutex);
    //   measure<
-   //      Hashtable::RobinhoodProbing<Data, Payload16<Data>, Hashfn, Fastrange<HASH_64>, Hashtable::LinearProbingFunc>>(
+   //      Hashtable::RobinhoodProbing<Data, Payload16<Data>, Hashfn, Fastrange<HASH_64>, Hashtable::LinearProbingFunc>, UnsuccessfulLookupPercent>(
    //      dataset_name, dataset, load_factor, outfile, iomutex);
    measure<
-      Hashtable::RobinhoodProbing<Data, Payload16<Data>, Hashfn, FastModulo<HASH_64>, Hashtable::LinearProbingFunc>>(
-      dataset_name, dataset, load_factor, outfile, iomutex);
+      Hashtable::RobinhoodProbing<Data, Payload16<Data>, Hashfn, FastModulo<HASH_64>, Hashtable::LinearProbingFunc>,
+      UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, outfile, iomutex);
    //   measure<
-   //      Hashtable::RobinhoodProbing<Data, Payload64<Data>, Hashfn, Fastrange<HASH_32>, Hashtable::LinearProbingFunc>>(
+   //      Hashtable::RobinhoodProbing<Data, Payload64<Data>, Hashfn, Fastrange<HASH_32>, Hashtable::LinearProbingFunc>, UnsuccessfulLookupPercent>(
    //      dataset_name, dataset, load_factor, outfile, iomutex);
    //   measure<
-   //      Hashtable::RobinhoodProbing<Data, Payload64<Data>, Hashfn, Fastrange<HASH_64>, Hashtable::LinearProbingFunc>>(
+   //      Hashtable::RobinhoodProbing<Data, Payload64<Data>, Hashfn, Fastrange<HASH_64>, Hashtable::LinearProbingFunc>, UnsuccessfulLookupPercent>(
    //      dataset_name, dataset, load_factor, outfile, iomutex);
    measure<
-      Hashtable::RobinhoodProbing<Data, Payload64<Data>, Hashfn, FastModulo<HASH_64>, Hashtable::LinearProbingFunc>>(
-      dataset_name, dataset, load_factor, outfile, iomutex);
+      Hashtable::RobinhoodProbing<Data, Payload64<Data>, Hashfn, FastModulo<HASH_64>, Hashtable::LinearProbingFunc>,
+      UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, outfile, iomutex);
 
    //   measure<
-   //      Hashtable::RobinhoodProbing<Data, Payload16<Data>, Hashfn, Fastrange<HASH_32>, Hashtable::QuadraticProbingFunc>>(
+   //      Hashtable::RobinhoodProbing<Data, Payload16<Data>, Hashfn, Fastrange<HASH_32>, Hashtable::QuadraticProbingFunc>, UnsuccessfulLookupPercent>(
    //      dataset_name, dataset, load_factor, outfile, iomutex);
    //   measure<
-   //      Hashtable::RobinhoodProbing<Data, Payload16<Data>, Hashfn, Fastrange<HASH_64>, Hashtable::QuadraticProbingFunc>>(
+   //      Hashtable::RobinhoodProbing<Data, Payload16<Data>, Hashfn, Fastrange<HASH_64>, Hashtable::QuadraticProbingFunc>, UnsuccessfulLookupPercent>(
    //      dataset_name, dataset, load_factor, outfile, iomutex);
    measure<
-      Hashtable::RobinhoodProbing<Data, Payload16<Data>, Hashfn, FastModulo<HASH_64>, Hashtable::QuadraticProbingFunc>>(
-      dataset_name, dataset, load_factor, outfile, iomutex);
+      Hashtable::RobinhoodProbing<Data, Payload16<Data>, Hashfn, FastModulo<HASH_64>, Hashtable::QuadraticProbingFunc>,
+      UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, outfile, iomutex);
    //   measure<
-   //      Hashtable::RobinhoodProbing<Data, Payload64<Data>, Hashfn, Fastrange<HASH_32>, Hashtable::QuadraticProbingFunc>>(
+   //      Hashtable::RobinhoodProbing<Data, Payload64<Data>, Hashfn, Fastrange<HASH_32>, Hashtable::QuadraticProbingFunc>, UnsuccessfulLookupPercent>(
    //      dataset_name, dataset, load_factor, outfile, iomutex);
    //   measure<
-   //      Hashtable::RobinhoodProbing<Data, Payload64<Data>, Hashfn, Fastrange<HASH_64>, Hashtable::QuadraticProbingFunc>>(
+   //      Hashtable::RobinhoodProbing<Data, Payload64<Data>, Hashfn, Fastrange<HASH_64>, Hashtable::QuadraticProbingFunc>, UnsuccessfulLookupPercent>(
    //      dataset_name, dataset, load_factor, outfile, iomutex);
    measure<
-      Hashtable::RobinhoodProbing<Data, Payload64<Data>, Hashfn, FastModulo<HASH_64>, Hashtable::QuadraticProbingFunc>>(
-      dataset_name, dataset, load_factor, outfile, iomutex);
+      Hashtable::RobinhoodProbing<Data, Payload64<Data>, Hashfn, FastModulo<HASH_64>, Hashtable::QuadraticProbingFunc>,
+      UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, outfile, iomutex);
 }
 
 template<class Hashfn1, class Hashfn2, class Data>
@@ -318,15 +327,58 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
 
    /// Probing
    for (const auto load_factor : {1.0 / 1.25, 1.0 / 1.5}) {
-      measure_probing<AquaHash<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
-      //      measure_probing<MeowHash64<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
-      //      measure_probing<CityHash64<t sData>>(dataset_name, dataset, load_factor, outfile, iomutex);
-      //      measure_probing<LargeTabulationHash<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
-      measure_probing<MurmurFinalizer<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
-      measure_probing<PrimeMultiplicationHash64>(dataset_name, dataset, load_factor, outfile, iomutex);
-      measure_probing<MultAddHash64>(dataset_name, dataset, load_factor, outfile, iomutex);
-      //      measure_probing<FibonacciHash64>(dataset_name, dataset, load_factor, outfile, iomutex);
-      measure_probing<XXHash3<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_probing<AquaHash<Data>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_probing<AquaHash<Data>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_probing<AquaHash<Data>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_probing<AquaHash<Data>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+
+      //      measure_probing<MeowHash64<Data>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+      //      measure_probing<MeowHash64<Data>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+      //      measure_probing<MeowHash64<Data>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+      //      measure_probing<MeowHash64<Data>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+
+      //      measure_probing<CityHash64<Data>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+      //      measure_probing<CityHash64<Data>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+      //      measure_probing<CityHash64<Data>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+      //      measure_probing<CityHash64<Data>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+
+      //      measure_probing<LargeTabulationHash<Data>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+      //      measure_probing<LargeTabulationHash<Data>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+      //      measure_probing<LargeTabulationHash<Data>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+      //      measure_probing<LargeTabulationHash<Data>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+
+      measure_probing<MurmurFinalizer<Data>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile,
+                                                                     iomutex);
+      measure_probing<MurmurFinalizer<Data>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile,
+                                                                      iomutex);
+      measure_probing<MurmurFinalizer<Data>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile,
+                                                                      iomutex);
+      measure_probing<MurmurFinalizer<Data>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile,
+                                                                      iomutex);
+
+      measure_probing<PrimeMultiplicationHash64, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile,
+                                                                         iomutex);
+      measure_probing<PrimeMultiplicationHash64, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile,
+                                                                          iomutex);
+      measure_probing<PrimeMultiplicationHash64, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile,
+                                                                          iomutex);
+      measure_probing<PrimeMultiplicationHash64, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile,
+                                                                          iomutex);
+
+      measure_probing<MultAddHash64, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_probing<MultAddHash64, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_probing<MultAddHash64, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_probing<MultAddHash64, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+
+      //      measure_probing<FibonacciHash64, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+      //      measure_probing<FibonacciHash64, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+      //      measure_probing<FibonacciHash64, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+      //      measure_probing<FibonacciHash64, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+
+      measure_probing<XXHash3<Data>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_probing<XXHash3<Data>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_probing<XXHash3<Data>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_probing<XXHash3<Data>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
    }
 }
 
