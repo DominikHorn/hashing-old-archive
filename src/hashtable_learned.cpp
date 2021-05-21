@@ -98,14 +98,14 @@ static void measure(const std::string& dataset_name, const std::vector<Data>& da
       for (const auto& stat : hashtable.lookup_statistics(dataset)) {
          datapoint.emplace(stat);
       }
-
-      // Write to csv
-      outfile.write(datapoint);
    } catch (const std::exception& e) {
       std::unique_lock<std::mutex> lock(iomutex);
       std::cout << std::setw(55) << std::right
                 << Hashtable::reducer_name() + "(" + Hashtable::hash_name() + ") failed: " << e.what() << std::endl;
    }
+
+   // Write to csv
+   outfile.write(datapoint);
 }
 
 template<class Data>
