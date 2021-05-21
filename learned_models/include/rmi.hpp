@@ -12,16 +12,16 @@
 
 namespace rmi {
    template<class X, class Y>
-   struct Datapoint {
+   struct DatapointImpl {
       const X x;
       const Y y;
    };
 
    template<class Key, class Precision>
-   struct Linear {
+   struct LinearImpl {
      private:
       Precision slope = 0, intercept = 0;
-      using Datapoint = Datapoint<Key, Precision>;
+      using Datapoint = DatapointImpl<Key, Precision>;
 
       static forceinline Precision compute_slope(const Datapoint& min, const Datapoint& max) {
          // slope = delta(y)/delta(x)
@@ -34,7 +34,7 @@ namespace rmi {
       }
 
      public:
-      Linear() = default;
+      LinearImpl() = default;
 
       /**
        * Performs trivial linear regression on the datapoints (i.e., computing max->min spline)
@@ -42,7 +42,7 @@ namespace rmi {
        * @param datapoints *sorted* datapoints to 'train' on
        * @param output_range outputs will be in range [0, output_range]. Defaults to 1
        */
-      Linear(const std::vector<Datapoint>& datapoints, const size_t output_range = 1)
+      LinearImpl(const std::vector<Datapoint>& datapoints, const size_t output_range = 1)
          // rescale output to [0, output_range]: (ax + b) * c = (c*ax + c+b)
          : slope(output_range * compute_slope(datapoints.front(), datapoints.back())),
            intercept(output_range * compute_intercept(datapoints.front(), datapoints.back())) {}
@@ -53,12 +53,12 @@ namespace rmi {
       }
    };
 
-   template<class Key, size_t SecondLevelModels, class RootModel = Linear<Key, double>>
+   template<class Key, size_t SecondLevelModels, class RootModel = LinearImpl<Key, double>>
    struct RMIHash {
      private:
       using Precision = double;
-      using Datapoint = Datapoint<Key, Precision>;
-      using Linear = Linear<Key, Precision>;
+      using Datapoint = DatapointImpl<Key, Precision>;
+      using Linear = LinearImpl<Key, Precision>;
 
       RootModel root_model;
       std::array<Linear, SecondLevelModels> second_level_models;
