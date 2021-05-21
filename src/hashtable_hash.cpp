@@ -20,7 +20,7 @@ const std::vector<std::string> csv_columns = {
    "dataset", "numelements", "load_factor", "bucket_size", "hashtable", "hash", "reducer", "payload",
    "insert_nanoseconds_total", "insert_nanoseconds_per_key", "avg_lookup_nanoseconds_total",
    "avg_lookup_nanoseconds_per_key", "median_lookup_nanoseconds_total", "median_lookup_nanoseconds_per_key",
-   "unsuccessful_lookup_percent"
+   "unsuccessful_lookup_percent",
 
    // Cuckoo custom statistics
    "primary_key_ratio",
