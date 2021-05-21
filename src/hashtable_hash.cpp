@@ -97,7 +97,7 @@ static void measure(const std::string& dataset_name, const std::vector<Data>& da
    try {
       // Theoretical slot count of a hashtable on which we want to measure collisions
       const double unsuccessful_perc = relative_to(UnsuccessfulLookupPercent, std::numeric_limits<uint32_t>::max());
-      const auto ht_capacity = static_cast<uint64_t>(static_cast<double>(dataset.size()) * unsuccessful_perc /
+      const auto ht_capacity = static_cast<uint64_t>(static_cast<double>(dataset.size()) * (1 - unsuccessful_perc) /
                                                      static_cast<double>(load_factor));
 
       Hashtable hashtable(ht_capacity);
