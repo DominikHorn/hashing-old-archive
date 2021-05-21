@@ -237,7 +237,7 @@ int main(int argc, char* argv[]) {
 
       // Worker pool for speeding up the benchmarking
       std::mutex iomutex;
-      std::counting_semaphore cpu_blocker(args.max_threads);
+      std_ext::counting_semaphore cpu_blocker(args.max_threads);
       std::vector<std::thread> threads{};
 
       for (const auto& it : args.datasets) {

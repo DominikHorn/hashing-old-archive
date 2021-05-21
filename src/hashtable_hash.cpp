@@ -427,7 +427,7 @@ int main(int argc, char* argv[]) {
       CSV outfile(args.outfile, csv_columns);
 
       std::mutex iomutex;
-      //      std::counting_semaphore cpu_blocker(args.max_threads, 0);
+      //      std_ext::counting_semaphore cpu_blocker(args.max_threads, 0);
       //      std::vector<std::thread> threads{};
 
       for (const auto& it : args.datasets) {

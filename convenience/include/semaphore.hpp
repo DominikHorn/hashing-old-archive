@@ -5,7 +5,7 @@
 
 #include "builtins.hpp"
 
-namespace std {
+namespace std_ext {
    /**
     * Custom counting_semaphore. Replace as soon as c++20 counting_semaphore implementation is available
     * (I could not find the appropriate header and since the implementation required by our code
@@ -53,4 +53,4 @@ namespace std {
       unsigned int counter;
       const unsigned int max_value;
    };
-} // namespace std
+} // namespace std_ext
