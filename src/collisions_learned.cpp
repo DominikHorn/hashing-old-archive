@@ -140,12 +140,26 @@ static void measure(const std::string& dataset_name, const std::vector<Data>& da
          sample = dataset;
       } else if (sample_n > 0) {
          sample.resize(sample_n);
+
          // Random constant to ensure reproducibility for debugging.
          // TODO: make truely random for benchmark/use varying constants (?) -> also adjust other such constants (e.g. fisher yates shuffle)
          const uint64_t seed = 0x9E3779B9LU;
          std::default_random_engine gen(seed);
          std::uniform_int_distribution<uint64_t> dist(0, dataset.size() - 1);
-         for (size_t i = 0; i < sample_n; i++) {
+
+         if (likely(sample_n > 2)) {
+            Data& min = sample[0];
+            Data& max = sample[sample_n - 1];
+
+            min = std::numeric_limits<Data>::max();
+            max = std::numeric_limits<Data>::min();
+            for (const auto& key : dataset) {
+               min = std::min(key, min);
+               max = std::max(key, max);
+            }
+         }
+
+         for (size_t i = 1; i < sample_n - 1; i++) {
             const auto random_index = dist(gen);
             sample[i] = dataset[random_index];
          }
