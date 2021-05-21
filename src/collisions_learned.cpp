@@ -176,7 +176,21 @@ static void measure(const std::string& dataset_name, const std::vector<Data>& da
          std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start_time).count());
    }
 
-   /// Epsrec 4
+   // TODO: enable rmi once implemented
+
+   //   /// RMI
+   //   measure<rmi::RMIHash<Data, 100>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns, prepare_ns,
+   //                                                              outfile, iomutex);
+   //   measure<rmi::RMIHash<Data, 1000>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns, prepare_ns,
+   //                                                               outfile, iomutex);
+   //   measure<rmi::RMIHash<Data, 10000>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns, prepare_ns,
+   //                                                                outfile, iomutex);
+
+   /// RadixSpline
+   measure<rs::RadixSplineHash<Data>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter,
+                                                                sample_ns, prepare_ns, outfile, iomutex);
+
+   /// PGM (eps_rec 4)
    measure<PGMHash<Data, 256, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
                                                             prepare_ns, outfile, iomutex);
    measure<PGMHash<Data, 64, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
@@ -186,7 +200,7 @@ static void measure(const std::string& dataset_name, const std::vector<Data>& da
    measure<PGMHash<Data, 4, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
                                                           prepare_ns, outfile, iomutex);
 
-   /// Epsrec 1
+   /// PGM (eps_rec 1)
    measure<PGMHash<Data, 256, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
                                                             prepare_ns, outfile, iomutex);
    measure<PGMHash<Data, 64, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
@@ -196,7 +210,7 @@ static void measure(const std::string& dataset_name, const std::vector<Data>& da
    measure<PGMHash<Data, 4, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
                                                           prepare_ns, outfile, iomutex);
 
-   // Epsrec 0
+   // PGM (eps_rec 0)
    measure<PGMHash<Data, 256, 0>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
                                                             prepare_ns, outfile, iomutex);
    measure<PGMHash<Data, 64, 0>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,

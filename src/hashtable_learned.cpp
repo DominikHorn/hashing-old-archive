@@ -257,6 +257,8 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
 
    /// Chained
    for (const auto load_factor : {1. / 0.75, 1. / 1., 1. / 1.25}) {
+      measure_chained<rs::RadixSplineHash<Data>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+
       try {
          measure_chained<PGMHash<Data, 128, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
       } catch (const std::exception& e) {
@@ -302,6 +304,8 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
 
    /// Cuckoo
    for (const auto load_factor : {0.98, 0.95}) {
+      measure_cuckoo<rs::RadixSplineHash<Data>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+
       try {
          measure_cuckoo<PGMHash<Data, 128, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
       } catch (const std::exception& e) {
@@ -347,6 +351,8 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
 
    /// Probing
    for (const auto load_factor : {1.0 / 1.25, 1.0 / 1.5}) {
+      measure_probing<rs::RadixSplineHash<Data>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+
       try {
          measure_probing<PGMHash<Data, 128, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
       } catch (const std::exception& e) {
