@@ -393,20 +393,20 @@ int main(int argc, char* argv[]) {
          const auto dataset_size = std::filesystem::file_size(path);
          const auto dataset_elem_count = dataset_size / dataset.bytesPerValue;
 
-         for (const auto& load_fac : args.load_factors) {
+         for (const auto& load_fac : {0.25, 0.5, 0.75, 0.8, 0.95, 0.98, 1.0, 1.33}) {
             const auto ht_capacity = static_cast<double>(dataset_elem_count) / load_fac;
 
-            using Chained =
-               Hashtable::Chained<uint64_t, uint32_t, 4, PrimeMultiplicationHash64, Reduction::Fastrange<HASH_64>>;
+            using Chained = Hashtable::Chained<uint64_t, Payload64<uint64_t>, 4, PrimeMultiplicationHash64,
+                                               Reduction::Fastrange<HASH_64>>;
             // Directory size + all keys go to one bucket chain
             const auto wc_chaining = Chained::directory_address_count(ht_capacity) * Chained::slot_byte_size() +
                ((dataset_elem_count - 1) / Chained::bucket_size()) * Chained::bucket_byte_size();
 
-            using Probing = Hashtable::Probing<uint64_t, uint32_t, PrimeMultiplicationHash64,
+            using Probing = Hashtable::Probing<uint64_t, Payload64<uint64_t>, PrimeMultiplicationHash64,
                                                Reduction::Fastrange<HASH_64>, Hashtable::LinearProbingFunc>;
             const auto wc_probing = Probing::bucket_byte_size() * Probing::directory_address_count(ht_capacity);
 
-            using Cuckoo = Hashtable::Cuckoo<uint64_t, uint32_t, 8, PrimeMultiplicationHash64,
+            using Cuckoo = Hashtable::Cuckoo<uint64_t, Payload64<uint64_t>, 8, PrimeMultiplicationHash64,
                                              PrimeMultiplicationHash64, Reduction::Fastrange<HASH_64>,
                                              Reduction::Fastrange<HASH_64>, Hashtable::UnbiasedKicking>;
             const auto wc_cuckoo = Cuckoo::bucket_byte_size() * Cuckoo::directory_address_count(ht_capacity);
