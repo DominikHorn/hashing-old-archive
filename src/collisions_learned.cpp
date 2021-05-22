@@ -278,9 +278,9 @@ int main(int argc, char* argv[]) {
 
          for (const auto load_factor : args.load_factors) {
             for (const auto sample_size : args.sample_sizes) {
-               threads.emplace_back(std::thread([&, dataset_ptr, load_factor] {
+               threads.emplace_back(std::thread([&, dataset_ptr, load_factor, sample_size] {
                   cpu_blocker.aquire();
-                  measure(it.name(), *dataset_ptr, load_factor, sample_size, outfile, iomutex);
+                  benchmark(it.name(), *dataset_ptr, load_factor, sample_size, outfile, iomutex);
                   cpu_blocker.release();
                }));
             }
