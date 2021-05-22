@@ -202,8 +202,13 @@ namespace Benchmark {
                const auto payload = ht.lookup(key);
                Optimizer::DoNotEliminate(payload);
                full_mem_barrier; // emulate doing something with payload by stalling at least until it arrives
-               assert(payload);
-               assert(payload.value() == typename Hashtable::PayloadType(key));
+#ifndef NDEBUG
+               // Only perform these checks when debugging
+               if (UnsuccessfulLookupPercent == 0) {
+                  assert(payload);
+                  assert(payload.value() == typename Hashtable::PayloadType(key));
+               }
+#endif
             }
 #ifdef MACOS
          }
