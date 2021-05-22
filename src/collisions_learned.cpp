@@ -122,7 +122,7 @@ static void measure(const std::string& dataset_name, const std::vector<Data>& da
 }
 
 template<class Data>
-static void measure(const std::string& dataset_name, const std::vector<Data>& dataset, const double load_factor,
+static void benchmark(const std::string& dataset_name, const std::vector<Data>& dataset, const double load_factor,
                     const double sample_size, CSV& outfile, std::mutex& iomutex) {
    uint64_t sample_ns = 0, prepare_ns = 0;
 
