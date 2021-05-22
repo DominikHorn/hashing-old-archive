@@ -7,89 +7,50 @@ import math as math
 
 # Plot expected colliding keys based on load_factor
 def plot_expected_colliding_keys():
-    fix, ax = plt.subplots()
+    fix, ax2 = plt.subplots()
+    ax1 = ax2.twinx()
 
-    # expectation function
+    # E[X] : X collision probability per key
+    color1 = 'tab:blue'
     x = np.linspace(0, 5, 100)
     y = 1 - np.exp(-x)
-    ax.plot(x, y)
+    yticks = np.linspace(0,1,5)
+    ax1.set_yticks(yticks)
+    ax1.set_yticklabels([f"{round(100*y, 2)}%" for y in yticks])
+    ax1.set_ylabel("collision chance per key (percent)")
+    ax1.tick_params(axis='y', labelcolor=color1)
+    ax1.set_ylim(min(yticks),max(yticks))
+    ax1.plot(x, y, color=color1)
 
+    # Hashtable size
+    color2 = 'tab:orange'
+    x = np.linspace(0, 5, 100)
+    y = [1 / x if x > 0 else 4294967296 for x in x]
+    yticks = np.linspace(0, 5, 11)
+    ax2.set_yticks(yticks)
+    ax2.set_yticklabels([f"{y}x" for y in yticks])
+    ax2.set_ylabel("hashtable over allocation")
+    ax2.tick_params(axis='y', labelcolor=color2)
+    ax2.set_ylim(min(yticks),max(yticks))
+    ax2.plot(x, y, color=color2)
+
+    # Annotated special points of interest
     x = [0.25, 0.5, 0.75, 1.0, 1.25]
     y = [1 - math.exp(-x) for x in x]
-    ax.scatter(x,y)
+    ax1.scatter(x,y, color=color1)
     for i, yi in enumerate(y):
         percent = round(yi*100,2)
-        ax.annotate(f"{percent} %", (x[i], y[i]))
+        ax1.annotate(f"{percent}%", (x[i]+0.1, y[i]-0.05), color=color1)
+    x = [0.25, 0.5, 0.75, 1.0, 1.25]
+    y = [1 / x for x in x]
+    ax2.scatter([x for x in x if x != 0.5], [y for y in y if y != 2], color=color2)
+    for i, yi in enumerate(y):
+        ax2.annotate(f"{round(yi, 2)}x", (x[i]+0.1, y[i]), color=color2)
 
-    # TODO: additional x ticks at 0.25, 0.5, ...
-    # TODO: display y tick labels as percent values
+    # customize x ticks
+    plt.xticks(np.linspace(0, 5, 11))
+    ax2.set_xlabel("load factor")
 
-    plt.xlabel("load factor")
-    plt.ylabel("collision chance per key (percent)")
-    plt.margins(x=0,y=0)
-
-    plt.show()
-    #plt.savefig(f"out/expected_colliding_keys.pdf")
+    plt.savefig(f"out/expected_colliding_keys.pdf", bbox_inches='tight')
 
 plot_expected_colliding_keys()
-
-# # Plot collision data
-# DATASET_KEY="dataset"
-# MACHINE_KEY="machine"
-# COMPILER_KEY="compiler"
-# REDUCER_KEY="reducer"
-# HASH_KEY="hash"
-# THROUGHPUT_KEY="throughput"
-# 
-# DO_NOTHING="do_nothing"
-# CLAMP="clamp"
-# 
-# colors = mcolors.CSS4_COLORS
-# 
-# csv = pd.read_csv(f"throughput.csv")
-# partial_data = csv[csv[DATASET_KEY].isnull()]
-# data = csv[csv[DATASET_KEY].notnull()]
-# 
-# datasets = sorted(set(data[DATASET_KEY]))
-# compilers = sorted(set(data[COMPILER_KEY]))
-# 
-# for compiler in compilers:
-#     d1 = data[data[COMPILER_KEY] == compiler]
-# 
-#     # Extract information
-#     machine = set(d1[MACHINE_KEY]).pop()
-#     processor = machine[machine.find("(")+1:machine.rfind(")")]
-# 
-#     # Use do_nothing entries to determine order
-#     do_nothing_data = data[(data[REDUCER_KEY] == DO_NOTHING) | (data[REDUCER_KEY] == CLAMP)].sort_values(THROUGHPUT_KEY)
-#     all_hashfns = list(dict.fromkeys(do_nothing_data[HASH_KEY])) # preserves order since python 3.7
-#     all_reducers = set(d1[d1[REDUCER_KEY] != DO_NOTHING][REDUCER_KEY])
-# 
-#     # Aggregate data over multiple datasets
-#     for i, reducer in enumerate(all_reducers):
-#         d = d1[d1[REDUCER_KEY] == reducer]
-# 
-#         # Generate plot
-#         fig, ax = plt.subplots()
-#         plt.suptitle(f"{compiler} @ {processor}")
-# 
-#         hashfns = [hfn for hfn in all_hashfns if hfn in set(d[HASH_KEY])]
-# 
-#         bars = {}
-#         for hashfn in hashfns:
-#             bars[hashfn] = list(d[d[HASH_KEY] == hashfn][THROUGHPUT_KEY])
-# 
-#         plt_labels = [s.strip() for s in hashfns]
-#         plt_values = [bars[hf] for hf in hashfns] 
-# 
-#         # Plt data
-#         ax.boxplot(plt_values, whis=(0,100))
-#         ax.title.set_text(f"Throughput {reducer}")
-#         ax.set_ylim([0, 300] if reducer == CLAMP else [0, 30])
-# 
-#         # Plot style/info
-#         plt.xticks(range(1,len(plt_labels)+1), plt_labels, rotation=45, ha="right", fontsize=8)
-#         plt.ylabel("ns per key")
-#         plt.tight_layout()
-# 
-#         plt.savefig(f"out/throughput_{reducer}_{compiler}.pdf")
