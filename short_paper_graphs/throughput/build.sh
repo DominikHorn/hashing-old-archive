@@ -5,4 +5,4 @@ mkdir -p out
 rm -rf out/*
 
 # Build and open result folder
-python plot_throughput.py && open out/
+python plot.py && open out/
