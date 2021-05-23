@@ -1,6 +1,5 @@
 # Project files
 data/
-out/
 !data/synthetic.py
 benchmark/
 
