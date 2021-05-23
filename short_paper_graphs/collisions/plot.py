@@ -83,13 +83,21 @@ def plot_collisions():
 
         # Use do_nothing entries to determine order
         tmp_d = d1[(d1[LOAD_FACTOR_KEY] == 1.0) 
-                & ((d1[REDUCER_KEY] == CLAMP) | (d1[REDUCER_KEY] == FASTMOD))
+                #& ((d1[REDUCER_KEY] == CLAMP) | (d1[REDUCER_KEY] == FASTMOD))
                 & ((d1[SAMPLE_SIZE_KEY] == 0.01) | (d1[SAMPLE_SIZE_KEY].isnull()))
-                & (d1[DATASET_KEY] == "wiki_ts_200M_uint64")].sort_values(COLLIDING_KEYS)[HASH_KEY]
-        all_hashfns = list(dict.fromkeys(tmp_d)) # preserves order since python 3.7
+                & (d1[DATASET_KEY] == "wiki_ts_200M_uint64")].sort_values(COLLIDING_KEYS)
+        # dict preserves insertion order since python 3.7
+        classical_hashfns = list(dict.fromkeys(tmp_d[tmp_d[REDUCER_KEY] == FASTMOD][HASH_KEY])) 
+        learned_hashfns = list(dict.fromkeys(tmp_d[tmp_d[REDUCER_KEY] == CLAMP][HASH_KEY])) 
+        all_hashfns = learned_hashfns + classical_hashfns
+
         all_reducers = set(d1[d1[REDUCER_KEY] != CLAMP][REDUCER_KEY])
         pallette = list(mcolors.TABLEAU_COLORS.keys())
-        colors = {h: pallette[i % len(pallette)] for i, h in enumerate(all_hashfns)}
+        classical_colors = {h: pallette[i % len(pallette)] for i, h in enumerate(classical_hashfns)}
+        pallette = list(mcolors.BASE_COLORS.keys())
+        learned_colors = {h: pallette[i % len(pallette)] for i, h in enumerate(learned_hashfns)}
+        colors = classical_colors
+        colors.update(learned_colors)
 
         # Aggregate data over multiple datasets
         for i, reducer in enumerate(all_reducers):
@@ -120,10 +128,9 @@ def plot_collisions():
                     bar_width = 0.8 / len(plt_data)
                     gap_width = 0.1 / len(plt_data)
                     for j, (hash_name, value) in enumerate(plt_data):
-                        ax.bar(i + j * (bar_width+gap_width), value, bar_width, color=colors.get(hash_name) or "purple")
+                        ax.bar(i + (0.01 if hash_name in classical_hashfns else -0.01) + j * (bar_width+gap_width), value, bar_width, color=colors.get(hash_name) or "purple")
 
                 ax.set_title(f"{dataset}")
-                #ax.set_ylim([0, 1])
 
             # Plot style/info
             yticks = [0, 0.25, 0.5, 0.75, 1.0]
