@@ -6,6 +6,10 @@ import matplotlib.colors as mcolors
 import pandas as pd
 import math as math
 
+# TODO: use latex
+# from matplotlib import rc
+# rc('text', usetex=True)
+
 # Plot expected colliding keys based on load_factor
 def plot_expected_colliding_keys():
     fix, ax2 = plt.subplots()
@@ -131,6 +135,14 @@ def plot_collisions():
                         ax.bar(i + (0.01 if hash_name in classical_hashfns else -0.01) + j * (bar_width+gap_width), value, bar_width, color=colors.get(hash_name) or "purple")
 
                 ax.set_title(f"{dataset}")
+
+                # 1 - e^(-load_factor)
+                for i, load_fac in enumerate(load_factors):
+                    y = 1 - np.exp(-load_fac)
+                    ax.plot([i, i+0.9], [y,y], color="black",
+                            linestyle="dashed", linewidth=1)
+                    #ax.text(i+0.9/2.0, y+0.05, r"1 - e^{-\lambda}", horizontalalignment='center')
+
 
             # Plot style/info
             yticks = [0, 0.25, 0.5, 0.75, 1.0]
