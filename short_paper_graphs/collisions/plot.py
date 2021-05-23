@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib as mpl
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import pandas as pd
@@ -53,4 +54,97 @@ def plot_expected_colliding_keys():
 
     plt.savefig(f"out/expected_colliding_keys.pdf", bbox_inches='tight')
 
+def plot_collisions():
+    DATASET_KEY="dataset"
+    MACHINE_KEY="machine"
+    COMPILER_KEY="compiler"
+    REDUCER_KEY="reducer"
+    HASH_KEY="hash"
+    LOAD_FACTOR_KEY="load_factor"
+    SAMPLE_SIZE_KEY="sample_size"
+    COLLIDING_KEYS="colliding_keys"
+
+    CLAMP="clamp"
+    FASTMOD="fast_modulo"
+
+    csv = pd.read_csv(f"collisions.csv")
+    partial_data = csv[csv[DATASET_KEY].isnull()]
+    data = csv[csv[DATASET_KEY].notnull()]
+
+    datasets = sorted(set(data[DATASET_KEY]))
+    compilers = sorted(set(data[COMPILER_KEY]))
+
+    for compiler in compilers:
+        d1 = data[data[COMPILER_KEY] == compiler]
+
+        # Extract information
+        machine = set(d1[MACHINE_KEY]).pop()
+        processor = machine[machine.find("(")+1:machine.rfind(")")]
+
+        # Use do_nothing entries to determine order
+        tmp_d = d1[(d1[LOAD_FACTOR_KEY] == 1.0) 
+                & ((d1[REDUCER_KEY] == CLAMP) | (d1[REDUCER_KEY] == FASTMOD))
+                & ((d1[SAMPLE_SIZE_KEY] == 0.01) | (d1[SAMPLE_SIZE_KEY].isnull()))
+                & (d1[DATASET_KEY] == "wiki_ts_200M_uint64")].sort_values(COLLIDING_KEYS)[HASH_KEY]
+        all_hashfns = list(dict.fromkeys(tmp_d)) # preserves order since python 3.7
+        all_reducers = set(d1[d1[REDUCER_KEY] != CLAMP][REDUCER_KEY])
+        pallette = list(mcolors.TABLEAU_COLORS.keys())
+        colors = {h: pallette[i % len(pallette)] for i, h in enumerate(all_hashfns)}
+
+        # Aggregate data over multiple datasets
+        for i, reducer in enumerate(all_reducers):
+            d2 = d1[(d1[REDUCER_KEY] == reducer) | (d1[REDUCER_KEY] == CLAMP)]
+
+            load_factors = sorted(set(d2[LOAD_FACTOR_KEY]), reverse=True)
+            datasets = sorted(set(d2[DATASET_KEY]))
+
+            # Generate plot
+            fig, axs = plt.subplots(nrows=len(datasets), ncols=1, sharex=True,
+                    sharey=True, figsize=(15,20))
+            plt.suptitle(f"Collisions {reducer}\n{compiler} @ {processor}\n")
+
+            for k, dataset in enumerate(datasets):
+                d3 = d2[d2[DATASET_KEY] == dataset]
+                ax = axs[k]
+
+                for i, load_factor in enumerate(load_factors):
+                    d = d3[d3[LOAD_FACTOR_KEY] == load_factor]
+                    hashfns = [hfn for hfn in all_hashfns if hfn in set(d[HASH_KEY])]
+
+                    bars = {}
+                    for hashfn in hashfns:
+                        bars[hashfn] = list(d[d[HASH_KEY] == hashfn][COLLIDING_KEYS])
+
+                    # Plt data
+                    plt_data = [(s.strip(), bars[s]) for s in hashfns]
+                    bar_width = 0.8 / len(plt_data)
+                    gap_width = 0.1 / len(plt_data)
+                    for j, (hash_name, value) in enumerate(plt_data):
+                        ax.bar(i + j * (bar_width+gap_width), value, bar_width, color=colors.get(hash_name) or "purple")
+
+                ax.set_title(f"{dataset}")
+                #ax.set_ylim([0, 1])
+
+            # Plot style/info
+            yticks = [0, 0.25, 0.5, 0.75, 1.0]
+            plt.yticks(yticks, [f"{int(yt*100)}%" for yt in yticks])
+            plt.xticks([0.5, 1.5, 2.5, 3.5], load_factors)
+            plt.xlabel("load factor")
+            fig.text(0.02, 0.5, 'collision chance per key (percent)', va='center', rotation='vertical')
+            plt.tight_layout()
+
+            # Fit ylabel
+            plt.subplots_adjust(left=0.075)
+
+            # Legend
+            plt.subplots_adjust(bottom=0.125)
+            fig.legend(
+                handles=[mpatches.Patch(color=colors.get(h), label=h) for h in all_hashfns],
+                #bbox_to_anchor=(1.05, 1),
+                loc="lower center",
+                ncol=5)
+
+            plt.savefig(f"out/collisions_{reducer}_{compiler}.pdf")
+
 plot_expected_colliding_keys()
+plot_collisions()
