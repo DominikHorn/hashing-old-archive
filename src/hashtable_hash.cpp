@@ -416,10 +416,7 @@ int main(int argc, char* argv[]) {
       }
 
       std::sort(exec_mem.rbegin(), exec_mem.rend());
-
-      for (size_t i = 0; i < args.max_threads && i < exec_mem.size(); i++) {
-         max_bytes += exec_mem[i];
-      }
+      max_bytes += exec_mem[0];
 
       std::cout << "Will consume max <= " << max_bytes / (std::pow(1024, 3)) << " GB of ram" << std::endl;
 #endif
