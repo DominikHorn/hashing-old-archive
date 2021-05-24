@@ -6,6 +6,15 @@ import matplotlib.colors as mcolors
 import pandas as pd
 import math as math
 
+# Latex figure export
+mpl.use("pgf")
+mpl.rcParams.update({
+    "pgf.texsystem": "pdflatex",
+    "font.family": "serif",
+    "text.usetex": True,
+    "pgf.rcfonts": False
+})
+
 def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
     DATASET_KEY="dataset"
     MACHINE_KEY="machine"
@@ -102,6 +111,7 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
         ncol=3)
 
     plt.savefig(f"out/{stat_key}_g++.pdf")
+    plt.savefig(f"out/{stat_key}_g++.pgf")
 
 #plot_expected_colliding_keys()
 plot_collision_statistic("colliding_keys", "Colliding keys", lambda load_fac : 1
