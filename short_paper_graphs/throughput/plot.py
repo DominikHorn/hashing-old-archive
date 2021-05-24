@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+import matplotlib.patches as mpatches
 import pandas as pd
 from statistics import median
 
@@ -20,10 +21,19 @@ hr_names = {"mult_prime64": "mult", "mult_add64": "mult_add", "murmur_finalizer6
 all_palette = list(mcolors.TABLEAU_COLORS.keys())
 palette = all_palette[:-1]
 colors = {h: palette[i % len(palette)] for i,h in enumerate(hr_names.keys())}
+
+# Helper
+def name(hashfn):
+    return hr_names.get(hashfn) or hashfn
+
 def color(hashfn):
     bracket_ind = hashfn.find("(")
     h = hashfn[0: bracket_ind if bracket_ind > 0 else len(hashfn)].strip()
     return colors.get(h) or all_palette[-1]
+
+def models(h):
+    bracket_ind = h.find("(")
+    return h[bracket_ind+1:h.find(")")] if bracket_ind > 0 else ""
 
 # Read data
 DATASET_KEY="dataset"
@@ -64,7 +74,7 @@ all_hashfns = list(dict.fromkeys(data[(data[REDUCER_KEY] == FAST_MODULO) |
     (data[REDUCER_KEY] == CLAMP)].sort_values(HASH_KEY).sort_values(THROUGHPUT_KEY)[HASH_KEY])) # preserves order since python 3.7
 hashfns = [hfn for hfn in all_hashfns if hfn in set(data[HASH_KEY])]
 
-labels = [hr_names.get(h) or h for h in hashfns]
+labels = [name(h)for h in hashfns]
 values = [median(list(data[data[HASH_KEY] == h][THROUGHPUT_KEY])) for h in hashfns] 
 
 # Plot data
@@ -76,11 +86,26 @@ for i,v in enumerate(values):
             fontsize=8, rotation=90)
 
 # Plot style/info
-plt.xticks(range(0,len(labels)), labels, rotation=45, ha="right", fontsize=8)
+plt.xticks(range(0,len(labels)), [models(l) for l in labels], rotation=45, ha="right", fontsize=8)
+plt.tick_params(
+    axis='x',         
+    which='both',     
+    bottom=False,     
+    top=False,        
+    labelbottom=True) 
+
 #plt.xlabel("hash function")
 plt.ylabel("ns per key")
-plt.margins(x=0.01,y=0.25)
+plt.margins(x=0.01,y=0.2)
 plt.tight_layout()
+
+# Legend
+#plt.subplots_adjust(bottom=0.15)
+fig.legend(
+    handles=[mpatches.Patch(color=color, label=name(h)) for h,color in colors.items()],
+    loc="upper center",
+    fontsize=6,
+    ncol=3)
 
 plt.savefig(f"out/median_throughput.pdf")
 plt.savefig(f"out/median_throughput.pgf")
