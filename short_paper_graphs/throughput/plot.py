@@ -5,6 +5,15 @@ import matplotlib.colors as mcolors
 import pandas as pd
 from statistics import median
 
+# Latex figure export
+mpl.use("pgf")
+mpl.rcParams.update({
+    "pgf.texsystem": "pdflatex",
+    "font.family": "serif",
+    "text.usetex": True,
+    "pgf.rcfonts": False
+})
+
 # Style
 hr_names = {"mult_prime64": "mult", "mult_add64": "mult_add", "murmur_finalizer64":
         "murmur_fin", "rmi": "rmi", "vp_rmi": "vp_rmi"}
@@ -45,7 +54,7 @@ data = data[(data[HASH_KEY] == "mult_prime64") | (data[HASH_KEY] ==
 
 
 # Create plot
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(7.00697/2,3))
 
 # Extract data
 machine = set(data[data[DATASET_KEY].notnull()][MACHINE_KEY]).pop()
@@ -63,8 +72,8 @@ bar_width = 1.0 / len(hashfns)
 ax.bar(labels, values, color=[color(h) for h in hashfns])
 
 for i,v in enumerate(values):
-    ax.text(i, v + 1, str(round(v, 1)), ha="center", color=color(hashfns[i]),
-            fontsize=8)
+    ax.text(i, v + 5, str(round(v, 1)), ha="center", color=color(hashfns[i]),
+            fontsize=8, rotation=90)
 
 # Auxiliary 
 ax.title.set_text(f"Median throughput")
@@ -73,6 +82,8 @@ ax.title.set_text(f"Median throughput")
 plt.xticks(range(0,len(labels)), labels, rotation=45, ha="right", fontsize=8)
 #plt.xlabel("hash function")
 plt.ylabel("ns per key")
+plt.margins(x=0.01,y=0.25)
 plt.tight_layout()
 
 plt.savefig(f"out/median_throughput.pdf")
+plt.savefig(f"out/median_throughput.pgf")
