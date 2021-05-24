@@ -54,7 +54,7 @@ def plot_expected_colliding_keys():
 
     plt.savefig(f"out/expected_colliding_keys.pdf", bbox_inches='tight')
 
-def plot_collisions():
+def plot_collision_statistic(stat_key, title):
     DATASET_KEY="dataset"
     MACHINE_KEY="machine"
     COMPILER_KEY="compiler"
@@ -62,7 +62,6 @@ def plot_collisions():
     HASH_KEY="hash"
     LOAD_FACTOR_KEY="load_factor"
     SAMPLE_SIZE_KEY="sample_size"
-    COLLIDING_KEYS="colliding_keys"
 
     CLAMP="clamp"
     FASTMOD="fast_modulo"
@@ -84,7 +83,8 @@ def plot_collisions():
         # Use do_nothing entries to determine order
         tmp_d = d1[(d1[LOAD_FACTOR_KEY] == 1.0) 
                 & ((d1[SAMPLE_SIZE_KEY] == 0.01) | (d1[SAMPLE_SIZE_KEY].isnull()))
-                & (d1[DATASET_KEY] == "wiki_ts_200M_uint64")].sort_values(COLLIDING_KEYS)
+                & (d1[DATASET_KEY] ==
+                    "wiki_ts_200M_uint64")].sort_values(stat_key)
         # dict preserves insertion order since python 3.7
         classical_hashfns = list(dict.fromkeys(tmp_d[tmp_d[REDUCER_KEY] == FASTMOD][HASH_KEY])) 
         learned_hashfns = list(dict.fromkeys(tmp_d[tmp_d[REDUCER_KEY] == CLAMP][HASH_KEY])) 
@@ -101,7 +101,7 @@ def plot_collisions():
         # Generate plot
         fig, axs = plt.subplots(nrows=len(datasets), ncols=3, sharex=True,
                 sharey=True, figsize=(30,20))
-        plt.suptitle(f"Collisions\n{compiler} @ {processor}\n")
+        plt.suptitle(f"{title}\n{compiler} @ {processor}\n")
 
         # Aggregate data over multiple datasets
         for l, reducer in enumerate(all_reducers):
@@ -128,7 +128,7 @@ def plot_collisions():
 
                     bars = {}
                     for hashfn in hashfns:
-                        bars[hashfn] = list(d[d[HASH_KEY] == hashfn][COLLIDING_KEYS])
+                        bars[hashfn] = list(d[d[HASH_KEY] == hashfn][stat_key])
 
                     # Plt data
                     plt_data = [(s.strip(), bars[s]) for s in hashfns]
@@ -138,26 +138,25 @@ def plot_collisions():
                         ax.bar(i + (0.01 if hash_name in classical_hashfns else -0.01) + j * (bar_width+gap_width), value, bar_width, color=colors.get(hash_name) or "purple")
 
 
-                # 1 - e^(-load_factor)
-                for i, load_fac in enumerate(load_factors):
-                    y = 1 - np.exp(-load_fac)
-                    ax.plot([i, i+0.9], [y,y], color="black",
-                            linestyle="dashed", linewidth=1)
-                    # TODO
-                    #ax.text(i+0.9/2.0, y+0.75, r"$1 - \frac{1}{e^{-" +
-                    #        str(load_fac) + "}}$", horizontalalignment='center')
+               #  # 1 - e^(-load_factor)
+               #  for i, load_fac in enumerate(load_factors):
+               #      y = 1 - np.exp(-load_fac)
+               #      ax.plot([i, i+0.9], [y,y], color="black",
+               #              linestyle="dashed", linewidth=1)
+               #      # TODO
+               #      #ax.text(i+0.9/2.0, y+0.75, r"$1 - \frac{1}{e^{-" +
+               #      #        str(load_fac) + "}}$", horizontalalignment='center')
 
 
             # Plot style/info
             yticks = [0, 0.25, 0.5, 0.75, 1.0]
             plt.yticks(yticks, [f"{int(yt*100)}%" for yt in yticks])
             plt.xticks([0.5, 1.5, 2.5, 3.5], load_factors)
-            fig.text(0.02, 0.5, 'collision chance per key (percent)', va='center', rotation='vertical')
-            fig.text(0.5, 0.1, 'load factor', ha='center')
+            fig.text(0.5, 0.1, 'Load factor', ha='center')
             plt.tight_layout()
 
             # Fit xlabel, ylabel
-            plt.subplots_adjust(left=0.05, bottom=0.14)
+            plt.subplots_adjust(bottom=0.14)
 
             # Legend
             fig.legend(
@@ -166,7 +165,9 @@ def plot_collisions():
                 loc="lower center",
                 ncol=5)
 
-        plt.savefig(f"out/collisions_{compiler}.pdf")
+        plt.savefig(f"out/{stat_key}_{compiler}.pdf")
 
 plot_expected_colliding_keys()
-plot_collisions()
+plot_collision_statistic("colliding_keys", "Colliding keys")
+plot_collision_statistic("colliding_slots", "Colliding slots")
+plot_collision_statistic("empty_slots", "Empty slots")
