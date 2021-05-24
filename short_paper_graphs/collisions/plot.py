@@ -54,7 +54,7 @@ def plot_expected_colliding_keys():
 
     plt.savefig(f"out/expected_colliding_keys.pdf", bbox_inches='tight')
 
-def plot_collision_statistic(stat_key, title):
+def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
     DATASET_KEY="dataset"
     MACHINE_KEY="machine"
     COMPILER_KEY="compiler"
@@ -138,19 +138,19 @@ def plot_collision_statistic(stat_key, title):
                         ax.bar(i + (0.01 if hash_name in classical_hashfns else -0.01) + j * (bar_width+gap_width), value, bar_width, color=colors.get(hash_name) or "purple")
 
 
-               #  # 1 - e^(-load_factor)
-               #  for i, load_fac in enumerate(load_factors):
-               #      y = 1 - np.exp(-load_fac)
-               #      ax.plot([i, i+0.9], [y,y], color="black",
-               #              linestyle="dashed", linewidth=1)
-               #      # TODO
-               #      #ax.text(i+0.9/2.0, y+0.75, r"$1 - \frac{1}{e^{-" +
-               #      #        str(load_fac) + "}}$", horizontalalignment='center')
+                for i, load_fac in enumerate(load_factors):
+                    y = expected_fun(load_fac)
+                    ax.plot([i, i+0.9], [y,y], color="black",
+                            linestyle="dashed", linewidth=1)
+                    # TODO
+                    #ax.text(i+0.9/2.0, y+0.75, r"$1 - \frac{1}{e^{-" +
+                    #        str(load_fac) + "}}$", horizontalalignment='center')
 
 
             # Plot style/info
-            yticks = [0, 0.25, 0.5, 0.75, 1.0]
+            yticks = np.linspace(0, ymax, 5)
             plt.yticks(yticks, [f"{int(yt*100)}%" for yt in yticks])
+
             plt.xticks([0.5, 1.5, 2.5, 3.5], load_factors)
             fig.text(0.5, 0.1, 'Load factor', ha='center')
             plt.tight_layout()
@@ -168,6 +168,9 @@ def plot_collision_statistic(stat_key, title):
         plt.savefig(f"out/{stat_key}_{compiler}.pdf")
 
 plot_expected_colliding_keys()
-plot_collision_statistic("colliding_keys", "Colliding keys")
-plot_collision_statistic("colliding_slots", "Colliding slots")
-plot_collision_statistic("empty_slots", "Empty slots")
+plot_collision_statistic("colliding_keys", "Colliding keys", lambda load_fac : 1
+        - np.exp(-load_fac))
+plot_collision_statistic("colliding_slots", "Colliding slots", lambda load_fac :
+        1 - (((1 + 1/load_fac) * np.exp(-load_fac)) / (1 / load_fac)), ymax=0.5)
+plot_collision_statistic("empty_slots", "Empty slots", lambda load_fac :
+        np.exp(-load_fac))
