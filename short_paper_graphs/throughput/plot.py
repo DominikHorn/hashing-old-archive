@@ -75,9 +75,6 @@ for i,v in enumerate(values):
     ax.text(i, v + 5, str(round(v, 1)), ha="center", color=color(hashfns[i]),
             fontsize=8, rotation=90)
 
-# Auxiliary 
-ax.title.set_text(f"Median throughput")
-
 # Plot style/info
 plt.xticks(range(0,len(labels)), labels, rotation=45, ha="right", fontsize=8)
 #plt.xlabel("hash function")
