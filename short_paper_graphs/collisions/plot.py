@@ -174,3 +174,7 @@ plot_collision_statistic("colliding_slots", "Colliding slots", lambda load_fac :
         1 - (((1 + 1/load_fac) * np.exp(-load_fac)) / (1 / load_fac)), ymax=0.5)
 plot_collision_statistic("empty_slots", "Empty slots", lambda load_fac :
         np.exp(-load_fac))
+plot_collision_statistic("exclusive_slots", "Exclusive slots (exactly one key)", lambda load_fac :
+        1 - (1 - (((1 + 1/load_fac) * np.exp(-load_fac)) / (1 / load_fac)) +
+            np.exp(-load_fac)))
+
