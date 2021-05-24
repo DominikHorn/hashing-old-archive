@@ -3,104 +3,76 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import pandas as pd
+from statistics import median
 
+# Style
+hr_names = {"mult_prime64": "mult", "mult_add64": "mult_add", "murmur_finalizer64":
+        "murmur_fin", "rmi": "rmi", "vp_rmi": "vp_rmi"}
+all_palette = list(mcolors.TABLEAU_COLORS.keys())
+palette = all_palette[:-1]
+colors = {h: palette[i % len(palette)] for i,h in enumerate(hr_names.keys())}
+def color(hashfn):
+    bracket_ind = hashfn.find("(")
+    h = hashfn[0: bracket_ind if bracket_ind > 0 else len(hashfn)].strip()
+    return colors.get(h) or all_palette[-1]
+
+# Read data
 DATASET_KEY="dataset"
 MACHINE_KEY="machine"
+COMPILER_KEY="compiler"
 REDUCER_KEY="reducer"
 HASH_KEY="hash"
 THROUGHPUT_KEY="throughput"
 
+FAST_MODULO="fast_modulo"
 DO_NOTHING="do_nothing"
 CLAMP="clamp"
 
-colors = mcolors.CSS4_COLORS
+csv = pd.read_csv(f"throughput.csv")
+partial_data = csv[csv[DATASET_KEY].isnull()]
+data = csv # csv[csv[DATASET_KEY].notnull()]
 
-def plot_classical_throughput():
-    csv = pd.read_csv(f"throughput.csv")
-    partial_data = csv[csv[DATASET_KEY].isnull()]
-    data = csv[csv[DATASET_KEY].notnull()]
+# Filter data
+# Only use g++ results
+data = data[(data[COMPILER_KEY].isnull()) |
+        (data[COMPILER_KEY].str.match(r"g\+\+"))]
+# Only use fast modulo results
+data = data[(data[REDUCER_KEY] == FAST_MODULO) | (data[REDUCER_KEY] == CLAMP)]
+# Only use certain hash functions
+data = data[(data[HASH_KEY] == "mult_prime64") | (data[HASH_KEY] ==
+    "mult_add64") | (data[HASH_KEY] == "murmur_finalizer64") |
+    (data[HASH_KEY].str.contains("rmi"))] #| (data[HASH_KEY].str.match("radix_spline"))]
 
-    datasets = sorted(set(data[DATASET_KEY]))
 
-    # Extract information
-    machine = set(data[MACHINE_KEY]).pop()
-    processor = machine[machine.find("(")+1:machine.rfind(")")]
+# Create plot
+fig, ax = plt.subplots()
 
-    # Use do_nothing entries to determine order
-    do_nothing_data = data[data[REDUCER_KEY] == DO_NOTHING].sort_values(THROUGHPUT_KEY)
-    all_hashfns = list(dict.fromkeys(do_nothing_data[HASH_KEY])) # preserves order since python 3.7
-    all_reducers = set(data[(data[REDUCER_KEY] != DO_NOTHING) &
-        (data[REDUCER_KEY] != CLAMP)][REDUCER_KEY])
+# Extract data
+machine = set(data[data[DATASET_KEY].notnull()][MACHINE_KEY]).pop()
+processor = machine[machine.find("(")+1:machine.rfind(")")]
 
-    fig, axs = plt.subplots(nrows=len(all_reducers), ncols=1, sharex=True,
-            sharey=False, figsize=(15,20))
-    plt.suptitle(f"Throughput (various datasets and compilers)\n{processor}\n")
+all_hashfns = list(dict.fromkeys(data[(data[REDUCER_KEY] == FAST_MODULO) |
+    (data[REDUCER_KEY] == CLAMP)].sort_values(HASH_KEY).sort_values(THROUGHPUT_KEY)[HASH_KEY])) # preserves order since python 3.7
+hashfns = [hfn for hfn in all_hashfns if hfn in set(data[HASH_KEY])]
 
-    # Aggregate data over multiple datasets
-    for i, reducer in enumerate(all_reducers):
-        ax = axs[i]
-        d = data[data[REDUCER_KEY] == reducer]
+labels = [hr_names.get(h) or h for h in hashfns]
+values = [median(list(data[data[HASH_KEY] == h][THROUGHPUT_KEY])) for h in hashfns] 
 
-        hashfns = [hfn for hfn in all_hashfns if hfn in set(d[HASH_KEY])]
+# Plot data
+bar_width = 1.0 / len(hashfns)
+ax.bar(labels, values, color=[color(h) for h in hashfns])
 
-        bars = {}
-        for hashfn in hashfns:
-            bars[hashfn] = list(d[d[HASH_KEY] == hashfn][THROUGHPUT_KEY])
+for i,v in enumerate(values):
+    ax.text(i, v + 1, str(round(v, 1)), ha="center", color=color(hashfns[i]),
+            fontsize=8)
 
-        plt_labels = [s.strip() for s in hashfns]
-        plt_values = [bars[hf] for hf in hashfns] 
+# Auxiliary 
+ax.title.set_text(f"Median throughput")
 
-        # Plt data
-        ax.boxplot(plt_values, whis=(0,100))
-        ax.title.set_text(f"Throughput {reducer}")
-        ax.set_ylim([0, 30])
+# Plot style/info
+plt.xticks(range(0,len(labels)), labels, rotation=45, ha="right", fontsize=8)
+#plt.xlabel("hash function")
+plt.ylabel("ns per key")
+plt.tight_layout()
 
-        # Plot style/info
-        plt.xticks(range(1,len(plt_labels)+1), plt_labels, rotation=45, ha="right", fontsize=8)
-        plt.ylabel("ns per key")
-        plt.tight_layout()
-
-    plt.savefig(f"out/throughput_classical.pdf")
-
-def plot_learned_throughput():
-    csv = pd.read_csv(f"throughput.csv")
-    partial_data = csv[csv[DATASET_KEY].isnull()]
-    data = csv[csv[DATASET_KEY].notnull()]
-
-    datasets = sorted(set(data[DATASET_KEY]))
-
-    # Extract information
-    machine = set(data[MACHINE_KEY]).pop()
-    processor = machine[machine.find("(")+1:machine.rfind(")")]
-
-    # Use do_nothing entries to determine order
-    hashfns = list(dict.fromkeys(data[data[REDUCER_KEY] == CLAMP][HASH_KEY])) # preserves order since python 3.7
-
-    fig, ax = plt.subplots()
-    plt.suptitle(f"Throughput (various datasets and compilers)\n{processor}\n")
-
-    # Aggregate data over multiple datasets
-    d = data[data[REDUCER_KEY] == CLAMP]
-
-    bars = {}
-    for hashfn in hashfns:
-        bars[hashfn] = list(d[d[HASH_KEY] == hashfn][THROUGHPUT_KEY])
-
-    hashfns_ordered = sorted(hashfns, key=lambda h: max(bars[h]))
-    plt_labels = [h.strip() for h in hashfns_ordered]
-    plt_values = [bars[h] for h in hashfns_ordered] 
-
-    # Plt data
-    ax.boxplot(plt_values, whis=(0,100))
-    ax.title.set_text(f"Throughput learned hash functions")
-    ax.set_ylim([0, 400])
-
-    # Plot style/info
-    plt.xticks(range(1,len(plt_labels)+1), plt_labels, rotation=45, ha="right", fontsize=8)
-    plt.ylabel("ns per key")
-    plt.tight_layout()
-
-    plt.savefig(f"out/throughput_learned.pdf")
-
-plot_classical_throughput()
-plot_learned_throughput()
+plt.savefig(f"out/median_throughput.pdf")
