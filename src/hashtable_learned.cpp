@@ -265,7 +265,40 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
 
    /// Chained
    for (const auto load_factor : {1. / 0.75, 1. / 1., 1. / 1.25}) {
-      measure_chained<rs::RadixSplineHash<Data>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+      auto i = 0;
+   test_rs:
+      try {
+         if (i == 0)
+            measure_chained<rs::RadixSplineHash<Data, 24, 20, 500>>(dataset_name, dataset, load_factor, sample, outfile,
+                                                                    iomutex);
+         if (i == 1)
+            measure_chained<rs::RadixSplineHash<Data, 18, 32, 500>>(dataset_name, dataset, load_factor, sample, outfile,
+                                                                    iomutex);
+         if (i == 2)
+            measure_chained<rs::RadixSplineHash<Data, 24, 40, 500>>(dataset_name, dataset, load_factor, sample, outfile,
+                                                                    iomutex);
+         if (i == 3)
+            measure_chained<rs::RadixSplineHash<Data, 20, 80, 500>>(dataset_name, dataset, load_factor, sample, outfile,
+                                                                    iomutex);
+         if (i == 4)
+            measure_chained<rs::RadixSplineHash<Data, 20, 160, 500>>(dataset_name, dataset, load_factor, sample,
+                                                                     outfile, iomutex);
+         //         if (i == 5)
+         //            measure_cuckoo<rs::RadixSplineHash<Data, 26, 8, 500>>(dataset_name, dataset, load_factor, sample, outfile,
+         //                                                                  iomutex);
+         //         if (i == 6)
+         //            measure_cuckoo<rs::RadixSplineHash<Data, 26, 3, 500>>(dataset_name, dataset, load_factor, sample, outfile,
+         //                                                                  iomutex);
+         //         if (i == 7)
+         //            measure_cuckoo<rs::RadixSplineHash<Data, 28, 2, 500>>(dataset_name, dataset, load_factor, sample, outfile,
+         //                                                                  iomutex);
+
+         std::unique_lock<std::mutex> lock(iomutex);
+         std::cerr << "Failed to find viable radix_spline configuration for " << dataset_name << std::endl;
+      } catch (const std::exception& e) {
+         i++;
+         goto test_rs;
+      }
 
       try {
          measure_chained<PGMHash<Data, 128, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
@@ -312,7 +345,40 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
 
    /// Cuckoo
    for (const auto load_factor : {0.98, 0.95}) {
-      measure_cuckoo<rs::RadixSplineHash<Data>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+      auto i = 0;
+   cuckoo_rs_begin:
+      try {
+         if (i == 0)
+            measure_cuckoo<rs::RadixSplineHash<Data, 24, 20, 500>>(dataset_name, dataset, load_factor, sample, outfile,
+                                                                   iomutex);
+         if (i == 1)
+            measure_cuckoo<rs::RadixSplineHash<Data, 18, 32, 500>>(dataset_name, dataset, load_factor, sample, outfile,
+                                                                   iomutex);
+         if (i == 2)
+            measure_cuckoo<rs::RadixSplineHash<Data, 24, 40, 500>>(dataset_name, dataset, load_factor, sample, outfile,
+                                                                   iomutex);
+         if (i == 3)
+            measure_cuckoo<rs::RadixSplineHash<Data, 20, 80, 500>>(dataset_name, dataset, load_factor, sample, outfile,
+                                                                   iomutex);
+         if (i == 4)
+            measure_cuckoo<rs::RadixSplineHash<Data, 20, 160, 500>>(dataset_name, dataset, load_factor, sample, outfile,
+                                                                    iomutex);
+         //         if (i == 5)
+         //            measure_cuckoo<rs::RadixSplineHash<Data, 26, 8, 500>>(dataset_name, dataset, load_factor, sample, outfile,
+         //                                                                  iomutex);
+         //         if (i == 6)
+         //            measure_cuckoo<rs::RadixSplineHash<Data, 26, 3, 500>>(dataset_name, dataset, load_factor, sample, outfile,
+         //                                                                  iomutex);
+         //         if (i == 7)
+         //            measure_cuckoo<rs::RadixSplineHash<Data, 28, 2, 500>>(dataset_name, dataset, load_factor, sample, outfile,
+         //                                                                  iomutex);
+
+         std::unique_lock<std::mutex> lock(iomutex);
+         std::cerr << "Failed to find viable radix_spline configuration for " << dataset_name << std::endl;
+      } catch (const std::exception& e) {
+         i++;
+         goto cuckoo_rs_begin;
+      }
 
       try {
          measure_cuckoo<PGMHash<Data, 128, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
@@ -329,7 +395,7 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
                                                                iomutex);
                } catch (const std::exception& e) {
                   std::unique_lock<std::mutex> lock(iomutex);
-                  std::cerr << "Failed to find viable epsrec0 configuration for " << dataset_name << std::endl;
+                  std::cerr << "Failed to find viable pgm epsrec0 configuration for " << dataset_name << std::endl;
                }
             }
          }
@@ -350,7 +416,7 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
                                                                iomutex);
                } catch (const std::exception& e) {
                   std::unique_lock<std::mutex> lock(iomutex);
-                  std::cerr << "Failed to find viable epsrec0 configuration for " << dataset_name << std::endl;
+                  std::cerr << "Failed to find viable pgm epsrec4 configuration for " << dataset_name << std::endl;
                }
             }
          }

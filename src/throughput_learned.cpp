@@ -158,22 +158,22 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
    //                                                                outfile, iomutex);
 
    /// RadixSpline
-   measure<rs::RadixSplineHash<Data>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
-                                                                outfile, iomutex);
    measure<rs::RadixSplineHash<Data, 20, 160>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns,
                                                                          prepare_ns, outfile, iomutex);
    measure<rs::RadixSplineHash<Data, 20, 80>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns,
                                                                         prepare_ns, outfile, iomutex);
    measure<rs::RadixSplineHash<Data, 24, 40>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns,
                                                                         prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 18, 32>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns,
+                                                                        prepare_ns, outfile, iomutex);
    measure<rs::RadixSplineHash<Data, 24, 20>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns,
                                                                         prepare_ns, outfile, iomutex);
-   measure<rs::RadixSplineHash<Data, 26, 8>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns,
-                                                                       prepare_ns, outfile, iomutex);
-   measure<rs::RadixSplineHash<Data, 26, 3>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns,
-                                                                       prepare_ns, outfile, iomutex);
-   measure<rs::RadixSplineHash<Data, 28, 2>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns,
-                                                                       prepare_ns, outfile, iomutex);
+   //   measure<rs::RadixSplineHash<Data, 26, 8>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns,
+   //                                                                       prepare_ns, outfile, iomutex);
+   //   measure<rs::RadixSplineHash<Data, 26, 3>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns,
+   //                                                                       prepare_ns, outfile, iomutex);
+   //   measure<rs::RadixSplineHash<Data, 28, 2>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns,
+   //                                                                       prepare_ns, outfile, iomutex);
 
    /// PGM (eps_rec 4)
    measure<PGMHash<Data, 256, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
@@ -255,16 +255,16 @@ int main(int argc, char* argv[]) {
       std::vector<std::thread> threads{};
 
       for (const auto& it : args.datasets) {
-            for (const auto sample_size : args.sample_sizes) {
-		 threads.emplace_back(std::thread([&, it, sample_size] {
-		    cpu_blocker.aquire();
+         for (const auto sample_size : args.sample_sizes) {
+            threads.emplace_back(std::thread([&, it, sample_size] {
+               cpu_blocker.aquire();
 
-		    auto dataset = it.load(iomutex);
-	            benchmark(it.name(), dataset, sample_size, outfile, iomutex);
+               auto dataset = it.load(iomutex);
+               benchmark(it.name(), dataset, sample_size, outfile, iomutex);
 
-		    cpu_blocker.release();
-		 }));
-	    }
+               cpu_blocker.release();
+            }));
+         }
       }
 
       for (auto& t : threads) {

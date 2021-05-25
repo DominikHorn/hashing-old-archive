@@ -123,7 +123,7 @@ static void measure(const std::string& dataset_name, const std::vector<Data>& da
 
 template<class Data>
 static void benchmark(const std::string& dataset_name, const std::vector<Data>& dataset, const double load_factor,
-                    const double sample_size, CSV& outfile, std::mutex& iomutex) {
+                      const double sample_size, CSV& outfile, std::mutex& iomutex) {
    uint64_t sample_ns = 0, prepare_ns = 0;
 
    // Theoretical slot count of a hashtable on which we want to measure collisions
@@ -187,8 +187,27 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
    //                                                                outfile, iomutex);
 
    /// RadixSpline
-   measure<rs::RadixSplineHash<Data>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter,
-                                                                sample_ns, prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 20, 160>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample,
+                                                                         collision_counter, sample_ns, prepare_ns,
+                                                                         outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 20, 80>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample,
+                                                                        collision_counter, sample_ns, prepare_ns,
+                                                                        outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 24, 40>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample,
+                                                                        collision_counter, sample_ns, prepare_ns,
+                                                                        outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 18, 32>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample,
+                                                                        collision_counter, sample_ns, prepare_ns,
+                                                                        outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 24, 20>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample,
+                                                                        collision_counter, sample_ns, prepare_ns,
+                                                                        outfile, iomutex);
+   //   measure<rs::RadixSplineHash<Data, 26, 8>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter,
+   //                                                                       sample_ns, prepare_ns, outfile, iomutex);
+   //   measure<rs::RadixSplineHash<Data, 26, 3>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter,
+   //                                                                       sample_ns, prepare_ns, outfile, iomutex);
+   //   measure<rs::RadixSplineHash<Data, 28, 2>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter,
+   //                                                                       sample_ns, prepare_ns, outfile, iomutex);
 
    /// PGM (eps_rec 4)
    measure<PGMHash<Data, 256, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
