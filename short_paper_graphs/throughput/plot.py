@@ -92,7 +92,8 @@ for i,v in enumerate(values):
 
 # Plot style/info
 plt.yticks(fontsize=8)
-plt.xticks(range(0,len(labels)), [l for l in labels], rotation=45, ha="right", fontsize=6)
+plt.xticks(range(0,len(labels)), [l for l in labels], rotation=45, ha="right",
+        va="top", fontsize=6)
 
 #plt.xlabel("hash function")
 plt.ylabel("ns per key")
@@ -108,4 +109,3 @@ fig.legend(
     ncol=3)
 
 plt.savefig(f"out/median_throughput.pdf")
-plt.savefig(f"out/median_throughput.pgf")
