@@ -78,7 +78,17 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
     fig, ax = plt.subplots(figsize=(7.00697/2,2))
 
     # Aggregate data over multiple datasets
-    datasets = sorted(set(data[DATASET_KEY]))
+    datasets =  [
+            # synthetic
+            'consecutive_200M_uint64',
+            'gapped_1%_200M_uint64', 
+            'gapped_10%_200M_uint64', 
+            #'uniform_dense_200M_uint64',
+
+            # real
+            'wiki_ts_200M_uint64',
+            'fb_200M_uint64', 
+            'osm_cellids_200M_uint64']
 
     for i, dataset in enumerate(datasets):
         d = data[data[DATASET_KEY] == dataset]
@@ -116,8 +126,8 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
     # Legend
     fig.legend(
         handles=[mpatches.Patch(color=colors.get(h), label=name(h)) for h in all_hashfns],
-        bbox_to_anchor=(1, 0.98),
-        loc="upper right",
+        bbox_to_anchor=(0.107, 0.98),
+        loc="upper left",
         fontsize=6,
         ncol=1)
 
@@ -129,7 +139,7 @@ plot_collision_statistic("colliding_keys", "Colliding keys", lambda load_fac : 1
 plot_collision_statistic("colliding_slots", "Colliding slots", lambda load_fac :
         1 - (((1 + 1/load_fac) * np.exp(-load_fac)) / (1 / load_fac)), ymax=0.5)
 plot_collision_statistic("empty_slots", "Empty slots", lambda load_fac:
-        np.exp(-load_fac), ymax=0.75)
+        np.exp(-load_fac), ymax=0.8)
 plot_collision_statistic("exclusive_slots", "Exclusive slots (exactly one key)", lambda load_fac :
         1 - (1 - (((1 + 1/load_fac) * np.exp(-load_fac)) / (1 / load_fac)) +
             np.exp(-load_fac)))
