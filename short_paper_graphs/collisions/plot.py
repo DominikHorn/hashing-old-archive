@@ -54,7 +54,7 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
             & (data[DATASET_KEY] ==
                 "wiki_ts_200M_uint64")].sort_values("colliding_slots")
     # dict preserves insertion order since python 3.7
-    classical_hashfns = list(dict.fromkeys(tmp_d[tmp_d[REDUCER_KEY] == FASTMOD][HASH_KEY])) 
+    classical_hashfns = ["mult_prime64", "mult_add64", "murmur_finalizer64"] 
     learned_hashfns = list(dict.fromkeys(tmp_d[tmp_d[REDUCER_KEY] == CLAMP][HASH_KEY])) 
     all_hashfns = learned_hashfns + classical_hashfns
 
@@ -106,7 +106,7 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
         #bbox_to_anchor=(1.05, 1),
         loc="upper center",
         fontsize=6,
-        ncol=4)
+        ncol=3)
 
     plt.savefig(f"out/{stat_key}.pdf")
 
