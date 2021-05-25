@@ -21,9 +21,11 @@ hr_names = {
        # "pgm_hash_eps128": "pgm_hash", 
        # "mult_prime64": "mult", 
        # "mult_add64": "mult_add", 
-        "murmur_finalizer64": "murmur_fin"
+        "murmur_finalizer64": "murmur finalizer"
         }
 def name(hashfn):
+    if hashfn.startswith("radix_spline"):
+        return "radix spline"
     return hr_names.get(hashfn) or hashfn
 
 DATASET_KEY="dataset"
@@ -91,7 +93,16 @@ datasets = sorted(set(data[DATASET_KEY]))
 fig, ax = plt.subplots(figsize=(7.00697/2,2))
 
 # Aggregate data over multiple datasets
-datasets = sorted(set(data[DATASET_KEY]))
+datasets = [
+        # synth
+        'consecutive_200M_uint64', 
+        'gapped_1percent_200M_uint64',
+        'gapped_10percent_200M_uint64',
+        'uniform_dense_200M_uint64',
+        # real
+        'wiki_ts_200M_uint64', 
+        'fb_200M_uint64',
+        'osm_cellids_200M_uint64']
 
 for i, dataset in enumerate(datasets):
     d = data[data[DATASET_KEY] == dataset]
@@ -128,9 +139,8 @@ plt.tight_layout(pad=0.1)
 # Legend
 fig.legend(
     handles=[mpatches.Patch(color=colors.get(h), label=name(h)) for h in all_hashfns],
-    #bbox_to_anchor=(1.05, 1),
-    loc="upper center",
-    fontsize=6,
-    ncol=3)
+    bbox_to_anchor=(1, 0.98),
+    loc="upper right",
+    fontsize=6)
 
 plt.savefig(f"out/primary_key_ratio.pdf")
