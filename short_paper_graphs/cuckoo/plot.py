@@ -119,7 +119,8 @@ for i, dataset in enumerate(datasets):
     bar_width = (1 - empty_space) / len(plt_data)
     gap_width = 0 #0.1 / len(plt_data)
     for j, (hash_name, value) in enumerate(plt_data):
-        ax.bar(empty_space/2 + i + j * (bar_width+gap_width), value, bar_width, color=colors.get(hash_name) or "purple")
+        ax.bar(empty_space/2 + i + j * (bar_width+gap_width) +
+                (bar_width+gap_width)/2, value, bar_width, color=colors.get(hash_name) or "purple")
 
 # Plot style/info
 yticks = np.linspace(0.75, 1, 5)
