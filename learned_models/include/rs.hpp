@@ -32,6 +32,10 @@ namespace rs {
          }
       }
 
+      size_t model_count() {
+         return spline.spline_points_.size();
+      }
+
       static std::string name() {
          return "radix_spline_err" + std::to_string(MaxError) + "_rbits" + std::to_string(NumRadixBits);
       }

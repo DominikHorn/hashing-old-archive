@@ -37,6 +37,10 @@ struct PGMHash : public pgm::PGMIndex<T, Epsilon, EpsilonRecursive, Floating> {
       }
    }
 
+   size_t model_count() {
+      return this->segments.spline_points_.size();
+   }
+
    /**
     * Human readable name useful, e.g., to log measured results
     * @return
