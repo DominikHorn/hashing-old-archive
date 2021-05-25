@@ -16,10 +16,18 @@ mpl.rcParams.update({
 })
 
 # Style
-hr_names = {"radix_spline": "radix_spline", "rmi": "rmi", "mult_prime64": "mult", "mult_add64": "mult_add", "murmur_finalizer64": "murmur_fin"}
+hr_names = {
+        "rmi": "rmi", 
+        "radix_spline": "radix spline",
+        #"mult_prime64": "mult", "mult_add64": "mult_add",
+        "murmur_finalizer64": "murmur finalizer"}
 all_palette = list(mcolors.TABLEAU_COLORS.keys())
 palette = all_palette[:-1]
-colors = {h: palette[i % len(palette)] for i,h in enumerate(hr_names.keys())}
+colors = {
+        "rmi": palette[2],
+        "radix_spline": palette[0],
+        "murmur_finalizer64": palette[1]
+        }
 
 # Helper
 def name(hashfn):
@@ -60,11 +68,11 @@ data = data[(data[REDUCER_KEY] == FAST_MODULO) | (data[REDUCER_KEY] == CLAMP)]
 # Only use sample size NaN or 1%
 data = data[(data[SAMPLE_SIZE_KEY] == 0.01) | (data[SAMPLE_SIZE_KEY].isnull())]
 # Only use certain hash functions
-data = data[(data[HASH_KEY] == "mult_prime64") | (data[HASH_KEY] ==
-    "mult_add64") | (data[HASH_KEY] == "murmur_finalizer64") |
+data = data[
+        # (data[HASH_KEY] == "mult_prime64") | (data[HASH_KEY] == "mult_add64") | 
+    (data[HASH_KEY] == "murmur_finalizer64") |
     (data[HASH_KEY].str.match("rmi")) |
-    ((data[HASH_KEY].str.contains("radix_spline")) & (data[HASH_KEY] !=
-        "radix_spline (32:18)"))]
+    ((data[HASH_KEY].str.contains("radix_spline")) & (data[HASH_KEY] != "radix_spline (32:18)"))]
 
 # Create plot
 fig, ax = plt.subplots(figsize=(7.00697/2,3))
@@ -102,8 +110,9 @@ plt.tight_layout(pad=0.1)
 #plt.subplots_adjust(bottom=0.15)
 fig.legend(
     handles=[mpatches.Patch(color=color, label=name(h)) for h,color in colors.items()],
-    loc="upper center",
+    bbox_to_anchor=(0.14, 1),
+    loc="upper left",
     fontsize=6,
-    ncol=3)
+    ncol=1)
 
 plt.savefig(f"out/median_throughput.pdf")
