@@ -255,16 +255,16 @@ int main(int argc, char* argv[]) {
       std::vector<std::thread> threads{};
 
       for (const auto& it : args.datasets) {
-         threads.emplace_back(std::thread([&, it] {
-            cpu_blocker.aquire();
-
-            auto dataset = it.load(iomutex);
             for (const auto sample_size : args.sample_sizes) {
-               benchmark(it.name(), dataset, sample_size, outfile, iomutex);
-            }
+		 threads.emplace_back(std::thread([&, it, sample_size] {
+		    cpu_blocker.aquire();
 
-            cpu_blocker.release();
-         }));
+		    auto dataset = it.load(iomutex);
+	            benchmark(it.name(), dataset, sample_size, outfile, iomutex);
+
+		    cpu_blocker.release();
+		 }));
+	    }
       }
 
       for (auto& t : threads) {
