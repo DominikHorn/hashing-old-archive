@@ -16,7 +16,9 @@ mpl.rcParams.update({
 })
 
 # Style
-hr_names = {"radix_spline": "radix_spline", "rmi": "rmi", "vp_rmi": "vp_rmi", "mult_prime64": "mult", "mult_add64": "mult_add", "murmur_finalizer64": "murmur_fin"}
+hr_names = {"radix_spline": "radix spline", "rmi": "rmi", "vp_rmi": "vp_rmi",
+        "mult_prime64": "mult", "mult_add64": "mult_add", "murmur_finalizer64":
+        "murmur finalizer"}
 def name(hashfn):
     return hr_names.get(hashfn) or hashfn
 
@@ -37,29 +39,34 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
     data = csv[csv[DATASET_KEY].notnull()]
 
     # Filter data
-    # Only use g++ results
-    data = data[(data[COMPILER_KEY].isnull()) |
-            (data[COMPILER_KEY].str.match(r"g\+\+"))]
-    # Only use load factor 1 results
-    data = data[data[LOAD_FACTOR_KEY] == 1.0]
-    # Only use fast modulo results
-    data = data[(data[REDUCER_KEY] == FASTMOD) | (data[REDUCER_KEY] == CLAMP)]
-    # Don't use normal dataset results for now (dataset broken)
-    data = data[(data[DATASET_KEY] != "normal_200M_uint64")]
-    # Only use certain hash functions
-    data = data[(data[HASH_KEY] == "mult_prime64") | (data[HASH_KEY] ==
-        "mult_add64") | (data[HASH_KEY] == "murmur_finalizer64") |
-        (data[HASH_KEY].str.contains("rmi")) |
-        (data[HASH_KEY].str.match("radix_spline")) |
-        (data[HASH_KEY].str.match("pgm"))]
-
+    data = data[
+            # Only use g++ results
+            ((data[COMPILER_KEY].isnull()) | (data[COMPILER_KEY].str.match(r"g\+\+")))
+            # Only use load factor 1 results
+            & (data[LOAD_FACTOR_KEY] == 1.0)
+            # Only use fast modulo results
+            & ((data[REDUCER_KEY] == FASTMOD) | (data[REDUCER_KEY] == CLAMP))
+            # Don't use normal dataset results for now (dataset broken)
+            & ((data[DATASET_KEY] != "normal_200M_uint64"))
+            # Only use certain hash functions
+            & (
+               # (data[HASH_KEY] == "mult_prime64")
+               # | (data[HASH_KEY] == "mult_add64")
+                (data[HASH_KEY] == "murmur_finalizer64")
+               # | (data[HASH_KEY].str.contains("rmi"))
+                | (data[HASH_KEY].str.match("radix_spline"))
+               # | (data[HASH_KEY].str.match("pgm"))
+                )
+            ]
 
     # Use do_nothing entries to determine order
     tmp_d = data[((data[SAMPLE_SIZE_KEY] == 0.01) | (data[SAMPLE_SIZE_KEY].isnull()))
             & (data[DATASET_KEY] ==
                 "wiki_ts_200M_uint64")].sort_values("colliding_slots")
     # dict preserves insertion order since python 3.7
-    classical_hashfns = ["mult_prime64", "mult_add64", "murmur_finalizer64"] 
+    classical_hashfns = [
+            #"mult_prime64", "mult_add64", 
+            "murmur_finalizer64"] 
     learned_hashfns = list(dict.fromkeys(tmp_d[tmp_d[REDUCER_KEY] == CLAMP][HASH_KEY])) 
     all_hashfns = learned_hashfns + classical_hashfns
 
@@ -68,7 +75,7 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
     datasets = sorted(set(data[DATASET_KEY]))
 
     # Generate plot
-    fig, ax = plt.subplots(figsize=(7.00697,2))
+    fig, ax = plt.subplots(figsize=(7.00697/2,2))
 
     # Aggregate data over multiple datasets
     datasets = sorted(set(data[DATASET_KEY]))
@@ -100,7 +107,8 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
     plt.yticks(yticks, [f"{int(yt*100)}%" for yt in yticks], fontsize=8)
 
     plt.xticks([i+0.5 for i in range(0, len(datasets))], [d.replace(r"_200M",
-        "").replace("_uint64", "").replace("_", " ") for d in datasets], #rotation=25, ha="right",
+        "").replace("_uint64", "").replace("_", " ") for d in datasets],
+        rotation=45, ha="right", va="top",
         fontsize=8)
     plt.margins(x=0.01,y=0.2)
     plt.tight_layout(pad=0.1)
@@ -108,10 +116,10 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
     # Legend
     fig.legend(
         handles=[mpatches.Patch(color=colors.get(h), label=name(h)) for h in all_hashfns],
-        #bbox_to_anchor=(1.05, 1),
-        loc="upper center",
+        bbox_to_anchor=(1, 0.98),
+        loc="upper right",
         fontsize=6,
-        ncol=3)
+        ncol=1)
 
     plt.savefig(f"out/{stat_key}.pdf")
 
@@ -120,7 +128,8 @@ plot_collision_statistic("colliding_keys", "Colliding keys", lambda load_fac : 1
         - np.exp(-load_fac))
 plot_collision_statistic("colliding_slots", "Colliding slots", lambda load_fac :
         1 - (((1 + 1/load_fac) * np.exp(-load_fac)) / (1 / load_fac)), ymax=0.5)
-plot_collision_statistic("empty_slots", "Empty slots", lambda load_fac: np.exp(-load_fac))
+plot_collision_statistic("empty_slots", "Empty slots", lambda load_fac:
+        np.exp(-load_fac), ymax=0.75)
 plot_collision_statistic("exclusive_slots", "Exclusive slots (exactly one key)", lambda load_fac :
         1 - (1 - (((1 + 1/load_fac) * np.exp(-load_fac)) / (1 / load_fac)) +
             np.exp(-load_fac)))
