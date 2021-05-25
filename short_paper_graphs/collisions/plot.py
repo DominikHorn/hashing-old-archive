@@ -39,6 +39,8 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
     data = data[data[LOAD_FACTOR_KEY] == 1.0]
     # Only use fast modulo results
     data = data[(data[REDUCER_KEY] == FASTMOD) | (data[REDUCER_KEY] == CLAMP)]
+    # Don't use normal dataset results for now (dataset broken)
+    data = data[(data[DATASET_KEY] != "normal_200M_uint64")]
     # Only use certain hash functions
     data = data[(data[HASH_KEY] == "mult_prime64") | (data[HASH_KEY] ==
         "mult_add64") | (data[HASH_KEY] == "murmur_finalizer64") |
