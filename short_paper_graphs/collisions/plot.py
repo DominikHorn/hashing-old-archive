@@ -51,7 +51,8 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
 
     # Use do_nothing entries to determine order
     tmp_d = data[((data[SAMPLE_SIZE_KEY] == 0.01) | (data[SAMPLE_SIZE_KEY].isnull()))
-            & (data[DATASET_KEY] == "wiki_ts_200M_uint64")].sort_values(stat_key)
+            & (data[DATASET_KEY] ==
+                "wiki_ts_200M_uint64")].sort_values("colliding_slots")
     # dict preserves insertion order since python 3.7
     classical_hashfns = list(dict.fromkeys(tmp_d[tmp_d[REDUCER_KEY] == FASTMOD][HASH_KEY])) 
     learned_hashfns = list(dict.fromkeys(tmp_d[tmp_d[REDUCER_KEY] == CLAMP][HASH_KEY])) 
@@ -66,7 +67,7 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
     datasets = sorted(set(data[DATASET_KEY]))
 
     # Generate plot
-    fig, ax = plt.subplots(figsize=(7.00697,3))
+    fig, ax = plt.subplots(figsize=(7.00697,2))
 
     # Aggregate data over multiple datasets
     datasets = sorted(set(data[DATASET_KEY]))
@@ -94,23 +95,22 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
 
     # Plot style/info
     yticks = np.linspace(0, ymax, 5)
-    plt.ylim(0,1)
+    plt.ylim(0,ymax)
     plt.yticks(yticks, [f"{int(yt*100)}%" for yt in yticks], fontsize=8)
 
     plt.xticks([i+0.5 for i in range(0, len(datasets))], [d.replace(r"_200M",
-        "").replace("_uint64", "") for d in datasets], #rotation=25, ha="right",
+        "").replace("_uint64", "").replace("_", " ") for d in datasets], #rotation=25, ha="right",
         fontsize=8)
     plt.margins(x=0.01,y=0.2)
-    plt.tight_layout()
+    plt.tight_layout(pad=0.1)
 
     # Legend
-    plt.subplots_adjust(bottom=0.2)
     fig.legend(
         handles=[mpatches.Patch(color=colors.get(h), label=h) for h in all_hashfns],
         #bbox_to_anchor=(1.05, 1),
         loc="upper center",
         fontsize=6,
-        ncol=3)
+        ncol=4)
 
     plt.savefig(f"out/{stat_key}.pdf")
 
