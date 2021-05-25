@@ -122,6 +122,12 @@ for i, dataset in enumerate(datasets):
         ax.bar(empty_space/2 + i + j * (bar_width+gap_width) +
                 (bar_width+gap_width)/2, value, bar_width, color=colors.get(hash_name) or "purple")
 
+
+# TODO: Expected value
+#y = 0.83
+#ax.plot([0, len(datasets)], [y,y], color="black",
+#        linestyle="dashed", linewidth=1.0)
+
 # Plot style/info
 yticks = np.linspace(0.75, 1, 5)
 plt.ylim(0.75,1)
