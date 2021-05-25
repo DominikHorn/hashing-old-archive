@@ -15,6 +15,11 @@ mpl.rcParams.update({
     "pgf.rcfonts": False
 })
 
+# Style
+hr_names = {"radix_spline": "radix_spline", "rmi": "rmi", "vp_rmi": "vp_rmi", "mult_prime64": "mult", "mult_add64": "mult_add", "murmur_finalizer64": "murmur_fin"}
+def name(hashfn):
+    return hr_names.get(hashfn) or hashfn
+
 def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
     DATASET_KEY="dataset"
     MACHINE_KEY="machine"
@@ -102,7 +107,7 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
 
     # Legend
     fig.legend(
-        handles=[mpatches.Patch(color=colors.get(h), label=h) for h in all_hashfns],
+        handles=[mpatches.Patch(color=colors.get(h), label=name(h)) for h in all_hashfns],
         #bbox_to_anchor=(1.05, 1),
         loc="upper center",
         fontsize=6,
