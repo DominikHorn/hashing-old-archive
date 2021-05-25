@@ -25,6 +25,11 @@ namespace rs {
             rsb.AddKey(*it);
 
          spline = rsb.Finalize();
+
+         if (spline.spline_points_.size() > MaxModels) {
+            throw std::runtime_error("RS " + name() + " had more models than allowed: " +
+                                     std::to_string(spline.spline_points_.size()) + " > " + std::to_string(MaxModels));
+         }
       }
 
       static std::string name() {
