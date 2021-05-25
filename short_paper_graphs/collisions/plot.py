@@ -59,11 +59,7 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
     all_hashfns = learned_hashfns + classical_hashfns
 
     pallette = list(mcolors.TABLEAU_COLORS.keys())
-    classical_colors = {h: pallette[i % len(pallette)] for i, h in enumerate(classical_hashfns)}
-    pallette = list(mcolors.BASE_COLORS.keys())
-    learned_colors = {h: pallette[i % len(pallette)] for i, h in enumerate(learned_hashfns)}
-    colors = classical_colors
-    colors.update(learned_colors)
+    colors = {h: pallette[i % len(pallette)] for i, h in enumerate(all_hashfns)}
     datasets = sorted(set(data[DATASET_KEY]))
 
     # Generate plot
