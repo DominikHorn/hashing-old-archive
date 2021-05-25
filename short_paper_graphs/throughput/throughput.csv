@@ -2102,7 +2102,7 @@ consecutive_200M_uint64,g++ (either 10.2.0 or 11.1.0),mcgraw (Intel(R) Xeon(R) G
 gapped_10percent_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps256_epsrec1,30.925244,,1.000,125.247868,10
 gapped_10percent_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps256_epsrec4,31.001259,,1.000,125.513552,10
 gapped_1percent_200M_uint64,g++ (either 10.2.0 or 11.1.0),mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps16_epsrec1,31.123201,,0.001,0.696614,10
-osm_cellids_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,radix_spline (2:28)2_rbits28,31.215524,,0.001,3.92471,10
+osm_cellids_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,radix_spline (2:28),31.215524,,0.001,3.92471,10
 books_200M_uint32,g++ (either 10.2.0 or 11.1.0),mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps256_epsrec1,31.253175,,0.010,1.593908,10
 consecutive_200M_uint64,clang++ (probably 11.1.0),mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps16_epsrec1,31.25395,,0.001,0.558348,10
 gapped_10percent_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps256_epsrec4,31.304383,,0.010,5.340086,10
@@ -2220,7 +2220,7 @@ books_200M_uint32,clang++ (probably 11.1.0),mcgraw (Intel(R) Xeon(R) Gold 6230 C
 normal_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps64_epsrec4,40.192437,,0.010,3.295618,10
 osm_cellids_200M_uint64,clang++ (probably 11.1.0),mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps64_epsrec0,40.232553,,0.001,0.715216,10
 books_200M_uint32,g++ (either 10.2.0 or 11.1.0),mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps256_epsrec4,40.260781,,1.000,101.040228,10
-osm_cellids_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,radix_spline (2:28)2_rbits28,40.285053,,0.010,5.351549,10
+osm_cellids_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,radix_spline (2:28),40.285053,,0.010,5.351549,10
 gapped_1percent_200M_uint64,g++ (either 10.2.0 or 11.1.0),mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps16_epsrec4,40.35457,,0.010,1.774418,10
 gapped_1percent_200M_uint64,g++ (either 10.2.0 or 11.1.0),mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps64_epsrec0,40.389815,,0.010,1.755605,10
 normal_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps256_epsrec4,40.40712,,0.100,18.157733,10
@@ -2530,7 +2530,7 @@ fb_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clam
 wiki_ts_200M_uint64,g++ (either 10.2.0 or 11.1.0),mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps4_epsrec0,77.356773,,0.010,1.801246,10
 uniform_dense_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps4_epsrec1,77.375659,,0.100,19.697576,10
 consecutive_200M_uint64,g++ (either 10.2.0 or 11.1.0),mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps4_epsrec1,77.646278,,0.100,16.620663,10
-osm_cellids_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,radix_spline (2:28)2_rbits28,77.902214,,0.100,23.069177,10
+osm_cellids_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,radix_spline (2:28),77.902214,,0.100,23.069177,10
 osm_cellids_200M_uint64,g++ (either 10.2.0 or 11.1.0),mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps16_epsrec0,78.495323,,0.010,1.632365,10
 gapped_10percent_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps4_epsrec4,78.672324,,0.100,19.558625,10
 gapped_1percent_200M_uint64,g++ (either 10.2.0 or 11.1.0),mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps4_epsrec4,78.995261,,0.100,16.790697,10
@@ -2652,7 +2652,7 @@ wiki_ts_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz)
 fb_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps16_epsrec0,127.919578,,0.100,19.64423,10
 osm_cellids_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps128_epsrec1,128.947172,,1.000,112.525896,10
 wiki_ts_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps128_epsrec0,130.781076,,0.100,42.749622,10
-osm_cellids_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,radix_spline (2:28)2_rbits28,131.262927,,1.000,128.524515,10
+osm_cellids_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,radix_spline (2:28),131.262927,,1.000,128.524515,10
 osm_cellids_200M_uint64,clang++ (probably 11.1.0),mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps64_epsrec0,132.84121,,1.000,104.019503,10
 uniform_dense_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps4_epsrec0,133.462634,,0.100,19.371269,10
 gapped_1percent_200M_uint64,clang++ (probably 11.1.0),mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,pgm_hash_eps4_epsrec0,133.546141,,0.100,15.741218,10

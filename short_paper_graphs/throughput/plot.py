@@ -16,9 +16,7 @@ mpl.rcParams.update({
 })
 
 # Style
-hr_names = {"mult_prime64": "mult", "mult_add64": "mult_add", "murmur_finalizer64":
-        "murmur_fin", "rmi": "rmi", "vp_rmi": "vp_rmi", "radix_spline":
-        "radix_spline"}
+hr_names = {"radix_spline": "radix_spline", "rmi": "rmi", "vp_rmi": "vp_rmi", "mult_prime64": "mult", "mult_add64": "mult_add", "murmur_finalizer64": "murmur_fin"}
 all_palette = list(mcolors.TABLEAU_COLORS.keys())
 palette = all_palette[:-1]
 colors = {h: palette[i % len(palette)] for i,h in enumerate(hr_names.keys())}
@@ -65,8 +63,8 @@ data = data[(data[SAMPLE_SIZE_KEY] == 0.01) | (data[SAMPLE_SIZE_KEY].isnull())]
 data = data[(data[HASH_KEY] == "mult_prime64") | (data[HASH_KEY] ==
     "mult_add64") | (data[HASH_KEY] == "murmur_finalizer64") |
     (data[HASH_KEY].str.contains("rmi")) |
-    (data[HASH_KEY].str.contains("radix_spline"))]
-
+    ((data[HASH_KEY].str.contains("radix_spline")) & (data[HASH_KEY] !=
+        "radix_spline (32:18)"))]
 
 # Create plot
 fig, ax = plt.subplots(figsize=(7.00697/2,3))
@@ -98,7 +96,7 @@ plt.xticks(range(0,len(labels)), [l for l in labels], rotation=45, ha="right",
 #plt.xlabel("hash function")
 plt.ylabel("ns per key")
 plt.margins(x=0.01,y=0.25)
-plt.tight_layout()
+plt.tight_layout(pad=0.1)
 
 # Legend
 #plt.subplots_adjust(bottom=0.15)
