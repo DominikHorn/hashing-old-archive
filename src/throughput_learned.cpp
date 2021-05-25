@@ -160,6 +160,20 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
    /// RadixSpline
    measure<rs::RadixSplineHash<Data>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
                                                                 outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 20, 160>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns,
+                                                                         prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 20, 80>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns,
+                                                                        prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 24, 40>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns,
+                                                                        prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 24, 20>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns,
+                                                                        prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 26, 8>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns,
+                                                                       prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 26, 3>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns,
+                                                                       prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 28, 2>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns,
+                                                                       prepare_ns, outfile, iomutex);
 
    /// PGM (eps_rec 4)
    measure<PGMHash<Data, 256, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_ns, prepare_ns,
