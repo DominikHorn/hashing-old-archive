@@ -17,7 +17,8 @@ mpl.rcParams.update({
 
 # Style
 hr_names = {"mult_prime64": "mult", "mult_add64": "mult_add", "murmur_finalizer64":
-        "murmur_fin", "rmi": "rmi", "vp_rmi": "vp_rmi"}
+        "murmur_fin", "rmi": "rmi", "vp_rmi": "vp_rmi", "radix_spline":
+        "radix_spline"}
 all_palette = list(mcolors.TABLEAU_COLORS.keys())
 palette = all_palette[:-1]
 colors = {h: palette[i % len(palette)] for i,h in enumerate(hr_names.keys())}
@@ -40,6 +41,7 @@ DATASET_KEY="dataset"
 MACHINE_KEY="machine"
 COMPILER_KEY="compiler"
 REDUCER_KEY="reducer"
+SAMPLE_SIZE_KEY="sample_size"
 HASH_KEY="hash"
 THROUGHPUT_KEY="throughput"
 
@@ -57,10 +59,13 @@ data = data[(data[COMPILER_KEY].isnull()) |
         (data[COMPILER_KEY].str.match(r"g\+\+"))]
 # Only use fast modulo results
 data = data[(data[REDUCER_KEY] == FAST_MODULO) | (data[REDUCER_KEY] == CLAMP)]
+# Only use sample size NaN or 1%
+data = data[(data[SAMPLE_SIZE_KEY] == 0.01) | (data[SAMPLE_SIZE_KEY].isnull())]
 # Only use certain hash functions
 data = data[(data[HASH_KEY] == "mult_prime64") | (data[HASH_KEY] ==
     "mult_add64") | (data[HASH_KEY] == "murmur_finalizer64") |
-    (data[HASH_KEY].str.contains("rmi"))] #| (data[HASH_KEY].str.match("radix_spline"))]
+    (data[HASH_KEY].str.contains("rmi")) |
+    (data[HASH_KEY].str.contains("radix_spline"))]
 
 
 # Create plot
@@ -70,33 +75,28 @@ fig, ax = plt.subplots(figsize=(7.00697/2,3))
 machine = set(data[data[DATASET_KEY].notnull()][MACHINE_KEY]).pop()
 processor = machine[machine.find("(")+1:machine.rfind(")")]
 
-all_hashfns = list(dict.fromkeys(data[(data[REDUCER_KEY] == FAST_MODULO) |
-    (data[REDUCER_KEY] == CLAMP)].sort_values(HASH_KEY).sort_values(THROUGHPUT_KEY)[HASH_KEY])) # preserves order since python 3.7
-hashfns = [hfn for hfn in all_hashfns if hfn in set(data[HASH_KEY])]
+plt_dat = sorted([(h, median(list(data[data[HASH_KEY] == h][THROUGHPUT_KEY])))for
+    h in set(data[HASH_KEY])], key=lambda x: x[1])
 
-labels = [name(h)for h in hashfns]
-values = [median(list(data[data[HASH_KEY] == h][THROUGHPUT_KEY])) for h in hashfns] 
+labels = [name(pltd[0]) for pltd in plt_dat]
+values = [pltd[1] for pltd in plt_dat]
 
 # Plot data
-bar_width = 1.0 / len(hashfns)
-ax.bar(labels, values, color=[color(h) for h in hashfns])
+bar_width = 1.0 / len(plt_dat)
+ax.bar(labels, values, color=[color(pltd[0]) for pltd in plt_dat])
 
+# Number above bar
 for i,v in enumerate(values):
-    ax.text(i, v + 5, str(round(v, 1)), ha="center", color=color(hashfns[i]),
+    ax.text(i, v + 5, str(round(v, 1)), ha="center", color=color(plt_dat[i][0]),
             fontsize=8, rotation=90)
 
 # Plot style/info
-plt.xticks(range(0,len(labels)), [models(l) for l in labels], rotation=45, ha="right", fontsize=8)
-plt.tick_params(
-    axis='x',         
-    which='both',     
-    bottom=False,     
-    top=False,        
-    labelbottom=True) 
+plt.yticks(fontsize=8)
+plt.xticks(range(0,len(labels)), [l for l in labels], rotation=45, ha="right", fontsize=6)
 
 #plt.xlabel("hash function")
 plt.ylabel("ns per key")
-plt.margins(x=0.01,y=0.2)
+plt.margins(x=0.01,y=0.25)
 plt.tight_layout()
 
 # Legend
