@@ -16,7 +16,13 @@ mpl.rcParams.update({
 })
 
 # Style
-hr_names = {"radix_spline": "radix_spline", "pgm_hash_eps128": "pgm_hash", "mult_prime64": "mult", "mult_add64": "mult_add", "murmur_finalizer64": "murmur_fin"}
+hr_names = {
+        "radix_spline": "radix_spline", 
+       # "pgm_hash_eps128": "pgm_hash", 
+       # "mult_prime64": "mult", 
+       # "mult_add64": "mult_add", 
+        "murmur_finalizer64": "murmur_fin"
+        }
 def name(hashfn):
     return hr_names.get(hashfn) or hashfn
 
@@ -54,12 +60,14 @@ data = data[
         # Don't use normal dataset results for now (dataset broken)
         & ((data[DATASET_KEY] != "normal_200M_uint64"))
         # Only use certain hash functions
-        & ((data[HASH_KEY].str.match("mult_prime64")) |
-            (data[HASH_KEY].str.match("mult_add64")) |
+        & (
+           # (data[HASH_KEY].str.match("mult_prime64")) |
+           # (data[HASH_KEY].str.match("mult_add64")) |
             (data[HASH_KEY].str.match("murmur_finalizer64")) |
-            (data[HASH_KEY].str.contains("rmi")) |
-            (data[HASH_KEY].str.match("radix_spline")) |
-            (data[HASH_KEY].str.match("pgm")))
+           # (data[HASH_KEY].str.contains("rmi")) |
+            (data[HASH_KEY].str.match("radix_spline")) #|
+           # (data[HASH_KEY].str.match("pgm"))
+           )
         ]
 
 
@@ -68,7 +76,9 @@ tmp_d = data[((data[SAMPLE_SIZE_KEY] == 0.01) | (data[SAMPLE_SIZE_KEY].isnull())
         & (data[DATASET_KEY] ==
             "wiki_ts_200M_uint64")].sort_values(PRIMARY_KEY_RATIO_KEY)
 # dict preserves insertion order since python 3.7
-classical_hashfns = ["mult_prime64", "mult_add64", "murmur_finalizer64"] 
+classical_hashfns = [
+       # "mult_prime64", "mult_add64", 
+        "murmur_finalizer64"] 
 learned_hashfns = [x[0:x.find("-")] for x in
     dict.fromkeys(tmp_d[tmp_d[REDUCER_KEY].str.match(CLAMP)][HASH_KEY])]
 all_hashfns = learned_hashfns + classical_hashfns
@@ -78,7 +88,7 @@ colors = {h: pallette[i % len(pallette)] for i, h in enumerate(all_hashfns)}
 datasets = sorted(set(data[DATASET_KEY]))
 
 # Generate plot
-fig, ax = plt.subplots(figsize=(7.00697,2))
+fig, ax = plt.subplots(figsize=(7.00697/2,2))
 
 # Aggregate data over multiple datasets
 datasets = sorted(set(data[DATASET_KEY]))
@@ -107,7 +117,10 @@ plt.ylim(0.75,1)
 plt.yticks(yticks, [f"{int(yt*100)}%" for yt in yticks], fontsize=8)
 
 plt.xticks([i+0.5 for i in range(0, len(datasets))], [d.replace(r"_200M",
-    "").replace("_uint64", "").replace("_", " ") for d in datasets], #rotation=25, ha="right",
+    "").replace("_uint64", "").replace("_", " ") for d in datasets], 
+    rotation=45,
+    ha="right",
+    va="top",
     fontsize=8)
 plt.margins(x=0.01,y=0.2)
 plt.tight_layout(pad=0.1)
