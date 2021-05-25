@@ -92,13 +92,12 @@ datasets = sorted(set(data[DATASET_KEY]))
 # Generate plot
 fig, ax = plt.subplots(figsize=(7.00697/2,2))
 
-# Aggregate data over multiple datasets
 datasets = [
         # synth
         'consecutive_200M_uint64', 
-        'gapped_1percent_200M_uint64',
-        'gapped_10percent_200M_uint64',
-        'uniform_dense_200M_uint64',
+        'gapped_1%_200M_uint64',
+        'gapped_10%_200M_uint64',
+        #'uniform_dense_200M_uint64',
         # real
         'wiki_ts_200M_uint64', 
         'fb_200M_uint64',
