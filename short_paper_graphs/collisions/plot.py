@@ -104,12 +104,13 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
         bar_width = (1 - empty_space) / len(plt_data)
         gap_width = 0 #0.1 / len(plt_data)
         for j, (hash_name, value) in enumerate(plt_data):
-            ax.bar(empty_space/2 + i + j * (bar_width+gap_width), value, bar_width, color=colors.get(hash_name) or "purple")
+            ax.bar(empty_space/2 + i + j * (bar_width+gap_width) +
+                    (bar_width+gap_width)/2, value, bar_width, color=colors.get(hash_name) or "purple")
 
     # Expected value (load factor 1)
     y = expected_fun(1.0)
     ax.plot([0, len(datasets)], [y,y], color="black",
-            linestyle="dashed", linewidth=1)
+            linestyle="dashed", linewidth=1.0)
 
     # Plot style/info
     yticks = np.linspace(0, ymax, 5)
