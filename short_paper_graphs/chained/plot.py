@@ -145,7 +145,7 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
         ax.set_xticks([i+0.5 for i in range(0, len(datasets))])
         ax.set_xticklabels([ds_name(d.replace(r"_200M", "").replace("_uint64",
             "").replace("_", " ")) for d in datasets],
-            va="center_baseline",position=(0.5,-0.05))
+            va="center_baseline",position=(0.5,-0.05), fontsize=8)
         
         # Legend
         ax.legend(
@@ -156,10 +156,10 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
             fontsize=6)
 
 
-fig.text(0.5, 0.02, 'dataset', ha='center')
-fig.text(0.01, 0.5, 'ns per key', va='center', rotation='vertical')
+fig.text(0.5, 0.02, 'dataset', ha='center', fontsize=8)
+fig.text(0.01, 0.5, 'ns per key', va='center', rotation='vertical', fontsize=8)
 
-plt.tight_layout()#pad=0.1)
+plt.tight_layout()
 plt.subplots_adjust(left=0.085, bottom=0.12)
 
 plt.savefig(f"out/median_probe_time.pdf")
