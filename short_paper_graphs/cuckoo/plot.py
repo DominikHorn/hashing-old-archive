@@ -48,7 +48,7 @@ data = csv[csv[DATASET_KEY].notnull()]
 
 
 # Generate plot
-fig, axs = plt.subplots(2,2,figsize=(7.00697,4))
+fig, axs = plt.subplots(2,2,figsize=(7.00697,4), sharex=True, sharey=True)
 
 letter = [["A", "B"], ["C", "D"]]
 expected = [[0.6503, 0.8353], [0.6140, 0.8111]]
@@ -138,7 +138,6 @@ for l, load_fac in enumerate(sorted(set(data[LOAD_FACTOR_KEY]))):
             plt_data = [(s.strip(), bars[s]) for s in bars.keys()]
             if len(plt_data) <= 0:
                 continue
-            print(plt_data)
 
             empty_space = 0.2
             bar_width = (1 - empty_space) / len(plt_data)
@@ -178,5 +177,4 @@ fig.text(0.01, 0.5, 'primary key ratio', va='center', rotation='vertical',
 
 plt.tight_layout()
 plt.subplots_adjust(left=0.09, bottom=0.12)
-
 plt.savefig(f"out/primary_key_ratio.pdf")
