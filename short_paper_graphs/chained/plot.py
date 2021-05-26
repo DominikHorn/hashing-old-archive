@@ -16,13 +16,17 @@ mpl.rcParams.update({
 })
 
 # Style
-hr_names = {"radix_spline": "radix spline",
+hr_names = {"radix_spline": "RadixSpline",
         #"mult_prime64": "mult", "mult_add64": "mult_add", 
-        "murmur_finalizer64": "murmur finalizer"}
+        "murmur_finalizer64": "Murmur"}
 def name(hashfn):
     if hashfn.startswith("radix_spline"):
         hashfn = "radix_spline"
     return hr_names.get(hashfn) or hashfn
+def ds_name(d):
+    if d.startswith("gapped"):
+        return "gapped"
+    return d
 
 DATASET_KEY="dataset"
 MACHINE_KEY="machine"
@@ -87,7 +91,7 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
         learned_hashfns = list(dict.fromkeys(tmp_d[tmp_d[REDUCER_KEY].str.match(CLAMP)][HASH_KEY]))
         all_hashfns = learned_hashfns + classical_hashfns
 
-        colors = {"radix spline": "tab:blue", "murmur finalizer": "tab:orange"}
+        colors = {"RadixSpline": "tab:blue", "Murmur": "tab:orange"}
         datasets = sorted(set(d[DATASET_KEY]))
 
         # Aggregate data over multiple datasets
@@ -141,20 +145,22 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
         # Plot style/info
         ax.set_ylim(195,300)
         ax.set_xticks([i+0.5 for i in range(0, len(datasets))])
-        ax.set_xticklabels([d.replace(r"_200M", "").replace("_uint64",
-            "").replace("_", " ") for d in datasets])
+        ax.set_xticklabels([ds_name(d.replace(r"_200M", "").replace("_uint64",
+            "").replace("_", " ")) for d in datasets])
+        
+        # Legend
+        ax.legend(
+            handles=[mpatches.Patch(color=colors.get(name(h)), label=name(h)) for h,_ in
+                hr_names.items()],
+            #bbox_to_anchor=(1, 0.98),
+            loc="upper right",
+            fontsize=6)
+
 
 fig.text(0.5, 0.02, 'dataset', ha='center')
 fig.text(0.01, 0.5, 'ns per key', va='center', rotation='vertical')
 
 plt.tight_layout()#pad=0.1)
 plt.subplots_adjust(left=0.085, bottom=0.12)
-# Legend
-fig.legend(
-    handles=[mpatches.Patch(color=colors.get(name(h)), label=name(h)) for h,_ in
-        hr_names.items()],
-    bbox_to_anchor=(1, 0.98),
-    loc="upper left",
-    fontsize=6)
 
 plt.savefig(f"out/median_probe_time.pdf")
