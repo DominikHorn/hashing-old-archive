@@ -161,7 +161,7 @@ for l, load_fac in enumerate(sorted(set(data[LOAD_FACTOR_KEY]))):
         ax.set_xticks([i+0.5 for i in range(0, len(datasets))])
         ax.set_xticklabels([d.replace(r"_200M", "").replace("_uint64",
             "").replace("_", " ") for d in datasets],
-                rotation=35, va="top", ha="center", fontsize=8)
+                va="center_baseline",position=(0.5,-0.05), fontsize=8)
 
         # Legend 
         ax.legend(
@@ -175,6 +175,7 @@ fig.text(0.5, 0.02, 'dataset', ha='center', fontsize=8)
 fig.text(0.01, 0.5, 'primary key ratio', va='center', rotation='vertical',
         fontsize=8)
 
+#plt.margins(x=0.01,y=0.2)
 plt.tight_layout()
 plt.subplots_adjust(left=0.09, bottom=0.12)
 plt.savefig(f"out/primary_key_ratio.pdf")
