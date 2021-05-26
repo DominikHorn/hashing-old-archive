@@ -100,10 +100,14 @@ def duplicated(start=1, duplicate_chance=0.4):
         if random.random() < 1 - duplicate_chance:
             num += 1
 
+def uniform(start=0, end=pow(2, 64)):
+    while True:
+        yield int(random.uniform(start, end))
 
 # write datasets
 n = 2 * (10 ** 8)
 write_dataset(name="debug", numbers=duplicated(start=1), amount=1000000, bytes_per_number=8)
+write_dataset(name="uniform_200M", numbers=uniform(), amount=n, bytes_per_number=8)
 write_dataset(name="consecutive_200M", numbers=dense(start=1000), amount=n, bytes_per_number=8)
 write_dataset(name="gapped_1permill_200M", numbers=gapped(start=10000,delete_probability=0.001), amount=n, bytes_per_number=8)
 write_dataset(name="gapped_1percent_200M", numbers=gapped(start=10000,delete_probability=0.01), amount=n, bytes_per_number=8)
