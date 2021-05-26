@@ -16,9 +16,9 @@ mpl.rcParams.update({
 })
 
 # Style
-hr_names = {"radix_spline": "radix spline", "rmi": "rmi", "vp_rmi": "vp_rmi",
+hr_names = {"radix_spline": "RadixSpline", "rmi": "rmi", "vp_rmi": "vp_rmi",
         "mult_prime64": "mult", "mult_add64": "mult_add", "murmur_finalizer64":
-        "murmur finalizer"}
+        "Murmur"}
 def name(hashfn):
     return hr_names.get(hashfn) or hashfn
 
@@ -62,7 +62,7 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
     # Use do_nothing entries to determine order
     tmp_d = data[((data[SAMPLE_SIZE_KEY] == 0.01) | (data[SAMPLE_SIZE_KEY].isnull()))
             & (data[DATASET_KEY] ==
-                "wiki_ts_200M_uint64")].sort_values("colliding_slots")
+                "wiki_200M_uint64")].sort_values("colliding_slots")
     # dict preserves insertion order since python 3.7
     classical_hashfns = [
             #"mult_prime64", "mult_add64", 
@@ -80,15 +80,15 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
     # Aggregate data over multiple datasets
     datasets =  [
             # synthetic
-            'consecutive_200M_uint64',
-            'gapped_1%_200M_uint64', 
-            'gapped_10%_200M_uint64', 
+            'seq_200M_uint64',
+            'gap_1%_200M_uint64', 
+            'gap_10%_200M_uint64', 
             #'uniform_dense_200M_uint64',
 
             # real
-            'wiki_ts_200M_uint64',
+            'wiki_200M_uint64',
             'fb_200M_uint64', 
-            'osm_cellids_200M_uint64']
+            'osm_200M_uint64']
 
     for i, dataset in enumerate(datasets):
         d = data[data[DATASET_KEY] == dataset]
@@ -116,18 +116,20 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
     yticks = np.linspace(0, ymax, 5)
     plt.ylim(0,ymax)
     plt.yticks(yticks, [f"{int(yt*100)}%" for yt in yticks], fontsize=8)
+    plt.ylabel(f"{stat_key.replace('_', ' ')}", fontsize=8)
 
     plt.xticks([i+0.5 for i in range(0, len(datasets))], [d.replace(r"_200M",
         "").replace("_uint64", "").replace("_", " ") for d in datasets],
-        rotation=45, ha="right", va="top",
-        fontsize=8)
+        va="center_baseline",position=(0.5,-0.05), fontsize=8)
+    plt.xlabel("dataset", fontsize=8)
+
     plt.margins(x=0.01,y=0.2)
     plt.tight_layout(pad=0.1)
 
     # Legend
-    fig.legend(
+    ax.legend(
         handles=[mpatches.Patch(color=colors.get(h), label=name(h)) for h in all_hashfns],
-        bbox_to_anchor=(0.107, 0.98),
+        #bbox_to_anchor=(0.107, 0.98),
         loc="upper left",
         fontsize=6,
         ncol=1)
