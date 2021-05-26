@@ -11,7 +11,7 @@ mpl.use("pgf")
 mpl.rcParams.update({
     "pgf.texsystem": "pdflatex",
     "font.family": "serif",
-    "text.usetex": True,
+    "text.usetex": False,
     "pgf.rcfonts": False
 })
 
@@ -24,8 +24,6 @@ def name(hashfn):
         hashfn = "radix_spline"
     return hr_names.get(hashfn) or hashfn
 def ds_name(d):
-    if d.startswith("gapped"):
-        return "gapped"
     return d
 
 DATASET_KEY="dataset"
@@ -82,7 +80,7 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
         # Use do_nothing entries to determine order
         tmp_d = d[((d[SAMPLE_SIZE_KEY] == 0.01) | (d[SAMPLE_SIZE_KEY].isnull()))
                 & (d[DATASET_KEY] ==
-                    "wiki_ts_200M_uint64")].sort_values(MEDIAN_PROBE_TIME_KEY)
+                    "wiki_200M_uint64")].sort_values(MEDIAN_PROBE_TIME_KEY)
         # dict preserves insertion order since python 3.7
         classical_hashfns = [
                # "mult_prime64", "mult_add64", 
@@ -97,13 +95,13 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
         # Aggregate data over multiple datasets
         datasets =  [
                 # synthetic
-                'consecutive_200M_uint64',
-                #'gapped_1%_200M_uint64', 
-                'gapped_10%_200M_uint64', 
+                'seq_200M_uint64',
+                'gap_1%_200M_uint64', 
+                'gap_10%_200M_uint64', 
                 #'uniform_dense_200M_uint64',
 
                 # real
-                'wiki_ts_200M_uint64',
+                'wiki_200M_uint64',
                 #'fb_200M_uint64', 
                 #'osm_cellids_200M_uint64'
                 ]
@@ -146,7 +144,8 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
         ax.set_ylim(195,300)
         ax.set_xticks([i+0.5 for i in range(0, len(datasets))])
         ax.set_xticklabels([ds_name(d.replace(r"_200M", "").replace("_uint64",
-            "").replace("_", " ")) for d in datasets])
+            "").replace("_", " ")) for d in datasets],
+            va="center_baseline",position=(0.5,-0.05))
         
         # Legend
         ax.legend(
