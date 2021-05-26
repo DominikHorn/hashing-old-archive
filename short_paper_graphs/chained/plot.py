@@ -142,7 +142,7 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
 
         # Plot style/info
         ax.set_ylim(180,300)
-        ax.set_yticks([180,200,220,240,260,280,300])
+        ax.set_yticks([180,210,240,270,300])
         ax.set_xticks([i+0.5 for i in range(0, len(datasets))])
         ax.set_xticklabels([ds_name(d.replace(r"_200M", "").replace("_uint64",
             "").replace("_", " ")) for d in datasets],
