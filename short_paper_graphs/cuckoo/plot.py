@@ -17,7 +17,7 @@ mpl.rcParams.update({
 
 # Style
 hr_names = {
-        "radix_spline": "radix_spline", 
+        "radix_spline": "radix spline", 
        # "pgm_hash_eps128": "pgm_hash", 
        # "mult_prime64": "mult", 
        # "mult_add64": "mult_add", 
@@ -25,7 +25,7 @@ hr_names = {
         }
 def name(hashfn):
     if hashfn.startswith("radix_spline"):
-        return "radix spline"
+        hashfn = "radix_spline"
     return hr_names.get(hashfn) or hashfn
 
 DATASET_KEY="dataset"
@@ -73,20 +73,16 @@ data = data[
         ]
 
 
-# Use do_nothing entries to determine order
-tmp_d = data[((data[SAMPLE_SIZE_KEY] == 0.01) | (data[SAMPLE_SIZE_KEY].isnull()))
-        & (data[DATASET_KEY] ==
-            "wiki_ts_200M_uint64")].sort_values(PRIMARY_KEY_RATIO_KEY)
 # dict preserves insertion order since python 3.7
 classical_hashfns = [
        # "mult_prime64", "mult_add64", 
         "murmur_finalizer64"] 
-learned_hashfns = [x[0:x.find("-")] for x in
-    dict.fromkeys(tmp_d[tmp_d[REDUCER_KEY].str.match(CLAMP)][HASH_KEY])]
+tmp_d = data[((data[SAMPLE_SIZE_KEY] == 0.01) | (data[SAMPLE_SIZE_KEY].isnull()))]
+x = dict.fromkeys(tmp_d[tmp_d[REDUCER_KEY].str.match(CLAMP)][HASH_KEY])
+learned_hashfns = [x[0:x.find("-")] for x in x]
 all_hashfns = learned_hashfns + classical_hashfns
 
-pallette = list(mcolors.TABLEAU_COLORS.keys())
-colors = {h: pallette[i % len(pallette)] for i, h in enumerate(all_hashfns)}
+colors = {"radix spline": "tab:blue", "murmur finalizer": "tab:orange"}
 datasets = sorted(set(data[DATASET_KEY]))
 
 # Generate plot
@@ -106,27 +102,48 @@ datasets = [
 for i, dataset in enumerate(datasets):
     d = data[data[DATASET_KEY] == dataset]
     ds_hfn_map = {x[0:x.find("-")]: x for x in set(d[HASH_KEY])}
+    seen_reps = dict()
 
     bars = {}
     for hashfn in all_hashfns:
         if hashfn not in ds_hfn_map:
             continue
-        bars[hashfn] = list(d[d[HASH_KEY] == ds_hfn_map[hashfn]][PRIMARY_KEY_RATIO_KEY])
+
+        res_l = list(d[d[HASH_KEY] ==
+            ds_hfn_map[hashfn]][PRIMARY_KEY_RATIO_KEY])
+        if len(res_l) != 1:
+            print(f"Expected exactly one value, received {len(res_l)}")
+            continue
+        res = res_l[0]
+
+        if name(hashfn) in seen_reps:
+            old_hashfn = seen_reps[name(hashfn)]
+            old_res = bars[old_hashfn]
+            if old_res < res:
+                seen_reps[name(hashfn)] = hashfn
+                bars[hashfn] = res
+        else:
+            seen_reps[name(hashfn)] = hashfn
+            bars[hashfn] = res
 
     # Plt data
     plt_data = [(s.strip(), bars[s]) for s in bars.keys()]
+    if len(plt_data) <= 0:
+        continue
+
     empty_space = 0.2
     bar_width = (1 - empty_space) / len(plt_data)
     gap_width = 0 #0.1 / len(plt_data)
     for j, (hash_name, value) in enumerate(plt_data):
         ax.bar(empty_space/2 + i + j * (bar_width+gap_width) +
-                (bar_width+gap_width)/2, value, bar_width, color=colors.get(hash_name) or "purple")
+                (bar_width+gap_width)/2, value, bar_width,
+                color=colors.get(name(hash_name)) or "purple")
 
 
-# TODO: Expected value
-#y = 0.83
-#ax.plot([0, len(datasets)], [y,y], color="black",
-#        linestyle="dashed", linewidth=1.0)
+# Expected value
+y = 0.8353
+ax.plot([0, len(datasets)], [y,y], color="black",
+        linestyle="dashed", linewidth=1.0)
 
 # Plot style/info
 yticks = np.linspace(0.75, 1, 5)
@@ -144,7 +161,8 @@ plt.tight_layout(pad=0.1)
 
 # Legend
 fig.legend(
-    handles=[mpatches.Patch(color=colors.get(h), label=name(h)) for h in all_hashfns],
+    handles=[mpatches.Patch(color=colors.get(name(h)), label=name(h)) for h,_ in
+        hr_names.items()],
     bbox_to_anchor=(1, 0.98),
     loc="upper right",
     fontsize=6)
