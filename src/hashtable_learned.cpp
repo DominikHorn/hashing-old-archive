@@ -19,10 +19,10 @@ using Args = BenchmarkArgs::LearnedHashtableArgs;
 
 const std::vector<std::string> csv_columns = {
    // General statistics
-   "dataset", "numelements", "load_factor", "sample_size", "bucket_size", "hashtable", "model", "reducer", "payload",
-   "insert_nanoseconds_total", "insert_nanoseconds_per_key", "avg_lookup_nanoseconds_total",
+   "dataset", "numelements", "load_factor", "sample_size", "bucket_size", "hashtable", "model", "model_count",
+   "reducer", "payload", "insert_nanoseconds_total", "insert_nanoseconds_per_key", "avg_lookup_nanoseconds_total",
    "avg_lookup_nanoseconds_per_key", "median_lookup_nanoseconds_total", "median_lookup_nanoseconds_per_key",
-   "unsuccessful_lookup_percent",
+   "unsuccessful_lookup_percent", "num_runs",
 
    // Cuckoo custom statistics
    "primary_key_ratio",
@@ -67,12 +67,13 @@ static const auto UNSUCCESSFUL_75_PERCENT = UNSUCCESSFUL_25_PERCENT * 3;
 
 template<class Hashfn, class Hashtable, const uint32_t UnsuccessfulLookupPercent = UNSUCCESSFUL_0_PERCENT, class Data>
 static void measure(const std::string& dataset_name, const std::vector<Data>& dataset, const double load_factor,
-                    const std::vector<Data>& sample, CSV& outfile, std::mutex& iomutex) {
+                    const double sample_size, const std::vector<Data>& sample, CSV& outfile, std::mutex& iomutex) {
    const auto str = [](auto s) { return std::to_string(s); };
    std::map<std::string, std::string> datapoint(
       {{"dataset", dataset_name},
        {"numelements", str(dataset.size())},
        {"load_factor", str(load_factor)},
+       {"sample_size", str(sample_size)},
        {"bucket_size", str(Hashtable::bucket_size())},
        {"hashtable", Hashtable::name()},
        {"payload", str(sizeof(typename Hashtable::PayloadType))},
@@ -100,8 +101,8 @@ static void measure(const std::string& dataset_name, const std::vector<Data>& da
    const double unsuccessful_perc = relative_to(UnsuccessfulLookupPercent, std::numeric_limits<uint32_t>::max());
    const auto ht_capacity = static_cast<uint64_t>(static_cast<double>(dataset.size()) * (1 - unsuccessful_perc) /
                                                   static_cast<double>(load_factor));
-   Hashtable hashtable(ht_capacity,
-                       Hashfn(sample.begin(), sample.end(), Hashtable::directory_address_count(ht_capacity)));
+   Hashfn fn = Hashfn(sample.begin(), sample.end(), Hashtable::directory_address_count(ht_capacity));
+   Hashtable hashtable(ht_capacity, fn);
    try {
       // Measure
       const auto stats = Benchmark::measure_hashtable<UnsuccessfulLookupPercent>(dataset, hashtable);
@@ -125,6 +126,8 @@ static void measure(const std::string& dataset_name, const std::vector<Data>& da
       datapoint.emplace("median_lookup_nanoseconds_total", str(stats.median_total_lookup_ns));
       datapoint.emplace("median_lookup_nanoseconds_per_key",
                         str(relative_to(stats.median_total_lookup_ns, dataset.size())));
+      datapoint.emplace("model_count", str(fn.model_count()));
+      datapoint.emplace("num_runs", str(stats.lookup_repeats));
 
       // Make sure we collect more insight based on hashtable
       for (const auto& stat : hashtable.lookup_statistics(dataset)) {
@@ -142,79 +145,82 @@ static void measure(const std::string& dataset_name, const std::vector<Data>& da
 
 template<class Hashfn, class Data>
 static void measure_chained(const std::string& dataset_name, const std::vector<Data>& dataset, const double load_factor,
-                            const std::vector<Data>& sample, CSV& outfile, std::mutex& iomutex) {
+                            const double sample_size, const std::vector<Data>& sample, CSV& outfile,
+                            std::mutex& iomutex) {
    using namespace Reduction;
    measure<Hashfn, Hashtable::Chained<Data, Payload16<Data>, 1, Hashfn, Clamp<HASH_64>>>(dataset_name, dataset,
-                                                                                         load_factor, sample, outfile,
-                                                                                         iomutex);
+                                                                                         load_factor, sample_size,
+                                                                                         sample, outfile, iomutex);
    measure<Hashfn, Hashtable::Chained<Data, Payload64<Data>, 1, Hashfn, Clamp<HASH_64>>>(dataset_name, dataset,
-                                                                                         load_factor, sample, outfile,
-                                                                                         iomutex);
+                                                                                         load_factor, sample_size,
+                                                                                         sample, outfile, iomutex);
 
    measure<Hashfn, Hashtable::Chained<Data, Payload16<Data>, 4, Hashfn, Clamp<HASH_64>>>(dataset_name, dataset,
-                                                                                         load_factor, sample, outfile,
-                                                                                         iomutex);
+                                                                                         load_factor, sample_size,
+                                                                                         sample, outfile, iomutex);
    measure<Hashfn, Hashtable::Chained<Data, Payload64<Data>, 4, Hashfn, Clamp<HASH_64>>>(dataset_name, dataset,
-                                                                                         load_factor, sample, outfile,
-                                                                                         iomutex);
+                                                                                         load_factor, sample_size,
+                                                                                         sample, outfile, iomutex);
 }
 
 template<class Hashfn, const uint32_t UnsuccessfulLookupPercent = UNSUCCESSFUL_0_PERCENT, class Data>
 static void measure_probing(const std::string& dataset_name, const std::vector<Data>& dataset, const double load_factor,
-                            const std::vector<Data>& sample, CSV& outfile, std::mutex& iomutex) {
+                            const double sample_size, const std::vector<Data>& sample, CSV& outfile,
+                            std::mutex& iomutex) {
    using namespace Reduction;
 
    /// Standard probing
    measure<Hashfn, Hashtable::Probing<Data, Payload16<Data>, Hashfn, Clamp<HASH_64>, Hashtable::LinearProbingFunc>,
-           UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+           UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, sample_size, sample, outfile, iomutex);
    measure<Hashfn, Hashtable::Probing<Data, Payload64<Data>, Hashfn, Clamp<HASH_64>, Hashtable::LinearProbingFunc>,
-           UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+           UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, sample_size, sample, outfile, iomutex);
 
    measure<Hashfn, Hashtable::Probing<Data, Payload16<Data>, Hashfn, Clamp<HASH_64>, Hashtable::QuadraticProbingFunc>,
-           UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+           UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, sample_size, sample, outfile, iomutex);
    measure<Hashfn, Hashtable::Probing<Data, Payload64<Data>, Hashfn, Clamp<HASH_64>, Hashtable::QuadraticProbingFunc>,
-           UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+           UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, sample_size, sample, outfile, iomutex);
 
    /// Robin Hood
    measure<Hashfn,
            Hashtable::RobinhoodProbing<Data, Payload16<Data>, Hashfn, Clamp<HASH_64>, Hashtable::LinearProbingFunc>,
-           UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+           UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, sample_size, sample, outfile, iomutex);
    measure<Hashfn,
            Hashtable::RobinhoodProbing<Data, Payload64<Data>, Hashfn, Clamp<HASH_64>, Hashtable::LinearProbingFunc>,
-           UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+           UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, sample_size, sample, outfile, iomutex);
 
    measure<Hashfn,
            Hashtable::RobinhoodProbing<Data, Payload16<Data>, Hashfn, Clamp<HASH_64>, Hashtable::QuadraticProbingFunc>,
-           UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+           UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, sample_size, sample, outfile, iomutex);
    measure<Hashfn,
            Hashtable::RobinhoodProbing<Data, Payload64<Data>, Hashfn, Clamp<HASH_64>, Hashtable::QuadraticProbingFunc>,
-           UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+           UnsuccessfulLookupPercent>(dataset_name, dataset, load_factor, sample_size, sample, outfile, iomutex);
 }
 
 template<class Hashfn, class Data>
 static void measure_cuckoo(const std::string& dataset_name, const std::vector<Data>& dataset, const double load_factor,
-                           const std::vector<Data>& sample, CSV& outfile, std::mutex& iomutex) {
+                           const double sample_size, const std::vector<Data>& sample, CSV& outfile,
+                           std::mutex& iomutex) {
    using namespace Reduction;
 
    /// Balanced kicking (insert into bucket with more free space, if both are full kick with 50% chance from either)
    measure<Hashfn,
            Hashtable::Cuckoo<Data, Payload16<Data>, 8, Hashfn, Murmur3FinalizerCuckoo2Func, Clamp<HASH_64>,
                              FastModulo<HASH_64>, Hashtable::BalancedKicking>>(dataset_name, dataset, load_factor,
-                                                                               sample, outfile, iomutex);
+                                                                               sample_size, sample, outfile, iomutex);
    measure<Hashfn,
            Hashtable::Cuckoo<Data, Payload64<Data>, 8, Hashfn, Murmur3FinalizerCuckoo2Func, Clamp<HASH_64>,
                              FastModulo<HASH_64>, Hashtable::BalancedKicking>>(dataset_name, dataset, load_factor,
-                                                                               sample, outfile, iomutex);
+                                                                               sample_size, sample, outfile, iomutex);
 
    /// Biased kicking (place in primary bucket first & kick from secondary bucket with 10% chance)
    measure<Hashfn,
            Hashtable::Cuckoo<Data, Payload16<Data>, 8, Hashfn, Murmur3FinalizerCuckoo2Func, Clamp<HASH_64>,
                              FastModulo<HASH_64>, Hashtable::BiasedKicking<10>>>(dataset_name, dataset, load_factor,
-                                                                                 sample, outfile, iomutex);
+                                                                                 sample_size, sample, outfile, iomutex);
    measure<Hashfn,
            Hashtable::Cuckoo<Data, Payload64<Data>, 8, Hashfn, Murmur3FinalizerCuckoo2Func, Clamp<HASH_64>,
                              FastModulo<HASH_64>, Hashtable::BiasedKicking<10>>>(dataset_name, dataset, load_factor,
-                                                                                 sample, outfile, iomutex);
+                                                                                 sample_size, sample, outfile, iomutex);
 }
 
 template<class Data>
@@ -248,35 +254,38 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
    /// Chained
    for (const auto load_factor : {1. / 0.75, 1. / 1., 1. / 1.25}) {
       // Always measure default configuration
-      measure_chained<rs::RadixSplineHash<Data>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+      measure_chained<rs::RadixSplineHash<Data>>(dataset_name, dataset, load_factor, sample_chance, sample, outfile,
+                                                 iomutex);
 
       try {
-         measure_chained<rs::RadixSplineHash<Data, 28, 2, max_models>>(dataset_name, dataset, load_factor, sample,
-                                                                       outfile, iomutex);
+         measure_chained<rs::RadixSplineHash<Data, 28, 2, max_models>>(dataset_name, dataset, load_factor,
+                                                                       sample_chance, sample, outfile, iomutex);
       } catch (const std::exception& e) {
          try {
-            measure_chained<rs::RadixSplineHash<Data, 26, 3, max_models>>(dataset_name, dataset, load_factor, sample,
-                                                                          outfile, iomutex);
+            measure_chained<rs::RadixSplineHash<Data, 26, 3, max_models>>(dataset_name, dataset, load_factor,
+                                                                          sample_chance, sample, outfile, iomutex);
          } catch (const std::exception& e) {
             try {
-               measure_chained<rs::RadixSplineHash<Data, 26, 8, max_models>>(dataset_name, dataset, load_factor, sample,
-                                                                             outfile, iomutex);
+               measure_chained<rs::RadixSplineHash<Data, 26, 8, max_models>>(dataset_name, dataset, load_factor,
+                                                                             sample_chance, sample, outfile, iomutex);
             } catch (const std::exception& e) {
                try {
                   measure_chained<rs::RadixSplineHash<Data, 24, 20, max_models>>(dataset_name, dataset, load_factor,
-                                                                                 sample, outfile, iomutex);
+                                                                                 sample_chance, sample, outfile,
+                                                                                 iomutex);
                } catch (const std::exception& e) {
                   try {
                      measure_chained<rs::RadixSplineHash<Data, 24, 40, max_models>>(dataset_name, dataset, load_factor,
-                                                                                    sample, outfile, iomutex);
+                                                                                    sample_chance, sample, outfile,
+                                                                                    iomutex);
                   } catch (const std::exception& e) {
                      try {
                         measure_chained<rs::RadixSplineHash<Data, 20, 80, max_models>>(dataset_name, dataset,
-                                                                                       load_factor, sample, outfile,
-                                                                                       iomutex);
+                                                                                       load_factor, sample_chance,
+                                                                                       sample, outfile, iomutex);
                      } catch (const std::exception& e) {
-                        measure_chained<rs::RadixSplineHash<Data, 20, 160>>(dataset_name, dataset, load_factor, sample,
-                                                                            outfile, iomutex);
+                        measure_chained<rs::RadixSplineHash<Data, 20, 160>>(dataset_name, dataset, load_factor,
+                                                                            sample_chance, sample, outfile, iomutex);
                      }
                   }
                }
@@ -288,32 +297,35 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
    /// Cuckoo
    for (const auto load_factor : {0.98, 0.95}) {
       // Always measure default configuration
-      measure_cuckoo<rs::RadixSplineHash<Data>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+      measure_cuckoo<rs::RadixSplineHash<Data>>(dataset_name, dataset, load_factor, sample_chance, sample, outfile,
+                                                iomutex);
 
       try {
-         measure_cuckoo<rs::RadixSplineHash<Data, 28, 2, max_models>>(dataset_name, dataset, load_factor, sample,
-                                                                      outfile, iomutex);
+         measure_cuckoo<rs::RadixSplineHash<Data, 28, 2, max_models>>(dataset_name, dataset, load_factor, sample_chance,
+                                                                      sample, outfile, iomutex);
       } catch (const std::exception& e) {
          try {
-            measure_cuckoo<rs::RadixSplineHash<Data, 26, 3, max_models>>(dataset_name, dataset, load_factor, sample,
-                                                                         outfile, iomutex);
+            measure_cuckoo<rs::RadixSplineHash<Data, 26, 3, max_models>>(dataset_name, dataset, load_factor,
+                                                                         sample_chance, sample, outfile, iomutex);
          } catch (const std::exception& e) {
             try {
-               measure_cuckoo<rs::RadixSplineHash<Data, 26, 8, max_models>>(dataset_name, dataset, load_factor, sample,
-                                                                            outfile, iomutex);
+               measure_cuckoo<rs::RadixSplineHash<Data, 26, 8, max_models>>(dataset_name, dataset, load_factor,
+                                                                            sample_chance, sample, outfile, iomutex);
             } catch (const std::exception& e) {
                try {
                   measure_cuckoo<rs::RadixSplineHash<Data, 24, 20, max_models>>(dataset_name, dataset, load_factor,
-                                                                                sample, outfile, iomutex);
+                                                                                sample_chance, sample, outfile,
+                                                                                iomutex);
                } catch (const std::exception& e) {
                   try {
                      measure_cuckoo<rs::RadixSplineHash<Data, 24, 40, max_models>>(dataset_name, dataset, load_factor,
-                                                                                   sample, outfile, iomutex);
+                                                                                   sample_chance, sample, outfile,
+                                                                                   iomutex);
                   } catch (const std::exception& e) {
-                     measure_cuckoo<rs::RadixSplineHash<Data, 20, 80>>(dataset_name, dataset, load_factor, sample,
-                                                                       outfile, iomutex);
-                     measure_cuckoo<rs::RadixSplineHash<Data, 20, 160>>(dataset_name, dataset, load_factor, sample,
-                                                                        outfile, iomutex);
+                     measure_cuckoo<rs::RadixSplineHash<Data, 20, 80>>(dataset_name, dataset, load_factor,
+                                                                       sample_chance, sample, outfile, iomutex);
+                     measure_cuckoo<rs::RadixSplineHash<Data, 20, 160>>(dataset_name, dataset, load_factor,
+                                                                        sample_chance, sample, outfile, iomutex);
                   }
                }
             }
@@ -324,13 +336,13 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
    /// Probing
    for (const auto load_factor : {1.0 / 1.25, 1.0 / 1.5}) {
       // TODO: limit models (similar to above)
-      //      measure_probing<rs::RadixSplineHash<Data>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, sample,
+      //      measure_probing<rs::RadixSplineHash<Data>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, sample_chance, sample,
       //                                                                         outfile, iomutex);
-      //      measure_probing<rs::RadixSplineHash<Data>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, sample,
+      //      measure_probing<rs::RadixSplineHash<Data>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, sample_chance, sample,
       //                                                                          outfile, iomutex);
-      //      measure_probing<rs::RadixSplineHash<Data>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, sample,
+      //      measure_probing<rs::RadixSplineHash<Data>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, sample_chance, sample,
       //                                                                          outfile, iomutex);
-      //      measure_probing<rs::RadixSplineHash<Data>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, sample,
+      //      measure_probing<rs::RadixSplineHash<Data>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, sample_chance, sample,
       //                                                                          outfile, iomutex);
    }
 }

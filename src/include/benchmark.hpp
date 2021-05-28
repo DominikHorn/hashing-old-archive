@@ -154,9 +154,11 @@ namespace Benchmark {
 
       uint64_t avg_total_lookup_ns;
       uint64_t median_total_lookup_ns;
+
+      unsigned int lookup_repeats;
    };
 
-   template<const uint32_t UnsuccessfulLookupPercent = 0, typename Hashtable, const unsigned int LookupRepeatCount = 5>
+   template<const uint32_t UnsuccessfulLookupPercent = 0, typename Hashtable, const unsigned int LookupRepeatCount = 7>
    HashtableStats measure_hashtable(const std::vector<typename Hashtable::KeyType>& dataset, Hashtable& ht) {
       // Random generator
       std::mt19937 rng;
@@ -229,6 +231,7 @@ namespace Benchmark {
 
       return {.total_insert_ns = total_insert_ns,
               .avg_total_lookup_ns = avg_total_lookup_ns,
-              .median_total_lookup_ns = median_total_lookup_ns};
+              .median_total_lookup_ns = median_total_lookup_ns,
+              .lookup_repeats = LookupRepeatCount};
    }
 } // namespace Benchmark
