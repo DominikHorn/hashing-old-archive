@@ -137,8 +137,8 @@ struct Dataset {
     * @param dataset
     * @param seed
     */
-   static forceinline void shuffle(std::vector<uint64_t>& dataset, const uint64_t seed = 0xC7455FEC83DD661FLLU) {
-      if (dataset.size() == 0)
+   static forceinline void shuffle(std::vector<uint64_t>& dataset, const uint64_t seed = std::random_device()()) {
+      if (dataset.empty())
          return;
 
       std::default_random_engine gen(seed);

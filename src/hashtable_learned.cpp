@@ -220,123 +220,65 @@ static void measure_cuckoo(const std::string& dataset_name, const std::vector<Da
 template<class Data>
 static void benchmark(const std::string& dataset_name, const std::vector<Data>& dataset, CSV& outfile,
                       std::mutex& iomutex) {
-   // Take a sample
-   const double sample_size = 0.01; // Fix this for now at 0.01
-   const auto sample_n = static_cast<size_t>(sample_size * static_cast<long double>(dataset.size()));
-   const auto pgm_sample_fn = [&]() {
-      std::vector<uint64_t> sample(sample_n, 0);
-      if (sample_n == 0)
-         return sample;
-      if (sample_n == dataset.size()) {
-         sample = dataset;
-         return sample;
-      }
-
-      // Random constant to ensure reproducibility for debugging. TODO: make truely random for benchmark/use varying constants (?) -> also adjust fisher yates shuffle and other such constants
-      const uint64_t seed = 0x9E3779B9LU;
-      std::default_random_engine gen(seed);
-      std::uniform_int_distribution<uint64_t> dist(0, dataset.size() - 1);
-
-      if (likely(sample_n > 2)) {
-         Data& min = sample[0];
-         Data& max = sample[sample_n - 1];
-
-         min = std::numeric_limits<Data>::max();
-         max = std::numeric_limits<Data>::min();
-         for (const auto& key : dataset) {
-            min = std::min(key, min);
-            max = std::max(key, max);
-         }
-      }
-
-      for (size_t i = 1; i < sample_n - 1; i++) {
-         const auto random_index = dist(gen);
-         sample[i] = dataset[random_index];
-      }
-
-      return sample;
-   };
-
-   const auto sort_prepare = [](auto& sample) { std::sort(sample.begin(), sample.end()); };
+   // Fix this for now at 0.01
+   const double sample_chance = 0.01;
 
    // Take a random sample
-   auto sample = pgm_sample_fn();
-   sort_prepare(sample);
+   std::vector<uint64_t> sample;
+   {
+      auto start_time = std::chrono::steady_clock::now();
+      if (sample_chance == 1.0) {
+         sample = dataset;
+      } else {
+         sample.reserve(sample_chance * dataset.size());
+         std::random_device seed_gen;
+         std::default_random_engine gen(seed_gen());
+         std::uniform_real_distribution<double> dist(0, 1);
+
+         for (size_t i = 0; i < dataset.size(); i++)
+            if (dist(gen) < sample_chance)
+               sample.push_back(dataset[i]);
+      }
+   }
+   // Sort the sample
+   std::sort(sample.begin(), sample.end());
+
+   constexpr size_t max_models = 2000;
 
    /// Chained
    for (const auto load_factor : {1. / 0.75, 1. / 1., 1. / 1.25}) {
-      auto i = 0;
-   test_rs:
-      try {
-         if (i == 0)
-            measure_chained<rs::RadixSplineHash<Data, 24, 20, 500>>(dataset_name, dataset, load_factor, sample, outfile,
-                                                                    iomutex);
-         if (i == 1)
-            measure_chained<rs::RadixSplineHash<Data, 18, 32, 500>>(dataset_name, dataset, load_factor, sample, outfile,
-                                                                    iomutex);
-         if (i == 2)
-            measure_chained<rs::RadixSplineHash<Data, 24, 40, 500>>(dataset_name, dataset, load_factor, sample, outfile,
-                                                                    iomutex);
-         if (i == 3)
-            measure_chained<rs::RadixSplineHash<Data, 20, 80, 500>>(dataset_name, dataset, load_factor, sample, outfile,
-                                                                    iomutex);
-         if (i == 4)
-            measure_chained<rs::RadixSplineHash<Data, 20, 160, 500>>(dataset_name, dataset, load_factor, sample,
-                                                                     outfile, iomutex);
-         //         if (i == 5)
-         //            measure_cuckoo<rs::RadixSplineHash<Data, 26, 8, 500>>(dataset_name, dataset, load_factor, sample, outfile,
-         //                                                                  iomutex);
-         //         if (i == 6)
-         //            measure_cuckoo<rs::RadixSplineHash<Data, 26, 3, 500>>(dataset_name, dataset, load_factor, sample, outfile,
-         //                                                                  iomutex);
-         //         if (i == 7)
-         //            measure_cuckoo<rs::RadixSplineHash<Data, 28, 2, 500>>(dataset_name, dataset, load_factor, sample, outfile,
-         //                                                                  iomutex);
-
-         std::unique_lock<std::mutex> lock(iomutex);
-         std::cerr << "Failed to find viable radix_spline configuration for " << dataset_name << std::endl;
-      } catch (const std::exception& e) {
-         i++;
-         goto test_rs;
-      }
+      // Always measure default configuration
+      measure_chained<rs::RadixSplineHash<Data>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
 
       try {
-         measure_chained<PGMHash<Data, 128, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+         measure_chained<rs::RadixSplineHash<Data, 28, 2, max_models>>(dataset_name, dataset, load_factor, sample,
+                                                                       outfile, iomutex);
       } catch (const std::exception& e) {
          try {
-            measure_chained<PGMHash<Data, 256, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+            measure_chained<rs::RadixSplineHash<Data, 26, 3, max_models>>(dataset_name, dataset, load_factor, sample,
+                                                                          outfile, iomutex);
          } catch (const std::exception& e) {
             try {
-               measure_chained<PGMHash<Data, 512, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile,
-                                                            iomutex);
+               measure_chained<rs::RadixSplineHash<Data, 26, 8, max_models>>(dataset_name, dataset, load_factor, sample,
+                                                                             outfile, iomutex);
             } catch (const std::exception& e) {
                try {
-                  measure_chained<PGMHash<Data, 1024, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile,
-                                                                iomutex);
+                  measure_chained<rs::RadixSplineHash<Data, 24, 20, max_models>>(dataset_name, dataset, load_factor,
+                                                                                 sample, outfile, iomutex);
                } catch (const std::exception& e) {
-                  std::unique_lock<std::mutex> lock(iomutex);
-                  std::cerr << "Failed to find viable epsrec0 configuration for " << dataset_name << std::endl;
-               }
-            }
-         }
-      }
-
-      try {
-         measure_chained<PGMHash<Data, 128, 4, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
-      } catch (const std::exception& e) {
-         try {
-            measure_chained<PGMHash<Data, 256, 4, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
-         } catch (const std::exception& e) {
-            try {
-               measure_chained<PGMHash<Data, 512, 4, 1000>>(dataset_name, dataset, load_factor, sample, outfile,
-                                                            iomutex);
-            } catch (const std::exception& e) {
-               try {
-                  measure_chained<PGMHash<Data, 1024, 4, 1000>>(dataset_name, dataset, load_factor, sample, outfile,
-                                                                iomutex);
-               } catch (const std::exception& e) {
-                  std::unique_lock<std::mutex> lock(iomutex);
-                  std::cerr << "Failed to find viable epsrec0 configuration for " << dataset_name << std::endl;
+                  try {
+                     measure_chained<rs::RadixSplineHash<Data, 24, 40, max_models>>(dataset_name, dataset, load_factor,
+                                                                                    sample, outfile, iomutex);
+                  } catch (const std::exception& e) {
+                     try {
+                        measure_chained<rs::RadixSplineHash<Data, 20, 80, max_models>>(dataset_name, dataset,
+                                                                                       load_factor, sample, outfile,
+                                                                                       iomutex);
+                     } catch (const std::exception& e) {
+                        measure_chained<rs::RadixSplineHash<Data, 20, 160>>(dataset_name, dataset, load_factor, sample,
+                                                                            outfile, iomutex);
+                     }
+                  }
                }
             }
          }
@@ -345,78 +287,34 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
 
    /// Cuckoo
    for (const auto load_factor : {0.98, 0.95}) {
-      auto i = 0;
-   cuckoo_rs_begin:
-      try {
-         if (i == 0)
-            measure_cuckoo<rs::RadixSplineHash<Data, 24, 20, 500>>(dataset_name, dataset, load_factor, sample, outfile,
-                                                                   iomutex);
-         if (i == 1)
-            measure_cuckoo<rs::RadixSplineHash<Data, 18, 32, 500>>(dataset_name, dataset, load_factor, sample, outfile,
-                                                                   iomutex);
-         if (i == 2)
-            measure_cuckoo<rs::RadixSplineHash<Data, 24, 40, 500>>(dataset_name, dataset, load_factor, sample, outfile,
-                                                                   iomutex);
-         if (i == 3)
-            measure_cuckoo<rs::RadixSplineHash<Data, 20, 80, 500>>(dataset_name, dataset, load_factor, sample, outfile,
-                                                                   iomutex);
-         if (i == 4)
-            measure_cuckoo<rs::RadixSplineHash<Data, 20, 160, 500>>(dataset_name, dataset, load_factor, sample, outfile,
-                                                                    iomutex);
-         //         if (i == 5)
-         //            measure_cuckoo<rs::RadixSplineHash<Data, 26, 8, 500>>(dataset_name, dataset, load_factor, sample, outfile,
-         //                                                                  iomutex);
-         //         if (i == 6)
-         //            measure_cuckoo<rs::RadixSplineHash<Data, 26, 3, 500>>(dataset_name, dataset, load_factor, sample, outfile,
-         //                                                                  iomutex);
-         //         if (i == 7)
-         //            measure_cuckoo<rs::RadixSplineHash<Data, 28, 2, 500>>(dataset_name, dataset, load_factor, sample, outfile,
-         //                                                                  iomutex);
-
-         std::unique_lock<std::mutex> lock(iomutex);
-         std::cerr << "Failed to find viable radix_spline configuration for " << dataset_name << std::endl;
-      } catch (const std::exception& e) {
-         i++;
-         goto cuckoo_rs_begin;
-      }
+      // Always measure default configuration
+      measure_cuckoo<rs::RadixSplineHash<Data>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
 
       try {
-         measure_cuckoo<PGMHash<Data, 128, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+         measure_cuckoo<rs::RadixSplineHash<Data, 28, 2, max_models>>(dataset_name, dataset, load_factor, sample,
+                                                                      outfile, iomutex);
       } catch (const std::exception& e) {
          try {
-            measure_cuckoo<PGMHash<Data, 256, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
+            measure_cuckoo<rs::RadixSplineHash<Data, 26, 3, max_models>>(dataset_name, dataset, load_factor, sample,
+                                                                         outfile, iomutex);
          } catch (const std::exception& e) {
             try {
-               measure_cuckoo<PGMHash<Data, 512, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile,
-                                                           iomutex);
+               measure_cuckoo<rs::RadixSplineHash<Data, 26, 8, max_models>>(dataset_name, dataset, load_factor, sample,
+                                                                            outfile, iomutex);
             } catch (const std::exception& e) {
                try {
-                  measure_cuckoo<PGMHash<Data, 1024, 0, 1000>>(dataset_name, dataset, load_factor, sample, outfile,
-                                                               iomutex);
+                  measure_cuckoo<rs::RadixSplineHash<Data, 24, 20, max_models>>(dataset_name, dataset, load_factor,
+                                                                                sample, outfile, iomutex);
                } catch (const std::exception& e) {
-                  std::unique_lock<std::mutex> lock(iomutex);
-                  std::cerr << "Failed to find viable pgm epsrec0 configuration for " << dataset_name << std::endl;
-               }
-            }
-         }
-      }
-
-      try {
-         measure_cuckoo<PGMHash<Data, 128, 4, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
-      } catch (const std::exception& e) {
-         try {
-            measure_cuckoo<PGMHash<Data, 256, 4, 1000>>(dataset_name, dataset, load_factor, sample, outfile, iomutex);
-         } catch (const std::exception& e) {
-            try {
-               measure_cuckoo<PGMHash<Data, 512, 4, 1000>>(dataset_name, dataset, load_factor, sample, outfile,
-                                                           iomutex);
-            } catch (const std::exception& e) {
-               try {
-                  measure_cuckoo<PGMHash<Data, 1024, 4, 1000>>(dataset_name, dataset, load_factor, sample, outfile,
-                                                               iomutex);
-               } catch (const std::exception& e) {
-                  std::unique_lock<std::mutex> lock(iomutex);
-                  std::cerr << "Failed to find viable pgm epsrec4 configuration for " << dataset_name << std::endl;
+                  try {
+                     measure_cuckoo<rs::RadixSplineHash<Data, 24, 40, max_models>>(dataset_name, dataset, load_factor,
+                                                                                   sample, outfile, iomutex);
+                  } catch (const std::exception& e) {
+                     measure_cuckoo<rs::RadixSplineHash<Data, 20, 80>>(dataset_name, dataset, load_factor, sample,
+                                                                       outfile, iomutex);
+                     measure_cuckoo<rs::RadixSplineHash<Data, 20, 160>>(dataset_name, dataset, load_factor, sample,
+                                                                        outfile, iomutex);
+                  }
                }
             }
          }
@@ -425,116 +323,15 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
 
    /// Probing
    for (const auto load_factor : {1.0 / 1.25, 1.0 / 1.5}) {
-      measure_probing<rs::RadixSplineHash<Data>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, sample,
-                                                                         outfile, iomutex);
-      measure_probing<rs::RadixSplineHash<Data>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, sample,
-                                                                          outfile, iomutex);
-      measure_probing<rs::RadixSplineHash<Data>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, sample,
-                                                                          outfile, iomutex);
-      measure_probing<rs::RadixSplineHash<Data>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, sample,
-                                                                          outfile, iomutex);
-
-      try {
-         measure_probing<PGMHash<Data, 128, 0, 1000>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor,
-                                                                              sample, outfile, iomutex);
-         measure_probing<PGMHash<Data, 128, 0, 1000>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor,
-                                                                               sample, outfile, iomutex);
-         measure_probing<PGMHash<Data, 128, 0, 1000>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor,
-                                                                               sample, outfile, iomutex);
-         measure_probing<PGMHash<Data, 128, 0, 1000>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor,
-                                                                               sample, outfile, iomutex);
-      } catch (const std::exception& e) {
-         try {
-            measure_probing<PGMHash<Data, 256, 0, 1000>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor,
-                                                                                 sample, outfile, iomutex);
-            measure_probing<PGMHash<Data, 256, 0, 1000>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor,
-                                                                                  sample, outfile, iomutex);
-            measure_probing<PGMHash<Data, 256, 0, 1000>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor,
-                                                                                  sample, outfile, iomutex);
-            measure_probing<PGMHash<Data, 256, 0, 1000>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor,
-                                                                                  sample, outfile, iomutex);
-         } catch (const std::exception& e) {
-            try {
-               measure_probing<PGMHash<Data, 512, 0, 1000>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor,
-                                                                                    sample, outfile, iomutex);
-               measure_probing<PGMHash<Data, 512, 0, 1000>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor,
-                                                                                     sample, outfile, iomutex);
-               measure_probing<PGMHash<Data, 512, 0, 1000>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor,
-                                                                                     sample, outfile, iomutex);
-               measure_probing<PGMHash<Data, 512, 0, 1000>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor,
-                                                                                     sample, outfile, iomutex);
-            } catch (const std::exception& e) {
-               try {
-                  measure_probing<PGMHash<Data, 1024, 0, 1000>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset,
-                                                                                        load_factor, sample, outfile,
-                                                                                        iomutex);
-                  measure_probing<PGMHash<Data, 1024, 0, 1000>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset,
-                                                                                         load_factor, sample, outfile,
-                                                                                         iomutex);
-                  measure_probing<PGMHash<Data, 1024, 0, 1000>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset,
-                                                                                         load_factor, sample, outfile,
-                                                                                         iomutex);
-                  measure_probing<PGMHash<Data, 1024, 0, 1000>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset,
-                                                                                         load_factor, sample, outfile,
-                                                                                         iomutex);
-               } catch (const std::exception& e) {
-                  std::unique_lock<std::mutex> lock(iomutex);
-                  std::cerr << "Failed to find viable epsrec0 configuration for " << dataset_name << std::endl;
-               }
-            }
-         }
-      }
-
-      try {
-         measure_probing<PGMHash<Data, 128, 4, 1000>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor,
-                                                                              sample, outfile, iomutex);
-         measure_probing<PGMHash<Data, 128, 4, 1000>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor,
-                                                                               sample, outfile, iomutex);
-         measure_probing<PGMHash<Data, 128, 4, 1000>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor,
-                                                                               sample, outfile, iomutex);
-         measure_probing<PGMHash<Data, 128, 4, 1000>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor,
-                                                                               sample, outfile, iomutex);
-      } catch (const std::exception& e) {
-         try {
-            measure_probing<PGMHash<Data, 256, 4, 1000>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor,
-                                                                                 sample, outfile, iomutex);
-            measure_probing<PGMHash<Data, 256, 4, 1000>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor,
-                                                                                  sample, outfile, iomutex);
-            measure_probing<PGMHash<Data, 256, 4, 1000>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor,
-                                                                                  sample, outfile, iomutex);
-            measure_probing<PGMHash<Data, 256, 4, 1000>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor,
-                                                                                  sample, outfile, iomutex);
-         } catch (const std::exception& e) {
-            try {
-               measure_probing<PGMHash<Data, 512, 4, 1000>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor,
-                                                                                    sample, outfile, iomutex);
-               measure_probing<PGMHash<Data, 512, 4, 1000>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor,
-                                                                                     sample, outfile, iomutex);
-               measure_probing<PGMHash<Data, 512, 4, 1000>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor,
-                                                                                     sample, outfile, iomutex);
-               measure_probing<PGMHash<Data, 512, 4, 1000>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor,
-                                                                                     sample, outfile, iomutex);
-            } catch (const std::exception& e) {
-               try {
-                  measure_probing<PGMHash<Data, 1024, 4, 1000>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset,
-                                                                                        load_factor, sample, outfile,
-                                                                                        iomutex);
-                  measure_probing<PGMHash<Data, 1024, 4, 1000>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset,
-                                                                                         load_factor, sample, outfile,
-                                                                                         iomutex);
-                  measure_probing<PGMHash<Data, 1024, 4, 1000>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset,
-                                                                                         load_factor, sample, outfile,
-                                                                                         iomutex);
-                  measure_probing<PGMHash<Data, 1024, 4, 1000>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset,
-                                                                                         load_factor, sample, outfile,
-                                                                                         iomutex);
-               } catch (const std::exception& e) {
-                  std::unique_lock<std::mutex> lock(iomutex);
-                  std::cerr << "Failed to find viable epsrec4 configuration for " << dataset_name << std::endl;
-               }
-            }
-         }
-      }
+      // TODO: limit models (similar to above)
+      //      measure_probing<rs::RadixSplineHash<Data>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, sample,
+      //                                                                         outfile, iomutex);
+      //      measure_probing<rs::RadixSplineHash<Data>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, sample,
+      //                                                                          outfile, iomutex);
+      //      measure_probing<rs::RadixSplineHash<Data>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, sample,
+      //                                                                          outfile, iomutex);
+      //      measure_probing<rs::RadixSplineHash<Data>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, sample,
+      //                                                                          outfile, iomutex);
    }
 }
 

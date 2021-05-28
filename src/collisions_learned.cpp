@@ -123,7 +123,7 @@ static void measure(const std::string& dataset_name, const std::vector<Data>& da
 
 template<class Data>
 static void benchmark(const std::string& dataset_name, const std::vector<Data>& dataset, const double load_factor,
-                      const double sample_size, CSV& outfile, std::mutex& iomutex) {
+                      const double sample_chance, CSV& outfile, std::mutex& iomutex) {
    uint64_t sample_ns = 0, prepare_ns = 0;
 
    // Theoretical slot count of a hashtable on which we want to measure collisions
@@ -132,37 +132,20 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
    std::vector<size_t> collision_counter(hashtable_size);
 
    // Take a random sample
-   const auto sample_n = static_cast<size_t>(sample_size * static_cast<long double>(dataset.size()));
-   std::vector<uint64_t> sample(sample_n, 0);
+   std::vector<uint64_t> sample;
    {
       auto start_time = std::chrono::steady_clock::now();
-      if (sample_n == dataset.size()) {
+      if (sample_chance == 1.0) {
          sample = dataset;
-      } else if (sample_n > 0) {
-         sample.resize(sample_n);
+      } else {
+         sample.reserve(sample_chance * dataset.size());
+         std::random_device seed_gen;
+         std::default_random_engine gen(seed_gen());
+         std::uniform_real_distribution<double> dist(0, 1);
 
-         // Random constant to ensure reproducibility for debugging.
-         // TODO: make truely random for benchmark/use varying constants (?) -> also adjust other such constants (e.g. fisher yates shuffle)
-         const uint64_t seed = 0x9E3779B9LU;
-         std::default_random_engine gen(seed);
-         std::uniform_int_distribution<uint64_t> dist(0, dataset.size() - 1);
-
-         if (likely(sample_n > 2)) {
-            Data& min = sample[0];
-            Data& max = sample[sample_n - 1];
-
-            min = std::numeric_limits<Data>::max();
-            max = std::numeric_limits<Data>::min();
-            for (const auto& key : dataset) {
-               min = std::min(key, min);
-               max = std::max(key, max);
-            }
-         }
-
-         for (size_t i = 1; i < sample_n - 1; i++) {
-            const auto random_index = dist(gen);
-            sample[i] = dataset[random_index];
-         }
+         for (size_t i = 0; i < dataset.size(); i++)
+            if (dist(gen) < sample_chance)
+               sample.push_back(dataset[i]);
       }
       sample_ns = static_cast<uint64_t>(
          std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start_time).count());
