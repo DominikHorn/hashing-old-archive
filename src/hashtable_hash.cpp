@@ -422,24 +422,12 @@ int main(int argc, char* argv[]) {
 #endif
 
       CSV outfile(args.outfile, csv_columns);
-
       std::mutex iomutex;
-      //      std_ext::counting_semaphore cpu_blocker(args.max_threads, 0);
-      //      std::vector<std::thread> threads{};
 
       for (const auto& it : args.datasets) {
          const auto dataset = it.load(iomutex);
-         //            threads.emplace_back(std::thread([&, it, dataset, load_factor] {
-         //               cpu_blocker.aquire();
          benchmark(it.name(), dataset, outfile, iomutex);
-         //               cpu_blocker.release();
-         //            }));
       }
-      //      cpu_blocker.release(args.max_threads);
-      //      for (auto& t : threads) {
-      //         t.join();
-      //      }
-      //      threads.clear();
    } catch (const std::exception& ex) {
       std::cerr << ex.what() << std::endl;
       return -1;
