@@ -92,7 +92,7 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
 
     for i, dataset in enumerate(datasets):
         d = data[data[DATASET_KEY] == dataset]
-        hashfns = [hfn for hfn in all_hashfns if hfn in set(d[HASH_KEY])]
+        hashfns = list(set(d[HASH_KEY]))
 
         bars = {}
         for hashfn in hashfns:
@@ -116,12 +116,12 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
     yticks = np.linspace(0, ymax, 5)
     plt.ylim(0,ymax)
     plt.yticks(yticks, [f"{int(yt*100)}%" for yt in yticks], fontsize=8)
-    plt.ylabel(f"{stat_key.replace('_', ' ')}", fontsize=8)
+    plt.ylabel(f"{stat_key.replace('_', ' ').capitalize()}", fontsize=8)
 
     plt.xticks([i+0.5 for i in range(0, len(datasets))], [d.replace(r"_200M",
-        "").replace("_uint64", "").replace("_", " ") for d in datasets],
+        "").replace("_uint64", "").replace("_", " ").capitalize() for d in datasets],
         va="center_baseline",position=(0.5,-0.05), fontsize=8)
-    plt.xlabel("dataset", fontsize=8)
+    plt.xlabel("Dataset", fontsize=8)
 
     plt.margins(x=0.01,y=0.2)
     plt.tight_layout(pad=0.1)
