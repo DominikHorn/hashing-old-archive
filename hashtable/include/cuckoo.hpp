@@ -137,10 +137,10 @@ namespace Hashtable {
          struct Slot {
             Key key = Sentinel;
             Payload payload;
-         } packed;
+         };
 
          std::array<Slot, BucketSize> slots;
-      } packed;
+      };
 
       std::vector<Bucket> buckets;
 

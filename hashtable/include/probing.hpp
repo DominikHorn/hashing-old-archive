@@ -229,10 +229,10 @@ namespace Hashtable {
          struct Slot {
             Key key = Sentinel;
             Payload payload;
-         } packed;
+         };
 
          std::array<Slot, BucketSize> slots /*__attribute((aligned(sizeof(Key) * 8)))*/;
-      } packed;
+      };
 
       std::vector<Bucket> buckets;
    };
@@ -444,10 +444,10 @@ namespace Hashtable {
             Key key = Sentinel;
             size_t psl;
             Payload payload;
-         } packed;
+         };
 
          std::array<Slot, BucketSize> slots /*__attribute((aligned(sizeof(Key) * 8)))*/;
-      } packed;
+      };
 
       std::vector<Bucket> buckets;
    };
