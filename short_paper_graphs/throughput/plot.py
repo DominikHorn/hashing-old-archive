@@ -1,4 +1,5 @@
 import numpy as np
+import math as math
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
@@ -17,30 +18,30 @@ mpl.rcParams.update({
 
 # Style
 hr_names = {
-        "rmi": "rmi", 
-        "radix_spline": "radix spline",
+        "murmur_finalizer64": "Murmur",
+        "radix_spline": "RadixSpline",
         #"mult_prime64": "mult", "mult_add64": "mult_add",
-        "murmur_finalizer64": "murmur finalizer"}
+        "rmi": "Rmi"
+        }
 all_palette = list(mcolors.TABLEAU_COLORS.keys())
 palette = all_palette[:-1]
 colors = {
-        "rmi": palette[2],
+        "murmur_finalizer64": palette[1],
         "radix_spline": palette[0],
-        "murmur_finalizer64": palette[1]
+        "rmi": palette[2]
         }
 
 # Helper
-def name(hashfn):
-    return hr_names.get(hashfn) or hashfn
+def base_name(hashfn):
+    bracket_ind = hashfn.find("(")
+    return  hashfn[0:bracket_ind if bracket_ind > 0 else len(hashfn)].strip()
+
+def hr_name(hashfn):
+    h = base_name(hashfn)
+    return hr_names.get(h) or h
 
 def color(hashfn):
-    bracket_ind = hashfn.find("(")
-    h = hashfn[0: bracket_ind if bracket_ind > 0 else len(hashfn)].strip()
-    return colors.get(h) or all_palette[-1]
-
-def models(h):
-    bracket_ind = h.find("(")
-    return h[bracket_ind+1:h.find(")")] if bracket_ind > 0 else ""
+    return colors.get(base_name(hashfn)) or all_palette[-1]
 
 # Read data
 DATASET_KEY="dataset"
@@ -50,6 +51,7 @@ REDUCER_KEY="reducer"
 SAMPLE_SIZE_KEY="sample_size"
 HASH_KEY="hash"
 THROUGHPUT_KEY="throughput"
+MODELCOUNT_KEY="model_size"
 
 FAST_MODULO="fast_modulo"
 DO_NOTHING="do_nothing"
@@ -81,35 +83,48 @@ fig, ax = plt.subplots(figsize=(7.00697/2,3))
 machine = set(data[data[DATASET_KEY].notnull()][MACHINE_KEY]).pop()
 processor = machine[machine.find("(")+1:machine.rfind(")")]
 
-plt_dat = sorted([(h, median(list(data[data[HASH_KEY] == h][THROUGHPUT_KEY])))for
+plt_dat = sorted([(h, median(list(data[data[HASH_KEY] == h][THROUGHPUT_KEY])),
+    set(data[data[HASH_KEY] == h][MODELCOUNT_KEY]).pop()) for
     h in set(data[HASH_KEY])], key=lambda x: x[1])
 
-labels = [name(pltd[0]) for pltd in plt_dat]
-values = [pltd[1] for pltd in plt_dat]
-
 # Plot data
-bar_width = 1.0 / len(plt_dat)
-ax.bar(labels, values, color=[color(pltd[0]) for pltd in plt_dat])
+groups = list({base_name(d[0]):0 for d in plt_dat}.keys())
+bar_width = 0.15
+next_pos = 0
+xticks_pos=[]
+xticks_text=[]
+for i, group in enumerate(groups):
+    def nearest_pow_10_exp(num):
+        return int(round(math.log10(num)))
+     
+    labels = [(f"$10^{str(nearest_pow_10_exp(pltd[2]))}$", pltd[0]) if not
+            math.isnan(pltd[2]) else ("", pltd[0]) for pltd in plt_dat if
+            pltd[0].startswith(group)]
+    values = [pltd[1] for pltd in plt_dat if pltd[0].startswith(group)]
 
-# Number above bar
-for i,v in enumerate(values):
-    ax.text(i, v + 5, str(round(v, 1)), ha="center", color=color(plt_dat[i][0]),
-            fontsize=8, rotation=90)
+    for j, ((label, hashfn), value) in enumerate(zip(labels,values)):
+        ax.bar(next_pos, value, bar_width, color=color(hashfn))
+        ax.text(next_pos, value+5, str(round(value, 1)), ha="center",
+                color=color(hashfn), fontsize=11, rotation=90)
+        xticks_pos.append(next_pos)
+        xticks_text.append(label)
+
+        next_pos += bar_width + 0.005
+    next_pos += 0.2
 
 # Plot style/info
 plt.yticks(fontsize=8)
-plt.xticks(range(0,len(labels)), [l for l in labels], rotation=45, ha="right",
-        va="top", fontsize=6)
+plt.xticks(xticks_pos, xticks_text, fontsize=8)
 
-#plt.xlabel("hash function")
-plt.ylabel("ns per key")
-plt.margins(x=0.01,y=0.25)
+plt.xlabel("Model count", fontsize=8)
+plt.ylabel("Nanoseconds per key", fontsize=8)
+plt.margins(x=0.01,y=0.2)
 plt.tight_layout(pad=0.1)
 
 # Legend
 #plt.subplots_adjust(bottom=0.15)
 fig.legend(
-    handles=[mpatches.Patch(color=color, label=name(h)) for h,color in colors.items()],
+    handles=[mpatches.Patch(color=color, label=hr_name(h)) for h,color in colors.items()],
     bbox_to_anchor=(0.14, 1),
     loc="upper left",
     fontsize=6,
