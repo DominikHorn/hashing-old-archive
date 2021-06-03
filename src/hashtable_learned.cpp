@@ -212,7 +212,7 @@ static void measure_cuckoo(const std::string& dataset_name, const std::vector<Da
                              FastModulo<HASH_64>, Hashtable::BalancedKicking>>(dataset_name, dataset, load_factor,
                                                                                sample_size, sample, outfile, iomutex);
 
-   /// Biased kicking (place in primary bucket first & kick from secondary bucket with 10% chance)
+   /// Biased kicking 10% (place in primary bucket first & kick from secondary bucket with 10% chance)
    measure<Hashfn,
            Hashtable::Cuckoo<Data, Payload16<Data>, 8, Hashfn, Murmur3FinalizerCuckoo2Func, Clamp<HASH_64>,
                              FastModulo<HASH_64>, Hashtable::BiasedKicking<10>>>(dataset_name, dataset, load_factor,
@@ -220,6 +220,16 @@ static void measure_cuckoo(const std::string& dataset_name, const std::vector<Da
    measure<Hashfn,
            Hashtable::Cuckoo<Data, Payload64<Data>, 8, Hashfn, Murmur3FinalizerCuckoo2Func, Clamp<HASH_64>,
                              FastModulo<HASH_64>, Hashtable::BiasedKicking<10>>>(dataset_name, dataset, load_factor,
+                                                                                 sample_size, sample, outfile, iomutex);
+
+   /// Biased kicking 90% (place in primary bucket first & kick from secondary bucket with 90% chance)
+   measure<Hashfn,
+           Hashtable::Cuckoo<Data, Payload16<Data>, 8, Hashfn, Murmur3FinalizerCuckoo2Func, Clamp<HASH_64>,
+                             FastModulo<HASH_64>, Hashtable::BiasedKicking<90>>>(dataset_name, dataset, load_factor,
+                                                                                 sample_size, sample, outfile, iomutex);
+   measure<Hashfn,
+           Hashtable::Cuckoo<Data, Payload64<Data>, 8, Hashfn, Murmur3FinalizerCuckoo2Func, Clamp<HASH_64>,
+                             FastModulo<HASH_64>, Hashtable::BiasedKicking<90>>>(dataset_name, dataset, load_factor,
                                                                                  sample_size, sample, outfile, iomutex);
 }
 
