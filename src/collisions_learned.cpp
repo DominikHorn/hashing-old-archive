@@ -185,48 +185,50 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
    measure<rs::RadixSplineHash<Data, 24, 20>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample,
                                                                         collision_counter, sample_ns, prepare_ns,
                                                                         outfile, iomutex);
-   //   measure<rs::RadixSplineHash<Data, 26, 8>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter,
-   //                                                                       sample_ns, prepare_ns, outfile, iomutex);
-   //   measure<rs::RadixSplineHash<Data, 26, 3>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter,
-   //                                                                       sample_ns, prepare_ns, outfile, iomutex);
-   //   measure<rs::RadixSplineHash<Data, 28, 2>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter,
-   //                                                                       sample_ns, prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 26, 8>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter,
+                                                                       sample_ns, prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 26, 3>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter,
+                                                                       sample_ns, prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 28, 2>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter,
+                                                                       sample_ns, prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 28, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter,
+                                                                       sample_ns, prepare_ns, outfile, iomutex);
 
-   /// PGM (eps_rec 4)
-   measure<PGMHash<Data, 256, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
-                                                            prepare_ns, outfile, iomutex);
-   measure<PGMHash<Data, 128, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
-                                                            prepare_ns, outfile, iomutex);
-   measure<PGMHash<Data, 64, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
-                                                           prepare_ns, outfile, iomutex);
-   measure<PGMHash<Data, 16, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
-                                                           prepare_ns, outfile, iomutex);
-   measure<PGMHash<Data, 4, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
-                                                          prepare_ns, outfile, iomutex);
-
-   /// PGM (eps_rec 1)
-   measure<PGMHash<Data, 256, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
-                                                            prepare_ns, outfile, iomutex);
-   measure<PGMHash<Data, 128, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
-                                                            prepare_ns, outfile, iomutex);
-   measure<PGMHash<Data, 64, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
-                                                           prepare_ns, outfile, iomutex);
-   measure<PGMHash<Data, 16, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
-                                                           prepare_ns, outfile, iomutex);
-   measure<PGMHash<Data, 4, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
-                                                          prepare_ns, outfile, iomutex);
-
-   // PGM (eps_rec 0)
-   measure<PGMHash<Data, 256, 0>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
-                                                            prepare_ns, outfile, iomutex);
-   measure<PGMHash<Data, 128, 0>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
-                                                            prepare_ns, outfile, iomutex);
-   measure<PGMHash<Data, 64, 0>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
-                                                           prepare_ns, outfile, iomutex);
-   measure<PGMHash<Data, 16, 0>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
-                                                           prepare_ns, outfile, iomutex);
-   measure<PGMHash<Data, 4, 0>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
-                                                          prepare_ns, outfile, iomutex);
+   //   /// PGM (eps_rec 4)
+   //   measure<PGMHash<Data, 256, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
+   //                                                            prepare_ns, outfile, iomutex);
+   //   measure<PGMHash<Data, 128, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
+   //                                                            prepare_ns, outfile, iomutex);
+   //   measure<PGMHash<Data, 64, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
+   //                                                           prepare_ns, outfile, iomutex);
+   //   measure<PGMHash<Data, 16, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
+   //                                                           prepare_ns, outfile, iomutex);
+   //   measure<PGMHash<Data, 4, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
+   //                                                          prepare_ns, outfile, iomutex);
+   //
+   //   /// PGM (eps_rec 1)
+   //   measure<PGMHash<Data, 256, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
+   //                                                            prepare_ns, outfile, iomutex);
+   //   measure<PGMHash<Data, 128, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
+   //                                                            prepare_ns, outfile, iomutex);
+   //   measure<PGMHash<Data, 64, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
+   //                                                           prepare_ns, outfile, iomutex);
+   //   measure<PGMHash<Data, 16, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
+   //                                                           prepare_ns, outfile, iomutex);
+   //   measure<PGMHash<Data, 4, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
+   //                                                          prepare_ns, outfile, iomutex);
+   //
+   //   // PGM (eps_rec 0)
+   //   measure<PGMHash<Data, 256, 0>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
+   //                                                            prepare_ns, outfile, iomutex);
+   //   measure<PGMHash<Data, 128, 0>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
+   //                                                            prepare_ns, outfile, iomutex);
+   //   measure<PGMHash<Data, 64, 0>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
+   //                                                           prepare_ns, outfile, iomutex);
+   //   measure<PGMHash<Data, 16, 0>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
+   //                                                           prepare_ns, outfile, iomutex);
+   //   measure<PGMHash<Data, 4, 0>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns,
+   //                                                          prepare_ns, outfile, iomutex);
 }
 
 int main(int argc, char* argv[]) {
