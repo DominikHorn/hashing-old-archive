@@ -47,7 +47,10 @@ csv = pd.read_csv(f"cuckoo.csv")
 partial_data = csv[csv[DATASET_KEY].isnull()]
 data = csv[csv[DATASET_KEY].notnull()]
 
-def plot(attribute, ymin, ymax, format_tick, is_a_worse):
+def plot(attribute, ymin, ymax, format_tick, is_a_worse,
+        ylabel=None):
+    ylabel = ylabel or attribute.replace('_', ' ').capitalize()
+
     # Generate plot
     fig, axs = plt.subplots(2,2,figsize=(7.00697,4), sharex=True, sharey=True)
 
@@ -173,7 +176,7 @@ def plot(attribute, ymin, ymax, format_tick, is_a_worse):
                 fontsize=6)
 
     fig.text(0.5, 0.02, 'Dataset', ha='center', fontsize=8)
-    fig.text(0.01, 0.5, attribute.replace('_', ' ').capitalize(), va='center', rotation='vertical',
+    fig.text(0.01, 0.5, ylabel, va='center', rotation='vertical',
             fontsize=8)
 
     #plt.margins(x=0.01,y=0.2)
@@ -183,4 +186,5 @@ def plot(attribute, ymin, ymax, format_tick, is_a_worse):
 
 plot(PRIMARY_KEY_RATIO_KEY, 0.5, 1.0, lambda yt: f"{int(yt*100)}%", lambda a,b:
         a < b)
-plot(MEDIAN_PROBE_TIME_KEY, 200, 350, lambda yt: str(yt), lambda a,b: a > b)
+plot(MEDIAN_PROBE_TIME_KEY, 200, 350, lambda yt: str(yt), lambda a,b: a > b,
+        "Median probe time in nanoseconds")
