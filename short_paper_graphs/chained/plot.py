@@ -141,12 +141,14 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
                         color=colors.get(name(hash_name)) or "purple")
 
         # Plot style/info
-        if payload_size == 16:
-            ax.set_ylim(175,250)
-            ax.set_yticks([175,200,225,250])
-        else:
-            ax.set_ylim(200,350)
-            ax.set_yticks([200,250,300,350])
+        # if payload_size == 16:
+        #     ax.set_ylim(175,250)
+        #     ax.set_yticks([175,200,225,250])
+        # else:
+        #     ax.set_ylim(200,350)
+        #     ax.set_yticks([200,250,300,350])
+        ax.set_ylim(175,300)
+        ax.set_yticks([175,200,225,250,275, 300])
 
         ax.set_xticks([i+0.5 for i in range(0, len(datasets))])
         ax.set_xticklabels([ds_name(d.replace(r"_200M", "").replace("_uint64",
