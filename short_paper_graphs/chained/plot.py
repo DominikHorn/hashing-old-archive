@@ -141,7 +141,6 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
                         color=colors.get(name(hash_name)) or "purple")
 
         # Plot style/info
-        print(payload_size)
         if payload_size == 16:
             ax.set_ylim(175,250)
             ax.set_yticks([175,200,225,250])
@@ -163,8 +162,8 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
             fontsize=6)
 
 
-fig.text(0.5, 0.02, 'dataset', ha='center', fontsize=8)
-fig.text(0.01, 0.5, 'ns per key', va='center', rotation='vertical', fontsize=8)
+fig.text(0.5, 0.02, 'Dataset', ha='center', fontsize=8)
+fig.text(0.01, 0.5, 'Nanoseconds per key', va='center', rotation='vertical', fontsize=8)
 
 plt.tight_layout()
 plt.subplots_adjust(left=0.085, bottom=0.12)
