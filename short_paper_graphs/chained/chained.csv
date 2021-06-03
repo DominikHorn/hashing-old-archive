@@ -70,7 +70,7 @@ seq_200M_uint64,200000000,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.
 seq_200M_uint64,200000000,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),4,fast_modulo,aqua0_64,1,1.00,64,131.76512,284.81282,284.761526,0.00,200000000,0.26,,,7
 seq_200M_uint64,200000000,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),4,fast_modulo,xxh3,1,1.00,64,134.619469,287.117333,286.864626,0.00,200000000,0.26,,,7
 seq_200M_uint64,200000000,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),4,fast_modulo,mult_prime64,1,1.00,64,169.278596,299.451443,299.814659,0.00,200000000,0.35,,,5
-seq_200M_uint64,200000000,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),4,fast_modulo,murmur_finalizer64,1,1.00,64,148.172158,323.267501,326.288447,0.01,200000000,0.26,,,7
+seq_200M_uint64,200000000,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),4,fast_modulo,murmur_finalizer64,1,1.00,64,168.784494,287.748674,287.246249,0.01,200000000,0.26,,,11
 seq_200M_uint64,200000000,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,fast_modulo,mult_prime64,1.333333,0.75,16,59.073678,192.307187,191.887343,0.00,150000037,0.25,,,5
 seq_200M_uint64,200000000,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,fast_modulo,mult_add64,1.333333,0.75,16,87.368041,208.32347,208.343768,0.00,150000037,0.42,,,5
 seq_200M_uint64,200000000,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,clamp,radix_spline_err32_rbits18,1.333333,0.75,16,79.982458,227.765379,227.80665,0.00,150000037,0.25,,0.01,5
