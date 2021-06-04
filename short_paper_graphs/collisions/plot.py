@@ -59,15 +59,11 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
                 )
             ]
 
-    # Use do_nothing entries to determine order
-    tmp_d = data[((data[SAMPLE_SIZE_KEY] == 0.01) | (data[SAMPLE_SIZE_KEY].isnull()))
-            & (data[DATASET_KEY] ==
-                "wiki_200M_uint64")].sort_values("colliding_slots")
     # dict preserves insertion order since python 3.7
     classical_hashfns = [
             #"mult_prime64", "mult_add64", 
             "murmur_finalizer64"] 
-    learned_hashfns = list(dict.fromkeys(tmp_d[tmp_d[REDUCER_KEY] == CLAMP][HASH_KEY])) 
+    learned_hashfns = list(dict.fromkeys(data[data[REDUCER_KEY] == CLAMP][HASH_KEY])) 
     all_hashfns = learned_hashfns + classical_hashfns
 
     pallette = list(mcolors.TABLEAU_COLORS.keys())
@@ -142,7 +138,7 @@ plot_collision_statistic("colliding_keys", "Colliding keys", lambda load_fac : 1
 plot_collision_statistic("colliding_slots", "Colliding slots", lambda load_fac :
         1 - (((1 + 1/load_fac) * np.exp(-load_fac)) / (1 / load_fac)), ymax=0.5)
 plot_collision_statistic("empty_slots", "Empty slots", lambda load_fac:
-        np.exp(-load_fac), ymax=0.8)
+        np.exp(-load_fac), ymax=1.0)
 plot_collision_statistic("exclusive_slots", "Exclusive slots (exactly one key)", lambda load_fac :
         1 - (1 - (((1 + 1/load_fac) * np.exp(-load_fac)) / (1 / load_fac)) +
             np.exp(-load_fac)))
