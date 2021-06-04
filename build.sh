@@ -6,6 +6,7 @@ cd "$(dirname "$0")"
 
 # Guarantee clean slate to start
 mkdir -p benchmark
+rm -rf benchmark/*
 find . -name "CMakeCache.txt" -type f | xargs rm -rf
 
 # Build with various compilers. SET THIS ACCORDING TO YOUR SYSTEM CONFIG
