@@ -145,23 +145,59 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
    //                                                                outfile, iomutex);
 
    /// RadixSpline
-   measure<rs::RadixSplineHash<Data, 20, 160>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
-                                                                         prepare_ns, outfile, iomutex);
-   measure<rs::RadixSplineHash<Data, 20, 80>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
-                                                                        prepare_ns, outfile, iomutex);
-   measure<rs::RadixSplineHash<Data, 24, 40>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
-                                                                        prepare_ns, outfile, iomutex);
    measure<rs::RadixSplineHash<Data, 18, 32>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
                                                                         prepare_ns, outfile, iomutex);
-   measure<rs::RadixSplineHash<Data, 24, 20>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
-                                                                        prepare_ns, outfile, iomutex);
-   measure<rs::RadixSplineHash<Data, 26, 8>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+
+   measure<rs::RadixSplineHash<Data, 1, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
                                                                        prepare_ns, outfile, iomutex);
-   measure<rs::RadixSplineHash<Data, 26, 3>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+   measure<rs::RadixSplineHash<Data, 2, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
                                                                        prepare_ns, outfile, iomutex);
-   measure<rs::RadixSplineHash<Data, 28, 2>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+   measure<rs::RadixSplineHash<Data, 4, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
                                                                        prepare_ns, outfile, iomutex);
-   measure<rs::RadixSplineHash<Data, 28, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+   measure<rs::RadixSplineHash<Data, 8, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+                                                                       prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 16, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+                                                                       prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 32, 1>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+                                                                       prepare_ns, outfile, iomutex);
+
+   measure<rs::RadixSplineHash<Data, 1, 2>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+                                                                       prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 2, 2>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+                                                                       prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 4, 2>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+                                                                       prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 8, 2>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+                                                                       prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 16, 2>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+                                                                       prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 32, 2>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+                                                                       prepare_ns, outfile, iomutex);
+
+   measure<rs::RadixSplineHash<Data, 1, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+                                                                       prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 2, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+                                                                       prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 4, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+                                                                       prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 8, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+                                                                       prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 16, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+                                                                       prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 32, 4>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+                                                                       prepare_ns, outfile, iomutex);
+
+   measure<rs::RadixSplineHash<Data, 1, 8>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+                                                                       prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 2, 8>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+                                                                       prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 4, 8>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+                                                                       prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 8, 8>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+                                                                       prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 16, 8>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
+                                                                       prepare_ns, outfile, iomutex);
+   measure<rs::RadixSplineHash<Data, 32, 8>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, sample_ns,
                                                                        prepare_ns, outfile, iomutex);
 
    //   /// PGM (eps_rec 4)

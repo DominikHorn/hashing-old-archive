@@ -587,3 +587,5 @@ books_200M_uint32,199999999,0.950000,0.010000,8,cuckoo_8_balanced_kicking,radix_
 books_200M_uint32,199999999,0.950000,0.010000,8,cuckoo_8_balanced_kicking,radix_spline_err32_rbits18-murmur3_fin64_2,1800,clamp-fast_modulo,64,81860443823,409.302221,73847420156,369.237103,73862939647,369.314700,0.000000,11,0.533245,,,,,,,,
 books_200M_uint32,199999999,0.950000,0.010000,8,cuckoo_8_biased_kicking_10,radix_spline_err32_rbits18-murmur3_fin64_2,1800,clamp-fast_modulo,16,91565188929,457.825947,54967278682,274.836395,54967054930,274.835276,0.000000,11,0.692386,,,,,,,,
 books_200M_uint32,199999999,0.950000,0.010000,8,cuckoo_8_biased_kicking_10,radix_spline_err32_rbits18-murmur3_fin64_2,1800,clamp-fast_modulo,64,135982882073,679.914414,73142757286,365.713788,73133723348,365.668619,0.000000,11,0.692386,,,,,,,,
+fb_200M_uint64,200000000,0.980000,0.010000,8,cuckoo_8_biased_kicking_90,radix_spline_err32_rbits18-murmur3_fin64_2,,clamp-fast_modulo,16,,,,,,,0.000000,,,,,,,,,,
+fb_200M_uint64,200000000,0.980000,0.010000,8,cuckoo_8_biased_kicking_90,radix_spline_err32_rbits18-murmur3_fin64_2,,clamp-fast_modulo,64,,,,,,,0.000000,,,,,,,,,,
