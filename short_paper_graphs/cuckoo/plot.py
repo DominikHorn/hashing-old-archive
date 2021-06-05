@@ -58,6 +58,7 @@ def plot(attribute, ymin, ymax, format_tick, is_a_worse,
     expected = [[0.6503, 0.8353], [0.6140, 0.8111]]
     for l, load_fac in enumerate(sorted(set(data[LOAD_FACTOR_KEY]))):
         for s, strat in enumerate(sorted(set(data[KICKING_STRAT_KEY]))):
+            print(load_fac, strat)
             ax = axs[l][s]
             ax.set_title(f"({letter[l][s]}) {load_fac} load factor, {strat[0:strat.find('_')]} kicking", fontsize=8)
 
@@ -69,10 +70,7 @@ def plot(attribute, ymin, ymax, format_tick, is_a_worse,
                     & (data[LOAD_FACTOR_KEY] == load_fac)
                     # Only use fast modulo results
                     & ((data[REDUCER_KEY].str.match(FASTMOD)) | (data[REDUCER_KEY].str.match(CLAMP)))
-                    # Only use 16 byte payload results (must be equal to 64 byte results for
-                    # primary_key_ratio, otherwise bug!)
-                    & (data[PAYLOAD_SIZE_KEY] == 16)
-                    # Only use biased kicking
+                    # Filter for kicking strat 
                     & (data[KICKING_STRAT_KEY] == strat)
                     # Don't use normal dataset results for now (dataset broken)
                     & ((data[DATASET_KEY] != "normal_200M_uint64"))
@@ -86,7 +84,6 @@ def plot(attribute, ymin, ymax, format_tick, is_a_worse,
                        # (data[HASH_KEY].str.match("pgm"))
                        )
                     ]
-
 
             # dict preserves insertion order since python 3.7
             classical_hashfns = [
@@ -121,11 +118,12 @@ def plot(attribute, ymin, ymax, format_tick, is_a_worse,
                     if hashfn not in ds_hfn_map:
                         continue
 
-                    res_l = list(d2[d2[HASH_KEY] ==
-                        ds_hfn_map[hashfn]][attribute])
-                    if len(res_l) != 1:
-                        continue
-                    res = res_l[0]
+                    res_l = sorted(list(d2[d2[HASH_KEY] ==
+                        ds_hfn_map[hashfn]][attribute]))
+                    if len(res_l) > 1:
+                        res = res_l[0] if is_a_worse(res_l[1], res_l[0]) else res_l[-1]
+                    else:
+                        res = res_l[0]
 
                     if name(hashfn) in seen_reps:
                         old_hashfn = seen_reps[name(hashfn)]
@@ -136,7 +134,6 @@ def plot(attribute, ymin, ymax, format_tick, is_a_worse,
                     else:
                         seen_reps[name(hashfn)] = hashfn
                         bars[name(hashfn)] = res
-
 
                 # Plt data
                 plt_data = [(s.strip(), bars[s]) for s in bars.keys()]
