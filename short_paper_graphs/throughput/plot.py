@@ -31,24 +31,16 @@ colors = {
         "rmi": palette[2]
         }
 
-# Helper
-def base_name(hashfn):
-    bracket_ind = hashfn.find("(")
-    return  hashfn[0:bracket_ind if bracket_ind > 0 else len(hashfn)].strip()
-
-def hr_name(hashfn):
-    h = base_name(hashfn)
+def hr_name(h):
     return hr_names.get(h) or h
 
-def color(hashfn):
-    return colors.get(base_name(hashfn)) or all_palette[-1]
+def color(h):
+    return colors.get(h) or all_palette[-1]
 
 # Read data
-DATASET_KEY="dataset"
 MACHINE_KEY="machine"
 COMPILER_KEY="compiler"
 REDUCER_KEY="reducer"
-SAMPLE_SIZE_KEY="sample_size"
 HASH_KEY="hash"
 THROUGHPUT_KEY="throughput"
 MODELCOUNT_KEY="model_size"
@@ -57,52 +49,49 @@ FAST_MODULO="fast_modulo"
 DO_NOTHING="do_nothing"
 CLAMP="clamp"
 
-csv = pd.read_csv(f"throughput.csv")
-partial_data = csv[csv[DATASET_KEY].isnull()]
-data = csv # csv[csv[DATASET_KEY].notnull()]
+data = pd.read_csv(f"throughput.csv")
 
 # Filter data
-# Only use g++ results
-data = data[(data[COMPILER_KEY].isnull()) |
-        (data[COMPILER_KEY].str.match(r"g\+\+"))]
-# Only use fast modulo results
-data = data[(data[REDUCER_KEY] == FAST_MODULO) | (data[REDUCER_KEY] == CLAMP)]
-# Only use sample size NaN or 1%
-data = data[(data[SAMPLE_SIZE_KEY] == 0.01) | (data[SAMPLE_SIZE_KEY].isnull())]
-# Only use certain hash functions
 data = data[
-        # (data[HASH_KEY] == "mult_prime64") | (data[HASH_KEY] == "mult_add64") | 
-    (data[HASH_KEY] == "murmur_finalizer64") |
-    (data[HASH_KEY].str.match("rmi")) |
-    ((data[HASH_KEY].str.contains("radix_spline")) & (data[HASH_KEY] != "radix_spline (32:18)"))]
+        # Only use g++ results
+        ((data[COMPILER_KEY].isnull()) |
+            (data[COMPILER_KEY].str.match(r"g\+\+")))
+        # Only use fast modulo results
+        & ((data[REDUCER_KEY] == FAST_MODULO) | (data[REDUCER_KEY] == CLAMP))
+        # Only plot certain functions
+        & (
+            (data[HASH_KEY] == "murmur_finalizer64") |
+            (data[HASH_KEY] == "rmi") |
+            (data[HASH_KEY] == "radix_spline")
+            )
+        ]
 
 # Create plot
 fig, ax = plt.subplots(figsize=(7.00697/2,3))
 
 # Extract data
-machine = set(data[data[DATASET_KEY].notnull()][MACHINE_KEY]).pop()
+machine = set(data[data[MACHINE_KEY].notnull()][MACHINE_KEY]).pop()
 processor = machine[machine.find("(")+1:machine.rfind(")")]
 
-plt_dat = sorted([(h, median(list(data[data[HASH_KEY] == h][THROUGHPUT_KEY])),
-    set(data[data[HASH_KEY] == h][MODELCOUNT_KEY]).pop()) for
-    h in set(data[HASH_KEY])], key=lambda x: x[1])
+plt_dat = [(h, list(data[data[HASH_KEY] == h][THROUGHPUT_KEY]),
+    list(data[data[HASH_KEY] == h][MODELCOUNT_KEY])) for
+    h in dict.fromkeys(data[HASH_KEY]).keys()]
 
 # Plot data
-groups = list({base_name(d[0]):0 for d in plt_dat}.keys())
 bar_width = 0.15
 next_pos = 0
 xticks_pos=[]
 xticks_text=[]
-for i, group in enumerate(groups):
+for i, group in enumerate(plt_dat):
     def nearest_pow_10_exp(num):
         return int(round(math.log10(num)))
-     
-    labels = [(f"$10^{str(nearest_pow_10_exp(pltd[2]))}$", pltd[0]) if not
-            math.isnan(pltd[2]) else ("", pltd[0]) for pltd in plt_dat if
-            pltd[0].startswith(group)]
-    values = [pltd[1] for pltd in plt_dat if pltd[0].startswith(group)]
 
-    for j, ((label, hashfn), value) in enumerate(zip(labels,values)):
+    hashfn = group[0]
+    labels = [f"$10^{str(nearest_pow_10_exp(d))}$" if not math.isnan(d) else
+            "n/a" for d in group[2]]
+    values = group[1]
+
+    for j, (label, value) in enumerate(zip(labels,values)):
         ax.bar(next_pos, value, bar_width, color=color(hashfn))
         ax.text(next_pos, value+5, str(round(value, 1)), ha="center",
                 color=color(hashfn), fontsize=11, rotation=90)
@@ -125,7 +114,7 @@ plt.tight_layout(pad=0.1)
 #plt.subplots_adjust(bottom=0.15)
 fig.legend(
     handles=[mpatches.Patch(color=color, label=hr_name(h)) for h,color in colors.items()],
-    bbox_to_anchor=(0.14, 1),
+    bbox_to_anchor=(0.125, 0.985),
     loc="upper left",
     fontsize=6,
     ncol=1)
