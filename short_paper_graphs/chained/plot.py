@@ -77,16 +77,11 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
                     )
                 ]
 
-        # Use do_nothing entries to determine order
-        tmp_d = d[((d[SAMPLE_SIZE_KEY] == 0.01) | (d[SAMPLE_SIZE_KEY].isnull()))
-                & (d[DATASET_KEY] ==
-                    "wiki_200M_uint64")].sort_values(MEDIAN_PROBE_TIME_KEY)
         # dict preserves insertion order since python 3.7
         classical_hashfns = [
                # "mult_prime64", "mult_add64", 
                 "murmur_finalizer64"] 
-        tmp_d = d[((d[SAMPLE_SIZE_KEY] == 0.01) | (d[SAMPLE_SIZE_KEY].isnull()))]
-        learned_hashfns = list(dict.fromkeys(tmp_d[tmp_d[REDUCER_KEY].str.match(CLAMP)][HASH_KEY]))
+        learned_hashfns = list(dict.fromkeys(d[d[REDUCER_KEY].str.match(CLAMP)][HASH_KEY]))
         all_hashfns = learned_hashfns + classical_hashfns
 
         colors = {"RadixSpline": "tab:blue", "Murmur": "tab:orange"}
