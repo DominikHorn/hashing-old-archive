@@ -61,8 +61,6 @@ namespace rmi {
          const auto pred = static_cast<size_t>((max_value + 1) * (slope * k + intercept));
 
          // clamp (just in case). TODO(dominik): remove this additional clamp
-         if (unlikely(pred < 0))
-            return 0;
          if (unlikely(pred > max_value))
             return max_value;
          return pred;
@@ -129,7 +127,7 @@ namespace rmi {
 
          // Edge case: First model does not have enough training data -> add artificial datapoints
          while (training_buckets[0].size() < 2)
-            training_buckets[0].insert(training_buckets[0].begin(), {.x = 0, .y = 0});
+            training_buckets[0].insert(training_buckets[0].begin(), Datapoint(0, 0));
 
          // Train each second level model on its respective bucket
          for (size_t model_idx = 0; model_idx < SecondLevelModelCount; model_idx++) {
