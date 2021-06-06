@@ -42,7 +42,7 @@ namespace rmi {
        * @param datapoints *sorted* datapoints to 'train' on
        * @param output_range outputs will be in range [0, output_range]. Defaults to 1
        */
-      LinearImpl(const std::vector<Datapoint>& datapoints, const size_t output_range = 1)
+      explicit LinearImpl(const std::vector<Datapoint>& datapoints, const size_t output_range = 1)
          // rescale output to [0, output_range]: (ax + b) * c = (c*ax + c+b)
          : slope(output_range * compute_slope(datapoints.front(), datapoints.back())),
            intercept(output_range * compute_intercept(datapoints.front(), datapoints.back())) {}
