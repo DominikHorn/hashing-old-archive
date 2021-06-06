@@ -9,6 +9,8 @@ benchmark/
 .idea
 
 ## CMake 
+Debug/
+Release/
 cmake-build-*
 cmake_install.cmake
 Makefile

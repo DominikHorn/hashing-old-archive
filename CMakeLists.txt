@@ -12,6 +12,9 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Always export compile commands
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 add_compile_options(-std=c++20)
 
 add_subdirectory(thirdparty)
