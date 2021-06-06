@@ -159,15 +159,21 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
          std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start_time).count());
    }
 
-   // TODO: enable rmi once implemented
-
-   //   /// RMI
-   //   measure<rmi::RMIHash<Data, 100>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns, prepare_ns,
-   //                                                              outfile, iomutex);
-   //   measure<rmi::RMIHash<Data, 1000>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns, prepare_ns,
-   //                                                               outfile, iomutex);
-   //   measure<rmi::RMIHash<Data, 10000>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, collision_counter, sample_ns, prepare_ns,
-   //                                                                outfile, iomutex);
+   /// RMI
+   measure<rmi::RMIHash<Data, 10>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, collision_counter, sample_ns, prepare_ns,
+                                                              outfile, iomutex);
+   measure<rmi::RMIHash<Data, 100>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, collision_counter, sample_ns, prepare_ns,
+                                                               outfile, iomutex);
+   measure<rmi::RMIHash<Data, 1000>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, collision_counter, sample_ns, prepare_ns,
+                                                                outfile, iomutex);
+   measure<rmi::RMIHash<Data, 10000>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, collision_counter, sample_ns, prepare_ns,
+                                                                outfile, iomutex);
+   measure<rmi::RMIHash<Data, 100000>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, collision_counter, sample_ns, prepare_ns,
+                                                                outfile, iomutex);
+   measure<rmi::RMIHash<Data, 1000000>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, collision_counter, sample_ns, prepare_ns,
+                                                                outfile, iomutex);
+   measure<rmi::RMIHash<Data, 10000000>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance, collision_counter, sample_ns, prepare_ns,
+                                                                outfile, iomutex);
 
    /// RadixSpline
    measure<rs::RadixSplineHash<Data, 20, 160>, Reduction::Clamp<size_t>>(dataset_name, dataset, sample, sample_chance,
