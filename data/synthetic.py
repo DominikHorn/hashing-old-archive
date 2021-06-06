@@ -109,6 +109,7 @@ write_dataset(name="debug", numbers=duplicated(start=1), amount=1000000, bytes_p
 write_dataset(name="uniform_200M", numbers=uniform(), amount=2 * (10**8), bytes_per_number=8)
 write_dataset(name="consecutive_200M", numbers=dense(start=1000), amount=2 * (10**8), bytes_per_number=8)
 write_dataset(name="consecutive_100M", numbers=dense(start=1000), amount=1 * (10 ** 8), bytes_per_number=8)
+write_dataset(name="consecutive_90437011", numbers=dense(start=1000), amount=90437011, bytes_per_number=8)
 write_dataset(name="gapped_1permill_200M", numbers=gapped(start=10000,delete_probability=0.001), amount=2 * (10**8), bytes_per_number=8)
 write_dataset(name="gapped_1percent_200M", numbers=gapped(start=10000,delete_probability=0.01), amount=2 * (10**8), bytes_per_number=8)
 write_dataset(name="gapped_10percent_200M", numbers=gapped(start=10000,delete_probability=0.1), amount=2 * (10**8), bytes_per_number=8)
