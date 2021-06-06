@@ -426,12 +426,7 @@ int main(int argc, char* argv[]) {
       std::mutex iomutex;
 
       for (const auto& it : args.datasets) {
-         auto dataset = it.load(iomutex);
-
-         // Since dataset is fisher_yates shuffled, we can comfortably do this
-         while (dataset.size() > args.max_keys)
-           dataset.pop_back();
-
+         const auto dataset = it.load(iomutex);
          benchmark(it.name(), dataset, outfile, iomutex);
       }
    } catch (const std::exception& ex) {
