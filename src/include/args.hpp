@@ -15,6 +15,7 @@ namespace BenchmarkArgs {
    const std::string help_key = "help";
    const std::string outfile_key = "outfile";
    const std::string max_threads_key = "max-threads";
+   const std::string max_keys_key= "max-keys";
    const std::string load_factors_key = "load-factors";
    const std::string sample_sizes_key = "sample-sizes";
    const std::string datasets_key = "datasets";
@@ -273,6 +274,7 @@ namespace BenchmarkArgs {
       std::vector<double> load_factors;
       std::vector<Dataset> datasets;
       unsigned int max_threads;
+      size_t max_keys;
 
       HashHashtableArgs(int argc, char* argv[]) {
          const std::vector<std::string> required{outfile_key, datasets_key};
@@ -289,6 +291,9 @@ namespace BenchmarkArgs {
                 "maximum amount of threads to concurrently execute. NOTE: more threads may be created but only " +
                    max_threads_key + " will actually execute at the same time.",
                 cxxopts::value<unsigned int>()->default_value(std::to_string(std::thread::hardware_concurrency()))) //
+               (max_keys_key,
+                "maximum amount of keys to use from each keyset (randomly eliminated)",
+                cxxopts::value<size_t>()->default_value(std::to_string(std::numeric_limits<size_t>::max()))) //
                (load_factors_key,
                 "comma separated list of load factors, i.e., percentage floating point values",
                 cxxopts::value<std::vector<double>>()->default_value("1.0")) //
@@ -320,6 +325,7 @@ namespace BenchmarkArgs {
             // Extract
             outfile = result[outfile_key].as<std::string>();
             max_threads = result[max_threads_key].as<unsigned int>();
+            max_keys = result[max_keys_key].as<size_t>();
             load_factors = result[load_factors_key].as<std::vector<double>>();
             datasets = result[datasets_key].as<std::vector<Dataset>>();
          } catch (const std::exception& ex) {
