@@ -83,6 +83,7 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
         all_hashfns = list(set(d[d[REDUCER_KEY].str.match(CLAMP)][HASH_KEY])) + ["murmur_finalizer64"]
 
         datapoints = list(zip(d[DATASET_KEY], d[ADDITIONAL_BUCKETS_KEY], d[MEDIAN_PROBE_TIME_KEY], d[HASH_KEY]))
+        print(datapoints)
         for (dataset, additional_buckets, median_probe_time, hashfn) in datapoints:
             hash_name = name(hashfn)
             dataset_name = name_d(dataset)
@@ -111,7 +112,7 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
         #ax.set_yticks([225, 250, 275])
         ax.set_xlim(-0.1,1.1)
         ax.set_xticks([0.0, 0.33, 0.66, 1.0])
-        ax.set_ylim(100,1500)
+        #ax.set_ylim(100,1500)
         ax.tick_params(axis='both', which='major', labelsize=8)
         #ax.margins(x=0.1)
 
