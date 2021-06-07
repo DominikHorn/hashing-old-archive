@@ -125,10 +125,10 @@ for l, load_factor in enumerate([0.95, 0.98]):
                 return 0
             def y_adjust():
                 if dataset_name == "seq":
-                    return -4
+                    return -5
                 if dataset_name == "gap 1%":
                     return 0.4
-                return +2
+                return +3
             def ha():
                 if dataset_name == "gap 1%":
                     if kicking_strat == "balanced_kicking":
@@ -146,7 +146,7 @@ for l, load_factor in enumerate([0.95, 0.98]):
                 ax.annotate(
                         f"{dataset_name}", 
                         (primary_key_ratio + x_adjust(), median_probe_time + y_adjust()), 
-                        fontsize=5, 
+                        fontsize=8, 
                         ha=ha(),
                         va=va())
 
@@ -162,9 +162,9 @@ for l, load_factor in enumerate([0.95, 0.98]):
             loc="upper right",
             fontsize=6)
 
-fig.text(0.5, 0.02, 'Primary key ratio [percent]', ha='center', fontsize=8)
-fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=8)
+fig.text(0.5, 0.02, 'Primary key ratio [percent]', ha='center', fontsize=11)
+fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=11)
 
 plt.tight_layout()
-plt.subplots_adjust(left=0.08, bottom=0.1)
+plt.subplots_adjust(left=0.08, bottom=0.12)
 plt.savefig(f"out/cuckoo.pdf")
