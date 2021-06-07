@@ -83,7 +83,6 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
         all_hashfns = list(set(d[d[REDUCER_KEY].str.match(CLAMP)][HASH_KEY])) + ["murmur_finalizer64"]
 
         datapoints = list(zip(d[DATASET_KEY], d[ADDITIONAL_BUCKETS_KEY], d[MEDIAN_PROBE_TIME_KEY], d[HASH_KEY]))
-        print(datapoints)
         for (dataset, additional_buckets, median_probe_time, hashfn) in datapoints:
             hash_name = name(hashfn)
             dataset_name = name_d(dataset)
