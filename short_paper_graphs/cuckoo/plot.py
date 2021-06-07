@@ -12,7 +12,7 @@ import math as math
 # primary key ratio (x axis) vs probe time (y axis)
 
 # Latex figure export
-mpl.use("pgf")
+#mpl.use("pgf")
 mpl.rcParams.update({
     "pgf.texsystem": "pdflatex",
     "font.family": "serif",
@@ -60,7 +60,7 @@ colors = {"RadixSpline": "tab:blue", "Murmur": "tab:orange"}
 letter = [["A", "B"], ["C", "D"]]
 
 # Generate plot
-fig, axs = plt.subplots(2,2,figsize=(7.00697,4),sharex=True,sharey=True)
+fig, axs = plt.subplots(2,2,figsize=(7.00697/2,2),sharex=True,sharey=True)
 for l, load_factor in enumerate([0.95, 0.98]):
     for s, kicking_strat in enumerate(["balanced_kicking", "biased_kicking_10"]):
         ax = axs[l][s]
@@ -77,7 +77,7 @@ for l, load_factor in enumerate([0.95, 0.98]):
                 & (data[KICKING_STRAT_KEY] == kicking_strat)
                 # Only use 16 byte payload numbers
                 & (data[PAYLOAD_SIZE_KEY] == 16)
-                # Don't use normal dataset results for now (dataset broken)
+                # Only use these select datasets for now
                 & (
                     (data[DATASET_KEY] == "seq_200M_uint64")
                     | (data[DATASET_KEY] == "gap_1%_200M_uint64")
@@ -151,20 +151,20 @@ for l, load_factor in enumerate([0.95, 0.98]):
                         va=va())
 
         # Plot style/info
-        ymin = 215
-        ymax = 285
-        yticks = np.linspace(225, 275, 3)
-        ax.set_ylim(ymin,ymax)
-        ax.set_yticks(yticks)
+        ax.set_ylim(1,1000)
+        ax.set_yscale('log')
+        ax.set_xticks([0.6, 0.7, 0.8, 0.9, 1.0])
 
         # Legend 
-        ax.legend(handles=[mpatches.Patch(color=colors.get(name(h)), label=name(h)) for h,_ in hr_names.items()],
-            loc="upper right",
-            fontsize=6)
+        if l == 1 and s == 1:
+            ax.legend(handles=[mpatches.Patch(color=colors.get(name(h)), label=name(h)) for h,_ in hr_names.items()],
+                loc="lower right",
+                fontsize=6)
 
-fig.text(0.5, 0.02, 'Primary key ratio [percent]', ha='center', fontsize=11)
-fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=11)
+fig.text(0.5, 0.02, 'Primary key ratio [percent]', ha='center', fontsize=8)
+fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=8)
 
 plt.tight_layout()
-plt.subplots_adjust(left=0.08, bottom=0.12)
+plt.subplots_adjust(wspace=0.1, hspace=0.5)
+#plt.subplots_adjust(left=0.1, bottom=0.2, wspace=0.2, hspace=0.1)
 plt.savefig(f"out/cuckoo.pdf")
