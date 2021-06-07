@@ -16,6 +16,8 @@ namespace rmi {
    struct DatapointImpl {
       X x;
       Y y;
+
+      DatapointImpl(const X x, const Y y) : x(x), y(y) {}
    };
 
    template<class Key, class Precision>
@@ -27,6 +29,9 @@ namespace rmi {
       using Datapoint = DatapointImpl<Key, Precision>;
 
       static forceinline Precision compute_slope(const Datapoint& min, const Datapoint& max) {
+         if (min.x == max.x)
+            return 0;
+
          // slope = delta(y)/delta(x)
          return ((max.y - min.y) / (max.x - min.x));
       }
@@ -47,7 +52,10 @@ namespace rmi {
        */
       explicit LinearImpl(const std::vector<Datapoint>& datapoints)
          : slope(compute_slope(datapoints.front(), datapoints.back())),
-           intercept(compute_intercept(datapoints.front(), datapoints.back())) {}
+           intercept(compute_intercept(datapoints.front(), datapoints.back())) {
+         assert(slope != NAN);
+         assert(intercept != NAN);
+      }
 
       /**
        * Extrapolates an index for the given key to the range [0, max_value]
@@ -58,12 +66,14 @@ namespace rmi {
       forceinline size_t operator()(const Key& k,
                                     const Precision& max_value = std::numeric_limits<Precision>::max()) const {
          // (slope * k + intercept) \in [0, 1] by construction
-         const auto pred = static_cast<size_t>((max_value + 1) * (slope * k + intercept));
+         const auto pred = (max_value + 1) * (slope * k + intercept);
 
          // clamp (just in case). TODO(dominik): remove this additional clamp
+         if (unlikely(pred < 0))
+            return 0;
          if (unlikely(pred > max_value))
             return max_value;
-         return pred;
+         return static_cast<size_t>(pred);
       }
    };
 
@@ -75,13 +85,12 @@ namespace rmi {
      private:
       using Precision = double;
       using Datapoint = DatapointImpl<Key, Precision>;
-      using Linear = LinearImpl<Key, Precision>;
 
       /// Root model
       const RootModel root_model;
 
       /// Second level models
-      std::array<Linear, SecondLevelModelCount> second_level_models;
+      std::vector<SecondLevelModel> second_level_models;
 
       /// prediction range for each second level model & full output range ([0, full_size])
       const size_t second_level_range, full_size;
@@ -101,9 +110,11 @@ namespace rmi {
        */
       template<class RandomIt>
       RMIHash(const RandomIt& sample_begin, const RandomIt& sample_end, const size_t full_size)
-         : root_model(Linear({{.x = *sample_begin, .y = 0}, {.x = *sample_end, .y = 1}})),
+         : root_model(RootModel({Datapoint(*sample_begin, 0), Datapoint(*(sample_end - 1), 1)})),
            second_level_range(full_size / SecondLevelModelCount), full_size(full_size),
-           missing_slots(std::max(static_cast<size_t>(0), full_size - SecondLevelModelCount * second_level_range)) {
+           missing_slots(std::max(static_cast<size_t>(0),
+                                  full_size - SecondLevelModelCount * (full_size / SecondLevelModelCount))),
+           second_level_models(SecondLevelModelCount) {
          // Assign each sample point into a training bucket according to root model
          std::vector<std::vector<Datapoint>> training_buckets(SecondLevelModelCount);
          const auto sample_size = std::distance(sample_begin, sample_end);
@@ -118,11 +129,11 @@ namespace rmi {
             // The following works because the previous training bucket has to be completed,
             // because the sample is sorted:
             // Each training bucket's min is the previous training bucket's max (except for first bucket)
-            if (bucket.empty() && second_level_index == 0)
+            if (bucket.empty() && second_level_index > 0 && !training_buckets[second_level_index - 1].empty())
                bucket.push_back(training_buckets[second_level_index - 1].back());
 
             // Add datapoint at the end of the bucket
-            bucket.push_back({.x = key, .y = static_cast<Precision>(i) / static_cast<Precision>(sample_size)});
+            bucket.push_back(Datapoint(key, static_cast<Precision>(i) / static_cast<Precision>(sample_size)));
          }
 
          // Edge case: First model does not have enough training data -> add artificial datapoints
@@ -134,9 +145,11 @@ namespace rmi {
             auto& training_bucket = training_buckets[model_idx];
 
             // Propagate datapoints from previous training bucket if necessary
-            assert(training_bucket.size() >= 1);
-            if (training_bucket.size() < 2)
+            while (training_bucket.size() < 2) {
+               assert(model_idx - 1 >= 0);
+               assert(!training_buckets[model_idx - 1].empty());
                training_bucket.insert(training_bucket.begin(), training_buckets[model_idx - 1].back());
+            }
             assert(training_bucket.size() >= 2);
 
             // Train model on training bucket & add it
