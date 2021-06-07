@@ -26,9 +26,8 @@ namespace std_ext {
       forceinline void release(const unsigned int& update = 1) {
          std::unique_lock<std::mutex> lock(mutex);
 
-         if (unlikely(update > max_value - counter)) {
+         if (unlikely(update > max_value - counter))
             throw std::runtime_error("Can not increase semaphore value by more than max_value - counter");
-         }
 
          counter += update;
          for (auto i = update; i > 0; i--)
@@ -41,9 +40,8 @@ namespace std_ext {
        */
       forceinline void aquire() {
          std::unique_lock<std::mutex> lock(mutex);
-         while (counter == 0) {
+         while (counter == 0)
             condition_variable.wait(lock);
-         }
          counter--;
       }
 
