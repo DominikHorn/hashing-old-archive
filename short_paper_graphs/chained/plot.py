@@ -6,25 +6,18 @@ import matplotlib.colors as mcolors
 import pandas as pd
 import math as math
 
-# Latex figure export
-#mpl.use("pgf")
-#mpl.rcParams.update({
-#    "pgf.texsystem": "pdflatex",
-#    "font.family": "serif",
-#    "text.usetex": False,
-#    "pgf.rcfonts": False
-#})
-
 # Style
 hr_names = {"radix_spline": "RadixSpline",
         #"mult_prime64": "mult", "mult_add64": "mult_add", 
         "murmur_finalizer64": "Murmur"}
+colors = {"RadixSpline": "tab:blue", "Murmur": "tab:orange"}
+def name_d(dataset):
+    x = dataset
+    return x.replace(r"_200M", "").replace("_uint64", "").replace("_", " ")
 def name(hashfn):
     if hashfn.startswith("radix_spline"):
         hashfn = "radix_spline"
     return hr_names.get(hashfn) or hashfn
-def ds_name(d):
-    return d
 
 DATASET_KEY="dataset"
 MACHINE_KEY="machine"
@@ -35,6 +28,7 @@ LOAD_FACTOR_KEY="load_factor"
 PAYLOAD_SIZE_KEY="payload_size"
 SLOTS_PER_BUCKET_KEY="slots_per_bucket"
 SAMPLE_SIZE_KEY="sample_size"
+ADDITIONAL_BUCKETS_KEY="additional_buckets_per_key"
 MEDIAN_PROBE_TIME_KEY="median_probe_time"
 
 CLAMP="clamp"
@@ -45,13 +39,13 @@ partial_data = csv[csv[DATASET_KEY].isnull()]
 data = csv[csv[DATASET_KEY].notnull()]
 
 # Generate plot
-fig, axs = plt.subplots(2,2,figsize=(7.00697,4))
+fig, axs = plt.subplots(2,2,figsize=(7.00697/2,2), sharex=True, sharey=True)
 
 letter = [["A", "B"], ["C", "D"]]
 for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
     for s, slots_per_bucket in enumerate(set(data[SLOTS_PER_BUCKET_KEY])):
         ax = axs[p][s]
-        ax.set_title(f"({letter[p][s]}) {payload_size} bytes payload, {slots_per_bucket} slots per bucket", fontsize=8)
+        ax.set_title(f"({letter[p][s]}) {payload_size}B payload {slots_per_bucket} slots per bucket", fontsize=6)
 
         # Filter data
         d = data[
@@ -64,8 +58,16 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
                 & (data[LOAD_FACTOR_KEY] == 1.0)
                 # Only use fast modulo results
                 & ((data[REDUCER_KEY] == FASTMOD) | (data[REDUCER_KEY] == CLAMP))
-                # Don't use normal dataset results for now (dataset broken)
-                & ((data[DATASET_KEY] != "normal_200M_uint64"))
+                # Only use these select datasets for now
+                & (
+                    (data[DATASET_KEY] == "seq_200M_uint64")
+                    | (data[DATASET_KEY] == "gap_1%_200M_uint64")
+                    | (data[DATASET_KEY] == "gap_10%_200M_uint64")
+                    #| (data[DATASET_KEY] == "uniform_200M_uint64")
+                    | (data[DATASET_KEY] == "wiki_200M_uint64")
+                    | (data[DATASET_KEY] == "fb_200M_uint64")
+                    | (data[DATASET_KEY] == "osm_200M_uint64")
+                )
                 # Only use certain hash functions
                 & (
                    # (data[HASH_KEY] == "mult_prime64")
@@ -78,86 +80,52 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
                 ]
 
         # dict preserves insertion order since python 3.7
-        classical_hashfns = [
-               # "mult_prime64", "mult_add64", 
-                "murmur_finalizer64"] 
-        learned_hashfns = list(dict.fromkeys(d[d[REDUCER_KEY].str.match(CLAMP)][HASH_KEY]))
-        all_hashfns = learned_hashfns + classical_hashfns
+        all_hashfns = list(set(d[d[REDUCER_KEY].str.match(CLAMP)][HASH_KEY])) + ["murmur_finalizer64"]
 
-        colors = {"RadixSpline": "tab:blue", "Murmur": "tab:orange"}
-        datasets = sorted(set(d[DATASET_KEY]))
+        datapoints = list(zip(d[DATASET_KEY], d[ADDITIONAL_BUCKETS_KEY], d[MEDIAN_PROBE_TIME_KEY], d[HASH_KEY]))
+        for (dataset, additional_buckets, median_probe_time, hashfn) in datapoints:
+            hash_name = name(hashfn)
+            dataset_name = name_d(dataset)
 
-        # Aggregate data over multiple datasets
-        datasets =  [
-                # synthetic
-                'seq_200M_uint64',
-                'gap_1%_200M_uint64', 
-                'gap_10%_200M_uint64', 
-                #'uniform_dense_200M_uint64',
+            ax.scatter(additional_buckets, median_probe_time, c=colors.get(hash_name), marker='.', s=10)
 
-                # real
-                'wiki_200M_uint64',
-                #'fb_200M_uint64', 
-                #'osm_200M_uint64'
-                ]
+            def x_adjust():
+                return 0
+            def y_adjust():
+                return +3
+            def ha():
+                return 'center'
+            def va():
+                return 'baseline'
 
-        for i, dataset in enumerate(datasets):
-            d2 = d[d[DATASET_KEY] == dataset]
-            seen_reps = dict()
 
-            bars = {}
-            for hashfn in all_hashfns:
-                res_l = list(d2[d2[HASH_KEY] == hashfn][MEDIAN_PROBE_TIME_KEY])
-                if len(res_l) != 1:
-                    continue
-                res = res_l[0]
-
-                if name(hashfn) in seen_reps:
-                    old_hashfn = seen_reps[name(hashfn)]
-                    old_res = bars[name(old_hashfn)]
-                    if old_res > res:
-                        seen_reps[name(hashfn)] = hashfn
-                        bars[name(hashfn)] = res
-                else:
-                    seen_reps[name(hashfn)] = hashfn
-                    bars[name(hashfn)] = res
-
-            # Plt data
-            plt_data = [(s.strip(), bars[s]) for s in bars.keys()]
-            if len(plt_data) <= 0:
-                continue
-
-            empty_space = 0.2
-            bar_width = (1 - empty_space) / len(plt_data)
-            gap_width = 0 #0.1 / len(plt_data)
-            for j, (hash_name, value) in enumerate(plt_data):
-                ax.bar(empty_space/2 + i + j * (bar_width+gap_width) +
-                        (bar_width+gap_width)/2, value, bar_width,
-                        color=colors.get(name(hash_name)) or "purple")
+            #if hash_name != "Murmur":
+            #    ax.annotate(
+            #            f"{dataset_name}", 
+            #            (additional_buckets + x_adjust(), median_probe_time + y_adjust()), 
+            #            fontsize=5, 
+            #            ha=ha(),
+            #            va=va())
 
         # Plot style/info
-        ax.set_ylim(175,300)
-        ax.set_yticks([175,200,225,250,275, 300])
-        #ax.set_yscale('log')
+        #ax.set_yticks([225, 250, 275])
+        ax.set_xlim(-0.1,1.1)
+        ax.set_xticks([0.0, 0.33, 0.66, 1.0])
+        ax.set_ylim(100,1500)
+        ax.tick_params(axis='both', which='major', labelsize=8)
+        #ax.margins(x=0.1)
 
-        ax.set_xticks([i+0.5 for i in range(0, len(datasets))])
-        ax.set_xticklabels([ds_name(d.replace(r"_200M", "").replace("_uint64",
-            "").replace("_", " ")) for d in datasets],
-            va="center_baseline",position=(0.5,-0.05), fontsize=8)
-        
-        # Legend
-        ax.legend(
-            handles=[mpatches.Patch(color=colors.get(name(h)), label=name(h)) for h,_ in
-                hr_names.items()],
-            #bbox_to_anchor=(1, 0.98),
-            loc="upper right",
-            fontsize=6)
+        # Legend 
+        if p == 0 and s == 1:
+            ax.legend(handles=[mpatches.Patch(color=colors.get(name(h)), label=name(h)) for h,_ in hr_names.items()],
+                loc="lower right",
+                fontsize=5)
 
 
-fig.text(0.5, 0.02, 'Dataset', ha='center', fontsize=8)
-fig.text(0.01, 0.5, 'Nanoseconds per key', va='center', rotation='vertical', fontsize=8)
+fig.text(0.5, 0.02, 'Additional buckets per key [percent]', ha='center', fontsize=8)
+fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=8)
 
 plt.tight_layout()
-plt.subplots_adjust(left=0.085, bottom=0.12)
+plt.subplots_adjust(left=0.15, bottom=0.175, wspace=0.15, hspace=0.5)
 
 plt.savefig(f"out/median_probe_time.pdf")
