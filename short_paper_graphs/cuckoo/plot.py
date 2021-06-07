@@ -6,6 +6,11 @@ import matplotlib.colors as mcolors
 import pandas as pd
 import math as math
 
+# ====================
+#      Plot plan
+# ====================
+# primary key ratio (x axis) vs probe time (y axis)
+
 # Latex figure export
 mpl.use("pgf")
 mpl.rcParams.update({
@@ -23,6 +28,10 @@ hr_names = {
        # "mult_add64": "mult_add", 
         "murmur_finalizer64": "Murmur"
         }
+def name_d(dataset):
+    x = dataset
+    return x.replace(r"_200M", "").replace("_uint64", "").replace("_", " ")
+
 def name(hashfn):
     if hashfn.startswith("radix_spline"):
         hashfn = "radix_spline"
@@ -47,141 +56,115 @@ csv = pd.read_csv(f"cuckoo.csv")
 partial_data = csv[csv[DATASET_KEY].isnull()]
 data = csv[csv[DATASET_KEY].notnull()]
 
-def plot(attribute, ymin, ymax, format_tick, is_a_worse,
-        ylabel=None):
-    ylabel = ylabel or attribute.replace('_', ' ').capitalize()
+colors = {"RadixSpline": "tab:blue", "Murmur": "tab:orange"}
+letter = [["A", "B"], ["C", "D"]]
 
-    # Generate plot
-    fig, axs = plt.subplots(2,2,figsize=(7.00697,4), sharex=True, sharey=True)
+# Generate plot
+fig, axs = plt.subplots(2,2,figsize=(7.00697,4),sharex=True,sharey=True)
+for l, load_factor in enumerate([0.95, 0.98]):
+    for s, kicking_strat in enumerate(["balanced_kicking", "biased_kicking_10"]):
+        ax = axs[l][s]
+        ax.set_title(f"({letter[l][s]}) {load_factor}, {kicking_strat[0:kicking_strat.find('_')]} kicking", fontsize=8)
 
-    letter = [["A", "B"], ["C", "D"]]
-    expected = [[0.6503, 0.8353], [0.6140, 0.8111]]
-    for l, load_fac in enumerate(sorted(set(data[LOAD_FACTOR_KEY]))):
-        for s, strat in enumerate(sorted(set(data[KICKING_STRAT_KEY]))):
-            print(load_fac, strat)
-            ax = axs[l][s]
-            ax.set_title(f"({letter[l][s]}) {load_fac} load factor, {strat[0:strat.find('_')]} kicking", fontsize=8)
+        # Filter data
+        d = data[
+                # Only use g++ results
+                ((data[COMPILER_KEY].isnull()) | (data[COMPILER_KEY].str.match(r"g\+\+")))
+                # Only use fast modulo and clamp results
+                & ((data[REDUCER_KEY].str.match(FASTMOD)) | (data[REDUCER_KEY].str.match(CLAMP)))
+                # Restrict load_fac & kicking strat
+                & (data[LOAD_FACTOR_KEY] == load_factor)
+                & (data[KICKING_STRAT_KEY] == kicking_strat)
+                # Only use 16 byte payload numbers
+                & (data[PAYLOAD_SIZE_KEY] == 16)
+                # Don't use normal dataset results for now (dataset broken)
+                & (
+                    (data[DATASET_KEY] == "seq_200M_uint64")
+                    | (data[DATASET_KEY] == "gap_1%_200M_uint64")
+                    | (data[DATASET_KEY] == "gap_10%_200M_uint64")
+                    #| (data[DATASET_KEY] == "uniform_200M_uint64")
+                    | (data[DATASET_KEY] == "wiki_200M_uint64")
+                    | (data[DATASET_KEY] == "fb_200M_uint64")
+                    | (data[DATASET_KEY] == "osm_200M_uint64")
+                )
+                # Only use certain hash functions
+                & (
+                   # (data[HASH_KEY].str.match("mult_prime64")) |
+                   # (data[HASH_KEY].str.match("mult_add64")) |
+                    (data[HASH_KEY].str.match("murmur_finalizer64")) |
+                   # (data[HASH_KEY].str.contains("rmi")) |
+                    (data[HASH_KEY].str.match("radix_spline")) #|
+                   # (data[HASH_KEY].str.match("pgm"))
+                   )
+                ]
 
-            # Filter data
-            d = data[
-                    # Only use g++ results
-                    ((data[COMPILER_KEY].isnull()) | (data[COMPILER_KEY].str.match(r"g\+\+")))
-                    # Only use load factor 95 results (?)
-                    & (data[LOAD_FACTOR_KEY] == load_fac)
-                    # Only use fast modulo results
-                    & ((data[REDUCER_KEY].str.match(FASTMOD)) | (data[REDUCER_KEY].str.match(CLAMP)))
-                    # Filter for kicking strat 
-                    & (data[KICKING_STRAT_KEY] == strat)
-                    # Don't use normal dataset results for now (dataset broken)
-                    & ((data[DATASET_KEY] != "normal_200M_uint64"))
-                    # Only use certain hash functions
-                    & (
-                       # (data[HASH_KEY].str.match("mult_prime64")) |
-                       # (data[HASH_KEY].str.match("mult_add64")) |
-                        (data[HASH_KEY].str.match("murmur_finalizer64")) |
-                       # (data[HASH_KEY].str.contains("rmi")) |
-                        (data[HASH_KEY].str.match("radix_spline")) #|
-                       # (data[HASH_KEY].str.match("pgm"))
-                       )
-                    ]
+        all_hashfns = list(set(d[d[REDUCER_KEY].str.match(CLAMP)][HASH_KEY])) + ["murmur_finalizer64"]
 
-            # dict preserves insertion order since python 3.7
-            classical_hashfns = [
-                   # "mult_prime64", "mult_add64", 
-                    "murmur_finalizer64"] 
-            tmp_d = d[((d[SAMPLE_SIZE_KEY] == 0.01) | (d[SAMPLE_SIZE_KEY].isnull()))]
-            x = dict.fromkeys(tmp_d[tmp_d[REDUCER_KEY].str.match(CLAMP)][HASH_KEY])
-            learned_hashfns = [x[0:x.find("-")] for x in x]
-            all_hashfns = learned_hashfns + classical_hashfns
+        murmur_datapoints = list()
+        other_datapoints = list()
+        for (d, p, m, h) in list(zip(d[DATASET_KEY], d[PRIMARY_KEY_RATIO_KEY], d[MEDIAN_PROBE_TIME_KEY], d[HASH_KEY])):
+            if name(h) == "Murmur":
+                murmur_datapoints.append((d, p, m, h))
+            else:
+                other_datapoints.append((d, p, m, h))
+        murmur_datapoints = sorted(murmur_datapoints, key=lambda t: t[1])
+        murmur_datapoint = murmur_datapoints[int(len(murmur_datapoints)/2)]
 
-            colors = {"RadixSpline": "tab:blue", "Murmur": "tab:orange"}
-            datasets = sorted(set(d[DATASET_KEY]))
+        for (dataset, primary_key_ratio, median_probe_time, hashfn) in other_datapoints + [murmur_datapoint]:
+            hash_name = name(hashfn)
+            dataset_name = name_d(dataset)
 
-            datasets = [
-                    # synth
-                    'seq_200M_uint64', 
-                    'gap_1%_200M_uint64',
-                    'gap_10%_200M_uint64',
-                    #'uniform_dense_200M_uint64',
-                    # real
-                    'wiki_200M_uint64', 
-                    'fb_200M_uint64',
-                    'osm_200M_uint64']
+            ax.scatter(primary_key_ratio, median_probe_time, c=colors.get(hash_name), marker='.')
 
-            for i, dataset in enumerate(datasets):
-                d2 = d[d[DATASET_KEY] == dataset]
-                ds_hfn_map = {x[0:x.find("-")]: x for x in set(d2[HASH_KEY])}
-                seen_reps = dict()
-
-                bars = {}
-                for hashfn in all_hashfns:
-                    if hashfn not in ds_hfn_map:
-                        continue
-
-                    res_l = sorted(list(d2[d2[HASH_KEY] ==
-                        ds_hfn_map[hashfn]][attribute]))
-                    if len(res_l) > 1:
-                        res = res_l[0] if is_a_worse(res_l[1], res_l[0]) else res_l[-1]
+            def x_adjust():
+                if dataset_name == "gap 1%":
+                    if kicking_strat == "balanced_kicking":
+                        return 0.006
                     else:
-                        res = res_l[0]
-
-                    if name(hashfn) in seen_reps:
-                        old_hashfn = seen_reps[name(hashfn)]
-                        old_res = bars[name(old_hashfn)]
-                        if is_a_worse(old_res, res):
-                            seen_reps[name(hashfn)] = hashfn
-                            bars[name(hashfn)] = res
+                        return -0.006
+                return 0
+            def y_adjust():
+                if dataset_name == "seq":
+                    return -4
+                if dataset_name == "gap 1%":
+                    return 0.4
+                return +2
+            def ha():
+                if dataset_name == "gap 1%":
+                    if kicking_strat == "balanced_kicking":
+                        return 'left'
                     else:
-                        seen_reps[name(hashfn)] = hashfn
-                        bars[name(hashfn)] = res
-
-                # Plt data
-                plt_data = [(s.strip(), bars[s]) for s in bars.keys()]
-                if len(plt_data) <= 0:
-                    continue
-
-                empty_space = 0.2
-                bar_width = (1 - empty_space) / len(plt_data)
-                gap_width = 0 #0.1 / len(plt_data)
-                for j, (hash_name, value) in enumerate(plt_data):
-                    ax.bar(empty_space/2 + i + j * (bar_width+gap_width) +
-                            (bar_width+gap_width)/2, value, bar_width,
-                            color=colors.get(name(hash_name)) or "purple")
+                        return 'right'
+                return 'center'
+            def va():
+                if dataset_name == "gap 1%":
+                    return 'center_baseline'
+                return 'baseline'
 
 
-            # Expected value
-            y = expected[l][s]
-            ax.plot([0, len(datasets)], [y,y], color="black",
-                    linestyle="dashed", linewidth=1.0)
+            if hash_name != "Murmur":
+                ax.annotate(
+                        f"{dataset_name}", 
+                        (primary_key_ratio + x_adjust(), median_probe_time + y_adjust()), 
+                        fontsize=5, 
+                        ha=ha(),
+                        va=va())
 
-            # Plot style/info
-            yticks = np.linspace(ymin, ymax, 5)
-            ax.set_ylim(ymin,ymax)
-            ax.set_yticks(yticks)
-            ax.set_yticklabels([format_tick(yt) for yt in yticks], fontsize=8)
-            ax.set_xticks([i+0.5 for i in range(0, len(datasets))])
-            ax.set_xticklabels([d.replace(r"_200M", "").replace("_uint64",
-                "").replace("_", " ") for d in datasets],
-                    va="center_baseline",position=(0.5,-0.05), fontsize=8)
+        # Plot style/info
+        ymin = 215
+        ymax = 285
+        yticks = np.linspace(225, 275, 3)
+        ax.set_ylim(ymin,ymax)
+        ax.set_yticks(yticks)
 
-            # Legend 
-            ax.legend(
-                handles=[mpatches.Patch(color=colors.get(name(h)), label=name(h)) for h,_ in
-                    hr_names.items()],
-                #bbox_to_anchor=(1, 0.98),
-                loc="upper right",
-                fontsize=6)
+        # Legend 
+        ax.legend(handles=[mpatches.Patch(color=colors.get(name(h)), label=name(h)) for h,_ in hr_names.items()],
+            loc="upper right",
+            fontsize=6)
 
-    fig.text(0.5, 0.02, 'Dataset', ha='center', fontsize=8)
-    fig.text(0.01, 0.5, ylabel, va='center', rotation='vertical',
-            fontsize=8)
+fig.text(0.5, 0.02, 'Primary key ratio [percent]', ha='center', fontsize=8)
+fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=8)
 
-    #plt.margins(x=0.01,y=0.2)
-    plt.tight_layout()
-    plt.subplots_adjust(left=0.09, bottom=0.12)
-    plt.savefig(f"out/{attribute}.pdf")
-
-plot(PRIMARY_KEY_RATIO_KEY, 0.5, 1.0, lambda yt: f"{int(yt*100)}%", lambda a,b:
-        a < b)
-plot(MEDIAN_PROBE_TIME_KEY, 200, 350, lambda yt: str(yt), lambda a,b: a > b,
-        "Median probe time in nanoseconds")
+plt.tight_layout()
+plt.subplots_adjust(left=0.08, bottom=0.1)
+plt.savefig(f"out/cuckoo.pdf")
