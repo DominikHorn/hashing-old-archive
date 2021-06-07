@@ -12,7 +12,7 @@ import math as math
 # primary key ratio (x axis) vs probe time (y axis)
 
 # Latex figure export
-#mpl.use("pgf")
+mpl.use("pgf")
 mpl.rcParams.update({
     "pgf.texsystem": "pdflatex",
     "font.family": "serif",
@@ -64,7 +64,7 @@ fig, axs = plt.subplots(2,2,figsize=(7.00697/2,2),sharex=True,sharey=True)
 for l, load_factor in enumerate([0.95, 0.98]):
     for s, kicking_strat in enumerate(["balanced_kicking", "biased_kicking_10"]):
         ax = axs[l][s]
-        ax.set_title(f"({letter[l][s]}) {load_factor}, {kicking_strat[0:kicking_strat.find('_')]} kicking", fontsize=8)
+        ax.set_title(f"({letter[l][s]}) {load_factor}, {kicking_strat[0:kicking_strat.find('_')]} kicking", fontsize=6)
 
         # Filter data
         d = data[
@@ -114,7 +114,7 @@ for l, load_factor in enumerate([0.95, 0.98]):
             hash_name = name(hashfn)
             dataset_name = name_d(dataset)
 
-            ax.scatter(primary_key_ratio, median_probe_time, c=colors.get(hash_name), marker='.')
+            ax.scatter(primary_key_ratio, median_probe_time, c=colors.get(hash_name), marker='.', s=10)
 
             def x_adjust():
                 if dataset_name == "gap 1%":
@@ -122,10 +122,14 @@ for l, load_factor in enumerate([0.95, 0.98]):
                         return 0.006
                     else:
                         return -0.006
+                if dataset_name == "seq" and load_factor == 0.95 and kicking_strat == "biased_kicking_10":
+                    return -0.006
                 return 0
             def y_adjust():
                 if dataset_name == "seq":
-                    return -5
+                    return -9
+                if dataset_name == "wiki" and kicking_strat == "balanced_kicking":
+                    return -11
                 if dataset_name == "gap 1%":
                     return 0.4
                 return +3
@@ -135,6 +139,8 @@ for l, load_factor in enumerate([0.95, 0.98]):
                         return 'left'
                     else:
                         return 'right'
+                if dataset_name == "wiki":
+                    return 'right'
                 return 'center'
             def va():
                 if dataset_name == "gap 1%":
@@ -146,25 +152,25 @@ for l, load_factor in enumerate([0.95, 0.98]):
                 ax.annotate(
                         f"{dataset_name}", 
                         (primary_key_ratio + x_adjust(), median_probe_time + y_adjust()), 
-                        fontsize=8, 
+                        fontsize=5, 
                         ha=ha(),
                         va=va())
 
         # Plot style/info
-        ax.set_ylim(1,1000)
-        ax.set_yscale('log')
+        ax.set_ylim(215,285)
+        ax.set_yticks([225, 250, 275])
         ax.set_xticks([0.6, 0.7, 0.8, 0.9, 1.0])
+        ax.tick_params(axis='both', which='major', labelsize=8)
 
         # Legend 
-        if l == 1 and s == 1:
+        if l == 0 and s == 0:
             ax.legend(handles=[mpatches.Patch(color=colors.get(name(h)), label=name(h)) for h,_ in hr_names.items()],
                 loc="lower right",
-                fontsize=6)
+                fontsize=5)
 
 fig.text(0.5, 0.02, 'Primary key ratio [percent]', ha='center', fontsize=8)
 fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=8)
 
 plt.tight_layout()
-plt.subplots_adjust(wspace=0.1, hspace=0.5)
-#plt.subplots_adjust(left=0.1, bottom=0.2, wspace=0.2, hspace=0.1)
+plt.subplots_adjust(left=0.125, bottom=0.175, wspace=0.15, hspace=0.5)
 plt.savefig(f"out/cuckoo.pdf")
