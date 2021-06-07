@@ -68,7 +68,7 @@ namespace rmi {
          // (slope * k + intercept) \in [0, 1] by construction
          const auto pred = (max_value + 1) * (slope * k + intercept);
 
-         // clamp (just in case). TODO(dominik): remove this additional clamp
+         // clamp value (very few entries should be smaller/larger than acceptable. Therefore this optimization)
          if (unlikely(pred < 0))
             return 0;
          if (unlikely(pred > max_value))
@@ -92,11 +92,8 @@ namespace rmi {
       /// Second level models
       std::vector<SecondLevelModel> second_level_models;
 
-      /// prediction range for each second level model & full output range ([0, full_size])
-      const size_t second_level_range, full_size;
-
-      /// due to rounding, some slots can potentially be empty at the end of the hashtable.
-      const size_t missing_slots;
+      /// output range is scaled from [0, 1] to [0, full_size]
+      const size_t full_size;
 
      public:
       /**
@@ -110,10 +107,7 @@ namespace rmi {
        */
       template<class RandomIt>
       RMIHash(const RandomIt& sample_begin, const RandomIt& sample_end, const size_t full_size)
-         : root_model(RootModel({Datapoint(*sample_begin, 0), Datapoint(*(sample_end - 1), 1)})),
-           second_level_range(full_size / SecondLevelModelCount), full_size(full_size),
-           missing_slots(std::max(static_cast<size_t>(0),
-                                  full_size - SecondLevelModelCount * (full_size / SecondLevelModelCount))),
+         : root_model(RootModel({Datapoint(*sample_begin, 0), Datapoint(*(sample_end - 1), 1)})), full_size(full_size),
            second_level_models(SecondLevelModelCount) {
          // Assign each sample point into a training bucket according to root model
          std::vector<std::vector<Datapoint>> training_buckets(SecondLevelModelCount);
@@ -174,16 +168,7 @@ namespace rmi {
       template<class Result = size_t>
       forceinline Result operator()(const Key& key) const {
          const auto second_level_index = root_model(key, SecondLevelModelCount - 1);
-
-         // Output for this model is \in [output_min, output_max]
-         auto output_min = second_level_index * second_level_range;
-         auto output_max = second_level_range;
-
-         // Necessary to ensure [0, full_range] output (otherwise a few slots might be unused)
-         if (second_level_index == SecondLevelModelCount - 1)
-            output_max += missing_slots;
-
-         return output_min + second_level_models[second_level_index](key, output_max);
+         return second_level_models[second_level_index](key, full_size);
       }
    };
 } // namespace rmi
