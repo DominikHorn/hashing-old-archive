@@ -100,6 +100,7 @@ for l, load_factor in enumerate([0.95, 0.98]):
 
         all_hashfns = list(set(d[d[REDUCER_KEY].str.match(CLAMP)][HASH_KEY])) + ["murmur_finalizer64"]
 
+        # Only one datapoint for murmur
         murmur_datapoints = list()
         other_datapoints = list()
         for (d, p, m, h) in list(zip(d[DATASET_KEY], d[PRIMARY_KEY_RATIO_KEY], d[MEDIAN_PROBE_TIME_KEY], d[HASH_KEY])):
@@ -107,7 +108,7 @@ for l, load_factor in enumerate([0.95, 0.98]):
                 murmur_datapoints.append((d, p, m, h))
             else:
                 other_datapoints.append((d, p, m, h))
-        murmur_datapoints = sorted(murmur_datapoints, key=lambda t: t[1])
+        murmur_datapoints = sorted(murmur_datapoints, key=lambda t: t[2])
         murmur_datapoint = murmur_datapoints[int(len(murmur_datapoints)/2)]
 
         for (dataset, primary_key_ratio, median_probe_time, hashfn) in other_datapoints + [murmur_datapoint]:
@@ -157,15 +158,13 @@ for l, load_factor in enumerate([0.95, 0.98]):
                         va=va())
 
         # Plot style/info
-        ax.set_ylim(215,285)
-        ax.set_yticks([225, 250, 275])
-        ax.set_xticks([0.6, 0.7, 0.8, 0.9, 1.0])
+        ax.set_xticks([0.4, 0.6, 0.8, 1.0])
         ax.tick_params(axis='both', which='major', labelsize=8)
 
         # Legend 
         if l == 0 and s == 0:
             ax.legend(handles=[mpatches.Patch(color=colors.get(name(h)), label=name(h)) for h,_ in hr_names.items()],
-                loc="lower right",
+                loc="upper right",
                 fontsize=5)
 
 fig.text(0.5, 0.02, 'Primary key ratio [percent]', ha='center', fontsize=8)
