@@ -75,7 +75,7 @@ struct PGMHash : public pgm::PGMIndex<T, Epsilon, EpsilonRecursive, Floating> {
       }
 
       auto k = std::max(first_key, key);
-      auto it = segment_for_key(k);
+      auto it = this->segment_for_key(k);
 
       // compute estimated pos (contrary to standard PGM, don't just throw slope precision away)
       const auto first_key_in_segment = it->key;
@@ -83,38 +83,10 @@ struct PGMHash : public pgm::PGMIndex<T, Epsilon, EpsilonRecursive, Floating> {
       Precision relative_pos = segment_pos / static_cast<double>(sample_size);
       auto global_pos = static_cast<Result>(static_cast<Precision>(N) * relative_pos);
 
-      // TODO: standard pgm algorithm limits clamped segment pos to at max intercept of next
+      // TODO: standard pgm algorithm limits returned segment pos to at max intercept of next
       //    slope segment. Maybe we should do something similar?
       //         auto pos = std::min<size_t>((*it)(k), std::next(it)->intercept);
 
       return global_pos;
    }
-
-  private:
-    forceinline auto segment_for_key(const T &key) const {
-        if constexpr (EpsilonRecursive == 0) {
-            auto it = std::upper_bound(this->segments.begin(), this->segments.begin() + this->segments_count(), key);
-            return it == this->segments.begin() ? it : std::prev(it);
-        }
-
-        auto it = this->segments.begin() + *(this->levels_offsets.end() - 2);
-        for (auto l = int(this->height()) - 2; l >= 0; --l) {
-            auto level_begin = this->segments.begin() + this->levels_offsets[l];
-            auto pos = std::min<size_t>((*it)(key), std::next(it)->intercept);
-            auto lo = level_begin + PGM_SUB_EPS(pos, EpsilonRecursive + 1);
-
-            static constexpr size_t linear_search_threshold = 8 * 64 / sizeof(this->Segment);
-            if constexpr (EpsilonRecursive <= linear_search_threshold) {
-                for (; std::next(lo)->key <= key; ++lo)
-                    continue;
-                it = lo;
-            } else {
-                auto level_size = this->levels_offsets[l + 1] - this->levels_offsets[l] - 1;
-                auto hi = level_begin + PGM_ADD_EPS(pos, EpsilonRecursive, level_size);
-                it = std::upper_bound(lo, hi, key);
-                it = it == level_begin ? it : std::prev(it);
-            }
-        }
-        return it;
-    }
 };
