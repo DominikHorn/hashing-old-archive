@@ -120,12 +120,11 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
     plt.xlabel("Dataset", fontsize=8)
 
     plt.margins(x=0.01,y=0.2)
-    plt.tight_layout(pad=0.1)
+    plt.tight_layout()
 
     # Legend
     ax.legend(
         handles=[mpatches.Patch(color=colors.get(h), label=name(h)) for h in all_hashfns],
-        #bbox_to_anchor=(0.107, 0.98),
         loc="upper left",
         fontsize=6,
         ncol=1)

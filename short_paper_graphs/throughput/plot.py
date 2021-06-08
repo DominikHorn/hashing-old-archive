@@ -126,13 +126,12 @@ plt.xticks(xticks_pos, xticks_text, fontsize=8)
 plt.xlabel("Model count", fontsize=8)
 plt.ylabel("Nanoseconds per key", fontsize=8)
 plt.margins(x=0.01,y=0.2)
-plt.tight_layout(pad=0.1)
+plt.tight_layout()
 
 # Legend
-#plt.subplots_adjust(bottom=0.15)
-fig.legend(
+plt.subplots_adjust(left=0.2)
+plt.legend(
     handles=[mpatches.Patch(color=color, label=hr_name(h)) for h,color in colors.items()],
-    bbox_to_anchor=(0.125, 0.985),
     loc="upper left",
     fontsize=6,
     ncol=1)
