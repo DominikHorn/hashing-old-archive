@@ -303,10 +303,10 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
       measure_chained<AquaHash<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
       //   measure_chained<MeowHash64<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
       //   measure_chained<CityHash64<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
-      //   measure_chained<LargeTabulationHash<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_chained<LargeTabulationHash<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
       measure_chained<MurmurFinalizer<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
-      //   measure_chained<PrimeMultiplicationHash64>(dataset_name, dataset, load_factor, outfile, iomutex);
-      //   measure_chained<MultAddHash64>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_chained<PrimeMultiplicationHash64>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_chained<MultAddHash64>(dataset_name, dataset, load_factor, outfile, iomutex);
       //   measure_chained<FibonacciHash64>(dataset_name, dataset, load_factor, outfile, iomutex);
       measure_chained<XXHash3<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
    }
