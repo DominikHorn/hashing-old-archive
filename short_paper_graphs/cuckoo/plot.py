@@ -118,35 +118,23 @@ for l, load_factor in enumerate([0.95, 0.98]):
             ax.scatter(primary_key_ratio, median_probe_time, c=colors.get(hash_name), marker='.', s=10)
 
             def x_adjust():
-                if dataset_name == "gap 1%":
-                    if kicking_strat == "balanced_kicking":
-                        return 0.006
-                    else:
-                        return -0.006
-                if dataset_name == "seq" and load_factor == 0.95 and kicking_strat == "biased_kicking_10":
-                    return -0.006
                 return 0
             def y_adjust():
-                if dataset_name == "seq":
-                    return -9
-                if dataset_name == "wiki" and kicking_strat == "balanced_kicking":
-                    return -11
-                if dataset_name == "gap 1%":
-                    return 0.4
-                return +3
+                if dataset_name == "osm":
+                    return -75 if s == 1 and p == 0 else 40
+                if dataset_name == "fb":
+                    return -100
+                return +20
             def ha():
-                if dataset_name == "gap 1%":
-                    if kicking_strat == "balanced_kicking":
-                        return 'left'
-                    else:
-                        return 'right'
-                if dataset_name == "wiki":
+                if dataset_name in {"seq", "gap 1%", "gap 10%", "wiki"}:
                     return 'right'
                 return 'center'
             def va():
-                if dataset_name == "gap 1%":
-                    return 'center_baseline'
                 return 'baseline'
+            def rotation():
+                if dataset_name in {"seq", "gap 1%", "gap 10%", "wiki"}:
+                    return -45
+                return 0
 
 
             if hash_name != "Murmur":
@@ -155,16 +143,17 @@ for l, load_factor in enumerate([0.95, 0.98]):
                         (primary_key_ratio + x_adjust(), median_probe_time + y_adjust()), 
                         fontsize=5, 
                         ha=ha(),
-                        va=va())
+                        va=va(),
+                        rotation=rotation())
 
         # Plot style/info
         ax.set_xticks([0.4, 0.6, 0.8, 1.0])
         ax.tick_params(axis='both', which='major', labelsize=8)
 
         # Legend 
-        if l == 0 and s == 0:
+        if l == 1 and s == 1:
             ax.legend(handles=[mpatches.Patch(color=colors.get(name(h)), label=name(h)) for h,_ in hr_names.items()],
-                loc="upper right",
+                loc="lower left",
                 fontsize=5)
 
 fig.text(0.5, 0.02, 'Primary key ratio [percent]', ha='center', fontsize=8)
