@@ -18,9 +18,9 @@ mpl.rcParams.update({
 
 # Style
 hr_names = {"radix_spline": "RadixSpline",
-        #"mult_prime64": "mult", "mult_add64": "mult_add", 
+        "mult_prime64": "Mult", "mult_add64": "MultAdd", 
         "murmur_finalizer64": "Murmur"}
-colors = {"RadixSpline": "tab:blue", "Murmur": "tab:orange"}
+colors = {"RadixSpline": "tab:blue", "Murmur": "tab:orange", "Mult": "tab:purple", "MultAdd": "tab:red"}
 def name_d(dataset):
     x = dataset
     return x.replace(r"_200M", "").replace("_uint64", "").replace("_", " ")
@@ -80,9 +80,9 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
                 )
                 # Only use certain hash functions
                 & (
-                   # (data[HASH_KEY] == "mult_prime64")
-                   # | (data[HASH_KEY] == "mult_add64")
-                    (data[HASH_KEY] == "murmur_finalizer64")
+                   (data[HASH_KEY] == "mult_prime64")
+                   | (data[HASH_KEY] == "mult_add64")
+                   | (data[HASH_KEY] == "murmur_finalizer64")
                    # | (data[HASH_KEY].str.contains("rmi"))
                     | (data[HASH_KEY].str.match("radix_spline"))
                    # | (data[HASH_KEY].str.match("pgm"))
@@ -90,7 +90,7 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
                 ]
 
         # dict preserves insertion order since python 3.7
-        all_hashfns = list(set(d[d[REDUCER_KEY].str.match(CLAMP)][HASH_KEY])) + ["murmur_finalizer64"]
+        all_hashfns = list(set(d[d[REDUCER_KEY].str.match(CLAMP)][HASH_KEY])) + ["mult_prime64", "mult_add64", "murmur_finalizer64"]
 
         # Only one datapoint for murmur
         murmur_datapoints = list()
@@ -103,7 +103,7 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
         murmur_datapoints = sorted(murmur_datapoints, key=lambda t: t[2])
         murmur_datapoint = murmur_datapoints[int(len(murmur_datapoints)/2)]
 
-        for (dataset, additional_buckets, median_probe_time, hashfn) in [murmur_datapoint] + other_datapoints:
+        for (dataset, additional_buckets, median_probe_time, hashfn) in other_datapoints + [murmur_datapoint]:
             hash_name = name(hashfn)
             dataset_name = name_d(dataset)
 
@@ -147,7 +147,7 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
                 return 0
 
 
-            if hash_name != "Murmur":
+            if hash_name == "RadixSpline":
                 ax.annotate(
                         f"{dataset_name}", 
                         (additional_buckets + x_adjust(), median_probe_time + y_adjust()), 
