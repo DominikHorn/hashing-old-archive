@@ -28,8 +28,8 @@ hr_names = {
 all_palette = list(mcolors.TABLEAU_COLORS.keys())
 palette = all_palette[:-1]
 colors = {
-        "murmur_finalizer64": palette[1],
         "aqua": palette[3],
+        "murmur_finalizer64": palette[1],
         "xxh3": palette[4],
         "radix_spline": palette[0],
         "rmi": palette[2]
@@ -66,16 +66,15 @@ data = data[
         ]
 
 # Create plot
-fig, ax = plt.subplots(figsize=(7.00697/2,2))
+fig, ax = plt.subplots(figsize=(7.00697/2,2.3))
 
 # Extract data
 machine = set(data[data[MACHINE_KEY].notnull()][MACHINE_KEY]).pop()
 processor = machine[machine.find("(")+1:machine.rfind(")")]
 
 # Plot data
-ymax=50
-bar_width = 0.15
-group_gap = 0.2
+bar_width = 0.2
+group_gap = 0.15
 bar_gap = 0.005
 next_pos = 0
 text_pad = 2
@@ -86,9 +85,10 @@ xticks_text=[]
 classic_plt_dat = [(h, median(list(data[data[HASH_KEY] == h][THROUGHPUT_KEY]))) for
     h in dict.fromkeys(data[(data[HASH_KEY] == "aqua") | (data[HASH_KEY] == "murmur_finalizer64") | (data[HASH_KEY] == "xxh3")][HASH_KEY]).keys()]
 for i, (hashfn, median_time) in enumerate(classic_plt_dat):
-    ax.bar(next_pos, median_time, bar_width, color=color(hashfn))
-    ax.text(next_pos+text_off, median_time+text_pad, str(round(median_time, 1)), ha="center",
-            color=color(hashfn), fontsize=11, rotation=90)
+    keys_per_second = 1 * (10**9) / median_time
+    ax.bar(next_pos, round(keys_per_second), bar_width, color=color(hashfn))
+    #ax.text(next_pos+text_off, median_time+text_pad, str(round(median_time, 1)), ha="center",
+    #        color=color(hashfn), fontsize=11, rotation=90)
 
     if i == int(len(classic_plt_dat)/2):
         xticks_pos.append(next_pos)
@@ -97,20 +97,17 @@ for i, (hashfn, median_time) in enumerate(classic_plt_dat):
     next_pos += bar_width + bar_gap
 
 next_pos += group_gap
-for i, (hashfn, values, model_cnts) in enumerate([(h, list(data[data[HASH_KEY] == h][THROUGHPUT_KEY]),
+for i, (hashfn, median_times, model_cnts) in enumerate([(h, list(data[data[HASH_KEY] == h][THROUGHPUT_KEY]),
     list(data[data[HASH_KEY] == h][MODELCOUNT_KEY])) for
     h in dict.fromkeys(data[(data[HASH_KEY] == "rmi") | (data[HASH_KEY] == "radix_spline")][HASH_KEY]).keys()]):
     def nearest_pow_10_exp(num):
         return int(round(math.log10(num)))
 
-    for j, (label, value) in enumerate(zip([f"$10^{str(nearest_pow_10_exp(d))}$" for d in model_cnts],values)):
-        ax.bar(next_pos, value, bar_width, color=color(hashfn))
-        if value < ymax:
-            ax.text(next_pos+text_off, value+text_pad, str(round(value, 1)), ha="center",
-                    color=color(hashfn), fontsize=11, rotation=90)
-        else:
-            ax.text(next_pos+text_off, ymax-text_pad, str(round(value, 1)), ha="center", va="top",
-                    color="white", fontsize=11, rotation=90)
+    for j, (label, median_time) in enumerate(zip([f"$10^{str(nearest_pow_10_exp(d))}$" for d in model_cnts],median_times)):
+        keys_per_second = 1 * (10**9) / median_time
+        ax.bar(next_pos, round(keys_per_second), bar_width, color=color(hashfn))
+        #    ax.text(next_pos+text_off, median_time+text_pad, str(round(median_time, 1)), ha="center",
+        #            color=color(hashfn), fontsize=11, rotation=90)
 
         xticks_pos.append(next_pos)
         xticks_text.append(label)
@@ -119,21 +116,22 @@ for i, (hashfn, values, model_cnts) in enumerate([(h, list(data[data[HASH_KEY] =
     next_pos += group_gap
 
 # Plot style/info
-plt.ylim(0,ymax)
-plt.yticks(fontsize=8)
-plt.xticks(xticks_pos, xticks_text, fontsize=8)
+plt.yticks(fontsize=15)
+plt.xticks(xticks_pos, xticks_text, fontsize=15, rotation=90)
 
-plt.xlabel("Model count", fontsize=8)
-plt.ylabel("Nanoseconds per key", fontsize=8)
+plt.xlabel("Model count", fontsize=15)
+plt.ylabel("Keys per second", fontsize=15)
 plt.margins(x=0.01,y=0.2)
 plt.tight_layout()
 
 # Legend
-plt.subplots_adjust(left=0.2)
-plt.legend(
+plt.subplots_adjust(left=0.2, bottom=0.5)
+fig.legend(
     handles=[mpatches.Patch(color=color, label=hr_name(h)) for h,color in colors.items()],
-    loc="upper left",
-    fontsize=6,
-    ncol=1)
+    loc="lower center",
+    fontsize=11,
+    ncol=3,
+    labelspacing=0.15,
+    columnspacing=0.15)
 
 plt.savefig(f"out/median_throughput.pdf")

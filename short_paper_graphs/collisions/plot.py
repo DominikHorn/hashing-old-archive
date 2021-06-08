@@ -71,7 +71,7 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
     datasets = sorted(set(data[DATASET_KEY]))
 
     # Generate plot
-    fig, ax = plt.subplots(figsize=(7.00697/2,2))
+    fig, ax = plt.subplots(figsize=(7.00697/2,2.3))
 
     # Aggregate data over multiple datasets
     datasets =  [
@@ -117,7 +117,7 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
     plt.xticks([i+0.5 for i in range(0, len(datasets))], [d.replace(r"_200M",
         "").replace("_uint64", "").replace("_", " ") for d in datasets],
         va="center_baseline",position=(0.5,-0.05), fontsize=15, rotation=35, ha="right")
-    #plt.xlabel("Dataset", fontsize=15)
+    plt.xlabel("Dataset", fontsize=15)
 
     plt.margins(x=0.01,y=0.2)
     plt.tight_layout()
