@@ -127,12 +127,16 @@ plt.tight_layout()
 
 # Legend
 plt.subplots_adjust(left=0.2, bottom=0.52)
-fig.legend(
+l = fig.legend(
     handles=[mpatches.Patch(color=color, label=hr_name(h)) for h,color in colors.items()],
     loc="lower center",
     fontsize=11,
     ncol=3,
     labelspacing=0.15,
     columnspacing=0.15)
+for r in l.legendHandles:
+    r.set_width(10.0)
+for t in l.get_texts():
+    t.set_position((-20,0))
 
 plt.savefig(f"out/median_throughput.pdf")
