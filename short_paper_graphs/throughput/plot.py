@@ -117,6 +117,7 @@ for i, (hashfn, median_times, model_cnts) in enumerate([(h, list(data[data[HASH_
 
 # Plot style/info
 plt.yticks([0, 2.5 * 10**8, 5 * 10**8], fontsize=15)
+ax.yaxis.get_offset_text().set_fontsize(15)
 plt.xticks(xticks_pos, xticks_text, fontsize=15, rotation=45)
 
 plt.xlabel("Model count", fontsize=15)
