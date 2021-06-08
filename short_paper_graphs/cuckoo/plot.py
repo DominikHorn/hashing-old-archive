@@ -118,22 +118,39 @@ for l, load_factor in enumerate([0.95, 0.98]):
             ax.scatter(primary_key_ratio, median_probe_time, c=colors.get(hash_name), marker='.', s=10)
 
             def x_adjust():
+                if dataset_name == "seq":
+                    return 0.015
+                if dataset_name == "gap 1%":
+                    return -0.015 if s == 1 else 0.015
+                if dataset_name == "gap 10%" and s == 1:
+                    return -0.015 if l == 0 else -0.005
+                if dataset_name == "gap 10%" and s == 0:
+                    return -0.01
+                if dataset_name == "wiki" and s == 0:
+                    return -0.01
                 return 0
             def y_adjust():
                 if dataset_name == "osm":
-                    return -75 if s == 1 and p == 0 else 40
+                    return 40 if s == 1 and l == 1 else -75
                 if dataset_name == "fb":
                     return -100
-                return +20
+                if dataset_name == "seq" and s == 0:
+                    return -20
+                return +40
             def ha():
-                if dataset_name in {"seq", "gap 1%", "gap 10%", "wiki"}:
-                    return 'right'
+                if dataset_name == "seq" and s == 0:
+                    return "left"
                 return 'center'
             def va():
+                if dataset_name == "seq" and s == 0:
+                    return "center"
                 return 'baseline'
             def rotation():
-                if dataset_name in {"seq", "gap 1%", "gap 10%", "wiki"}:
-                    return -45
+                if dataset_name in {"gap 1%", "gap 10%", "wiki"}:
+                    return 90
+                if dataset_name == "seq" and s == 1:
+                    return 90
+
                 return 0
 
 
@@ -147,6 +164,7 @@ for l, load_factor in enumerate([0.95, 0.98]):
                         rotation=rotation())
 
         # Plot style/info
+        ax.set_xlim(0.35, 1.05)
         ax.set_xticks([0.4, 0.6, 0.8, 1.0])
         ax.tick_params(axis='both', which='major', labelsize=8)
 
