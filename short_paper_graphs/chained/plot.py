@@ -6,6 +6,16 @@ import matplotlib.colors as mcolors
 import pandas as pd
 import math as math
 
+# Latex figure export
+mpl.use("pgf")
+mpl.rcParams.update({
+    "pgf.texsystem": "pdflatex",
+    "font.family": "serif",
+    "text.usetex": True,
+    "pgf.rcfonts": False
+})
+
+
 # Style
 hr_names = {"radix_spline": "RadixSpline",
         #"mult_prime64": "mult", "mult_add64": "mult_add", 
@@ -45,7 +55,7 @@ letter = [["A", "B"], ["C", "D"]]
 for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
     for s, slots_per_bucket in enumerate(set(data[SLOTS_PER_BUCKET_KEY])):
         ax = axs[p][s]
-        ax.set_title(f"({letter[p][s]}) {payload_size}B payload {slots_per_bucket} slots per bucket", fontsize=6)
+        ax.set_title(f"({letter[p][s]}) {payload_size}B payload {slots_per_bucket} slots", fontsize=6)
 
         # Filter data
         d = data[
@@ -82,41 +92,80 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
         # dict preserves insertion order since python 3.7
         all_hashfns = list(set(d[d[REDUCER_KEY].str.match(CLAMP)][HASH_KEY])) + ["murmur_finalizer64"]
 
-        datapoints = list(zip(d[DATASET_KEY], d[ADDITIONAL_BUCKETS_KEY], d[MEDIAN_PROBE_TIME_KEY], d[HASH_KEY]))
-        for (dataset, additional_buckets, median_probe_time, hashfn) in datapoints:
+        # Only one datapoint for murmur
+        murmur_datapoints = list()
+        other_datapoints = list()
+        for (d, a, m, h) in list(zip(d[DATASET_KEY], d[ADDITIONAL_BUCKETS_KEY], d[MEDIAN_PROBE_TIME_KEY], d[HASH_KEY])):
+            if name(h) == "Murmur":
+                murmur_datapoints.append((d, a, m, h))
+            else:
+                other_datapoints.append((d, a, m, h))
+        murmur_datapoints = sorted(murmur_datapoints, key=lambda t: t[2])
+        murmur_datapoint = murmur_datapoints[int(len(murmur_datapoints)/2)]
+
+        for (dataset, additional_buckets, median_probe_time, hashfn) in [murmur_datapoint] + other_datapoints:
             hash_name = name(hashfn)
             dataset_name = name_d(dataset)
 
             ax.scatter(additional_buckets, median_probe_time, c=colors.get(hash_name), marker='.', s=10)
 
             def x_adjust():
+                if dataset_name == "osm":
+                    return -0.02 if s == 0 else 0.02
+                if dataset_name == "fb":
+                    return 0.02 if s == 0 else -0.02
+                if dataset_name in {"gap 1%", "gap 10%"}:
+                    return -0.01
+                if dataset_name == "seq":
+                    return 0.02
                 return 0
             def y_adjust():
-                return +3
+                if dataset_name in set(["osm", "fb"]):
+                    return -50 if s == 0 else 100
+                if dataset_name == "wiki":
+                    return -200 if p == 1 else -175
+                if dataset_name == "seq":
+                    return -175 if p == 1 else -140
+                if dataset_name in {"gap 1%", "gap 10%"}:
+                    return 100
+                return +20
             def ha():
+                if dataset_name == "osm":
+                    return "right" if s == 0 else "left"
+                if dataset_name == "fb":
+                    return "left" if s == 0 else "right"
+                if dataset_name == "seq":
+                    return "right"
                 return 'center'
             def va():
+                if dataset_name in {"osm", "fb"}:
+                    return "center_baseline"
                 return 'baseline'
+            def rotation():
+                if dataset_name in {"gap 1%", "gap 10%"}:
+                    return 90
+                return 0
 
 
-            #if hash_name != "Murmur":
-            #    ax.annotate(
-            #            f"{dataset_name}", 
-            #            (additional_buckets + x_adjust(), median_probe_time + y_adjust()), 
-            #            fontsize=5, 
-            #            ha=ha(),
-            #            va=va())
+            if hash_name != "Murmur":
+                ax.annotate(
+                        f"{dataset_name}", 
+                        (additional_buckets + x_adjust(), median_probe_time + y_adjust()), 
+                        fontsize=5, 
+                        ha=ha(),
+                        va=va(),
+                        rotation=rotation())
 
         # Plot style/info
-        #ax.set_yticks([225, 250, 275])
+        ax.set_ylim(0, 1350)
+        ax.set_yticks([0, 250, 500, 750, 1000, 1250])
         ax.set_xlim(-0.1,1.1)
         ax.set_xticks([0.0, 0.33, 0.66, 1.0])
-        #ax.set_ylim(100,1500)
         ax.tick_params(axis='both', which='major', labelsize=8)
         #ax.margins(x=0.1)
 
         # Legend 
-        if p == 0 and s == 1:
+        if p == 1 and s == 1:
             ax.legend(handles=[mpatches.Patch(color=colors.get(name(h)), label=name(h)) for h,_ in hr_names.items()],
                 loc="lower right",
                 fontsize=5)
@@ -126,6 +175,6 @@ fig.text(0.5, 0.02, 'Additional buckets per key [percent]', ha='center', fontsiz
 fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=8)
 
 plt.tight_layout()
-plt.subplots_adjust(left=0.15, bottom=0.175, wspace=0.15, hspace=0.5)
+plt.subplots_adjust(left=0.15, bottom=0.175, wspace=0.1, hspace=0.45)
 
-plt.savefig(f"out/median_probe_time.pdf")
+plt.savefig(f"out/chained.pdf")
