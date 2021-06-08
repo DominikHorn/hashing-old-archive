@@ -116,8 +116,8 @@ for i, (hashfn, median_times, model_cnts) in enumerate([(h, list(data[data[HASH_
     next_pos += group_gap
 
 # Plot style/info
-plt.yticks(fontsize=15)
-plt.xticks(xticks_pos, xticks_text, fontsize=15, rotation=90)
+plt.yticks([0, 2.5 * 10**8, 5 * 10**8], fontsize=15)
+plt.xticks(xticks_pos, xticks_text, fontsize=15, rotation=45)
 
 plt.xlabel("Model count", fontsize=15)
 plt.ylabel("Keys per second", fontsize=15)
@@ -125,7 +125,7 @@ plt.margins(x=0.01,y=0.2)
 plt.tight_layout()
 
 # Legend
-plt.subplots_adjust(left=0.2, bottom=0.5)
+plt.subplots_adjust(left=0.2, bottom=0.52)
 fig.legend(
     handles=[mpatches.Patch(color=color, label=hr_name(h)) for h,color in colors.items()],
     loc="lower center",
