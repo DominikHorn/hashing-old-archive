@@ -19,14 +19,18 @@ mpl.rcParams.update({
 # Style
 hr_names = {
         "murmur_finalizer64": "Murmur",
+        "aqua": "AquaHash",
+        "xxh3": "XXH3",
         "radix_spline": "RadixSpline",
         #"mult_prime64": "mult", "mult_add64": "mult_add",
-        "rmi": "Rmi"
+        "rmi": "RMI"
         }
 all_palette = list(mcolors.TABLEAU_COLORS.keys())
 palette = all_palette[:-1]
 colors = {
         "murmur_finalizer64": palette[1],
+        "aqua": palette[3],
+        "xxh3": palette[4],
         "radix_spline": palette[0],
         "rmi": palette[2]
         }
@@ -59,11 +63,6 @@ data = data[
         # Only use fast modulo results
         & ((data[REDUCER_KEY] == FAST_MODULO) | (data[REDUCER_KEY] == CLAMP))
         # Only plot certain functions
-        & (
-            (data[HASH_KEY] == "murmur_finalizer64") |
-            (data[HASH_KEY] == "rmi") |
-            (data[HASH_KEY] == "radix_spline")
-            )
         ]
 
 # Create plot
@@ -73,33 +72,37 @@ fig, ax = plt.subplots(figsize=(7.00697/2,3))
 machine = set(data[data[MACHINE_KEY].notnull()][MACHINE_KEY]).pop()
 processor = machine[machine.find("(")+1:machine.rfind(")")]
 
-plt_dat = [(h, list(data[data[HASH_KEY] == h][THROUGHPUT_KEY]),
-    list(data[data[HASH_KEY] == h][MODELCOUNT_KEY])) for
-    h in dict.fromkeys(data[HASH_KEY]).keys()]
-
 # Plot data
 bar_width = 0.15
+group_gap = 0.2
+bar_gap = 0.005
 next_pos = 0
 xticks_pos=[]
 xticks_text=[]
-for i, group in enumerate(plt_dat):
+for i, (hashfn, median_time) in enumerate([(h, median(list(data[data[HASH_KEY] == h][THROUGHPUT_KEY]))) for
+    h in dict.fromkeys(data[(data[HASH_KEY] == "aqua") | (data[HASH_KEY] == "murmur_finalizer64") | (data[HASH_KEY] == "xxh3")][HASH_KEY]).keys()]):
+    ax.bar(next_pos, median_time, bar_width, color=color(hashfn))
+    ax.text(next_pos, median_time+5, str(round(median_time, 1)), ha="center",
+            color=color(hashfn), fontsize=11, rotation=90)
+    next_pos += bar_width + bar_gap
+
+next_pos += group_gap
+for i, (hashfn, values, model_cnts) in enumerate([(h, list(data[data[HASH_KEY] == h][THROUGHPUT_KEY]),
+    list(data[data[HASH_KEY] == h][MODELCOUNT_KEY])) for
+    h in dict.fromkeys(data[(data[HASH_KEY] == "rmi") | (data[HASH_KEY] == "radix_spline")][HASH_KEY]).keys()]):
     def nearest_pow_10_exp(num):
         return int(round(math.log10(num)))
 
-    hashfn = group[0]
-    labels = [f"$10^{str(nearest_pow_10_exp(d))}$" if not math.isnan(d) else
-            "n/a" for d in group[2]]
-    values = group[1]
-
-    for j, (label, value) in enumerate(zip(labels,values)):
+    for j, (label, value) in enumerate(zip([f"$10^{str(nearest_pow_10_exp(d))}$" for d in model_cnts],values)):
         ax.bar(next_pos, value, bar_width, color=color(hashfn))
         ax.text(next_pos, value+5, str(round(value, 1)), ha="center",
                 color=color(hashfn), fontsize=11, rotation=90)
+
         xticks_pos.append(next_pos)
         xticks_text.append(label)
 
-        next_pos += bar_width + 0.005
-    next_pos += 0.2
+        next_pos += bar_width + bar_gap
+    next_pos += group_gap
 
 # Plot style/info
 plt.yticks(fontsize=8)

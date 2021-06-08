@@ -1,5 +1,7 @@
 compiler,machine,reducer,hash,throughput,,model_size,runs
-g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,murmur_finalizer64,2.4,,,10
+g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),fast_modulo,aqua,1.9,,,10
+g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),fast_modulo,murmur_finalizer64,2.4,,,10
+g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),fast_modulo,xxh3,2.9,,,10
 g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,radix_spline,3.9,,2,10
 g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,radix_spline,5.1,,1653,10
 g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),clamp,radix_spline,25.7,,61273,10
