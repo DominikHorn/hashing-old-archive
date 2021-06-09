@@ -236,10 +236,7 @@ static void measure_cuckoo(const std::string& dataset_name, const std::vector<Da
 template<class Data>
 static void benchmark(const std::string& dataset_name, const std::vector<Data>& dataset, CSV& outfile,
                       std::mutex& iomutex) {
-   {
-      // Fix this for now at 0.01
-      const double sample_chance = 0.01;
-
+   for (double sample_chance : {0.01, 1.0}) {
       // Take a random sample
       std::vector<uint64_t> sample;
       {
@@ -258,83 +255,27 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
       }
       // Sort the sample
       std::sort(sample.begin(), sample.end());
-
-      constexpr size_t max_models = 2000;
 
       /// Chained
       for (const auto load_factor : {1.}) {
-         // Always measure default configuration
-         measure_chained<rs::RadixSplineHash<Data>>(dataset_name, dataset, load_factor, sample_chance, sample, outfile,
-                                                    iomutex);
-
-         //      /// RMI
-         //      measure_chained<rmi::RMIHash<Data, 10>>(dataset_name, dataset, load_factor, sample_chance,
-         //                                                                sample, outfile, iomutex);
-         //      // measure_chained<rmi::RMIHash<Data, 100>>(dataset_name, dataset, load_factor, sample_chance,
-         //      //                                                            sample, outfile, iomutex);
-         //      measure_chained<rmi::RMIHash<Data, 1000>>(dataset_name, dataset, load_factor, sample_chance,
-         //                                                                  sample, outfile, iomutex);
-         //      // measure_chained<rmi::RMIHash<Data, 10000>>(dataset_name, dataset, load_factor, sample_chance,
-         //      //                                                              sample, outfile, iomutex);
-         //      measure_chained<rmi::RMIHash<Data, 100000>>(dataset_name, dataset, load_factor, sample_chance,
-         //                                                                    sample, outfile, iomutex);
-         //      // measure_chained<rmi::RMIHash<Data, 1000000>>(dataset_name, dataset, load_factor, sample_chance,
-         //      //                                                               sample, outfile, iomutex);
-         //      measure_chained<rmi::RMIHash<Data, 10000000>>(dataset_name, dataset, load_factor, sample_chance,
-         //                                                                     sample, outfile, iomutex);
-
-         try {
-            measure_chained<rs::RadixSplineHash<Data, 28, 2, max_models>>(dataset_name, dataset, load_factor,
-                                                                          sample_chance, sample, outfile, iomutex);
-         } catch (const std::exception& e) {
-            try {
-               measure_chained<rs::RadixSplineHash<Data, 26, 3, max_models>>(dataset_name, dataset, load_factor,
-                                                                             sample_chance, sample, outfile, iomutex);
-            } catch (const std::exception& e) {
-               try {
-                  measure_chained<rs::RadixSplineHash<Data, 26, 8, max_models>>(dataset_name, dataset, load_factor,
-                                                                                sample_chance, sample, outfile,
-                                                                                iomutex);
-               } catch (const std::exception& e) {
-                  try {
-                     measure_chained<rs::RadixSplineHash<Data, 24, 20, max_models>>(dataset_name, dataset, load_factor,
-                                                                                    sample_chance, sample, outfile,
-                                                                                    iomutex);
-                  } catch (const std::exception& e) {
-                     try {
-                        measure_chained<rs::RadixSplineHash<Data, 24, 40, max_models>>(dataset_name, dataset,
-                                                                                       load_factor, sample_chance,
-                                                                                       sample, outfile, iomutex);
-                     } catch (const std::exception& e) {
-                        try {
-                           measure_chained<rs::RadixSplineHash<Data, 20, 80, max_models>>(dataset_name, dataset,
-                                                                                          load_factor, sample_chance,
-                                                                                          sample, outfile, iomutex);
-                        } catch (const std::exception& e) {
-                           measure_chained<rs::RadixSplineHash<Data, 20, 160>>(dataset_name, dataset, load_factor,
-                                                                               sample_chance, sample, outfile, iomutex);
-                        }
-                     }
-                  }
-               }
-            }
-         }
+         /// PGM (eps_rec 4)
+         measure_chained<PGMHash<Data, 256, 4>>(dataset_name, dataset, load_factor, sample_chance, sample, outfile,
+                                                iomutex);
+         measure_chained<PGMHash<Data, 64, 4>>(dataset_name, dataset, load_factor, sample_chance, sample, outfile,
+                                               iomutex);
+         measure_chained<PGMHash<Data, 4, 4>>(dataset_name, dataset, load_factor, sample_chance, sample, outfile,
+                                              iomutex);
+         /// PGM (eps_rec 0)
+         measure_chained<PGMHash<Data, 256, 0>>(dataset_name, dataset, load_factor, sample_chance, sample, outfile,
+                                                iomutex);
+         measure_chained<PGMHash<Data, 64, 0>>(dataset_name, dataset, load_factor, sample_chance, sample, outfile,
+                                               iomutex);
+         measure_chained<PGMHash<Data, 4, 0>>(dataset_name, dataset, load_factor, sample_chance, sample, outfile,
+                                              iomutex);
       }
    }
 
-   {
-      {
-         std::unique_lock<std::mutex> lock(iomutex);
-         std::cout << "cuckoo dataset " << dataset_name << std::endl;
-
-         if (!dataset_name.compare("fb_200M_uint64") && !dataset_name.compare("osm_cellids_200M_uint64")) {
-            std::cout << "\t -> skipped" << std::endl;
-            return;
-         }
-      }
-
-      const double sample_chance = 1.0;
-
+   for (double sample_chance : {0.01, 1.0}) {
       // Take a random sample
       std::vector<uint64_t> sample;
       {
@@ -354,61 +295,22 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
       // Sort the sample
       std::sort(sample.begin(), sample.end());
 
-      constexpr size_t max_models = 2000;
-
       /// Cuckoo
       for (const auto load_factor : {0.98, 0.95}) {
-         // Always measure default configuration
-         measure_cuckoo<rs::RadixSplineHash<Data>>(dataset_name, dataset, load_factor, sample_chance, sample, outfile,
-                                                   iomutex);
-
-         //      /// RMI
-         //      measure_cuckoo<rmi::RMIHash<Data, 10>>(dataset_name, dataset, load_factor, sample_chance,
-         //                                                                sample, outfile, iomutex);
-         //      // measure_cuckoo<rmi::RMIHash<Data, 100>>(dataset_name, dataset, load_factor, sample_chance,
-         //      //                                                            sample, outfile, iomutex);
-         //      measure_cuckoo<rmi::RMIHash<Data, 1000>>(dataset_name, dataset, load_factor, sample_chance,
-         //                                                                  sample, outfile, iomutex);
-         //      // measure_cuckoo<rmi::RMIHash<Data, 10000>>(dataset_name, dataset, load_factor, sample_chance,
-         //      //                                                              sample, outfile, iomutex);
-         //      measure_cuckoo<rmi::RMIHash<Data, 100000>>(dataset_name, dataset, load_factor, sample_chance,
-         //                                                                    sample, outfile, iomutex);
-         //      // measure_cuckoo<rmi::RMIHash<Data, 1000000>>(dataset_name, dataset, load_factor, sample_chance,
-         //      //                                                               sample, outfile, iomutex);
-         //      measure_cuckoo<rmi::RMIHash<Data, 10000000>>(dataset_name, dataset, load_factor, sample_chance,
-         //                                                                     sample, outfile, iomutex);
-
-         try {
-            measure_cuckoo<rs::RadixSplineHash<Data, 28, 2, max_models>>(dataset_name, dataset, load_factor,
-                                                                         sample_chance, sample, outfile, iomutex);
-         } catch (const std::exception& e) {
-            try {
-               measure_cuckoo<rs::RadixSplineHash<Data, 26, 3, max_models>>(dataset_name, dataset, load_factor,
-                                                                            sample_chance, sample, outfile, iomutex);
-            } catch (const std::exception& e) {
-               try {
-                  measure_cuckoo<rs::RadixSplineHash<Data, 26, 8, max_models>>(dataset_name, dataset, load_factor,
-                                                                               sample_chance, sample, outfile, iomutex);
-               } catch (const std::exception& e) {
-                  try {
-                     measure_cuckoo<rs::RadixSplineHash<Data, 24, 20, max_models>>(dataset_name, dataset, load_factor,
-                                                                                   sample_chance, sample, outfile,
-                                                                                   iomutex);
-                  } catch (const std::exception& e) {
-                     try {
-                        measure_cuckoo<rs::RadixSplineHash<Data, 24, 40, max_models>>(dataset_name, dataset,
-                                                                                      load_factor, sample_chance,
-                                                                                      sample, outfile, iomutex);
-                     } catch (const std::exception& e) {
-                        measure_cuckoo<rs::RadixSplineHash<Data, 20, 80>>(dataset_name, dataset, load_factor,
-                                                                          sample_chance, sample, outfile, iomutex);
-                        measure_cuckoo<rs::RadixSplineHash<Data, 20, 160>>(dataset_name, dataset, load_factor,
-                                                                           sample_chance, sample, outfile, iomutex);
-                     }
-                  }
-               }
-            }
-         }
+         /// PGM (eps_rec 4)
+         measure_cuckoo<PGMHash<Data, 256, 4>>(dataset_name, dataset, load_factor, sample_chance, sample, outfile,
+                                               iomutex);
+         measure_cuckoo<PGMHash<Data, 64, 4>>(dataset_name, dataset, load_factor, sample_chance, sample, outfile,
+                                              iomutex);
+         measure_cuckoo<PGMHash<Data, 4, 4>>(dataset_name, dataset, load_factor, sample_chance, sample, outfile,
+                                             iomutex);
+         /// PGM (eps_rec 0)
+         measure_cuckoo<PGMHash<Data, 256, 0>>(dataset_name, dataset, load_factor, sample_chance, sample, outfile,
+                                               iomutex);
+         measure_cuckoo<PGMHash<Data, 64, 0>>(dataset_name, dataset, load_factor, sample_chance, sample, outfile,
+                                              iomutex);
+         measure_cuckoo<PGMHash<Data, 4, 0>>(dataset_name, dataset, load_factor, sample_chance, sample, outfile,
+                                             iomutex);
       }
    }
 
