@@ -1,13 +1,19 @@
 dataset,compiler,machine,load_factor,reducer,hash,max_in_single_slot,empty_slots,expected_empty_slots,colliding_slots,expected_colliding_slots,colliding_keys,expected_colliding_keys,exclusive_slots,expected_exclusive_slots,,sample_size
-seq_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,clamp,radix_spline,34,0.002112,36.79 %,0.002111,26.42 %,0.004223,63.21 %,0.995777,36.79 %,,1.00 %
-seq_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,fast_modulo,murmur_finalizer64,11,0.36789,36.79 %,0.264251,26.42 %,0.632141,63.21 %,0.367859,36.79 %,,
 fb_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,fast_modulo,murmur_finalizer64,11,0.367848,36.79 %,0.264215,26.42 %,0.632063,63.21 %,0.367937,36.79 %,,
 fb_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,clamp,radix_spline,344,0.672988,36.79 %,0.142713,26.42 %,0.815701,63.21 %,0.184299,36.79 %,,1.00 %
-gap_10%_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,clamp,radix_spline,118,0.089964,36.79 %,0.089963,26.42 %,0.179928,63.21 %,0.820073,36.79 %,,1.00 %
-gap_10%_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,fast_modulo,murmur_finalizer64,12,0.367857,36.79 %,0.264219,26.42 %,0.632076,63.21 %,0.367924,36.79 %,,
+fb_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,clamp,pgm,401,0.710913,36.79 %,,,,,,,,1.00 %
 gap_1%_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,clamp,radix_spline,98,0.010073,36.79 %,0.010072,26.42 %,0.020145,63.21 %,0.979855,36.79 %,,1.00 %
+gap_1%_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,clamp,pgm,1411,0.019279,36.79 %,,,,,,,,1.00 %
 gap_1%_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,fast_modulo,murmur_finalizer64,11,0.367887,36.79 %,0.26425,26.42 %,0.632138,63.21 %,0.367863,36.79 %,,
+gap_10%_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,clamp,radix_spline,118,0.089964,36.79 %,0.089963,26.42 %,0.179928,63.21 %,0.820073,36.79 %,,1.00 %
+gap_10%_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,clamp,pgm,5723,0.091907,36.79 %,,,,,,,,1.00 %
+gap_10%_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,fast_modulo,murmur_finalizer64,12,0.367857,36.79 %,0.264219,26.42 %,0.632076,63.21 %,0.367924,36.79 %,,
 osm_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,fast_modulo,murmur_finalizer64,11,0.367908,36.79 %,0.264262,26.42 %,0.632169,63.21 %,0.36783,36.79 %,,
 osm_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,clamp,radix_spline,931,0.548436,36.79 %,0.207602,26.42 %,0.756038,63.21 %,0.243962,36.79 %,,1.00 %
+osm_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,clamp,pgm,1664,0.572067,36.79 %,,,,,,,,1.00 %
+seq_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,clamp,radix_spline,34,0.002112,36.79 %,0.002111,26.42 %,0.004223,63.21 %,0.995777,36.79 %,,1.00 %
+seq_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,clamp,pgm,150,0.015261,36.79 %,,,,,,,,1.00 %
+seq_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,fast_modulo,murmur_finalizer64,11,0.36789,36.79 %,0.264251,26.42 %,0.632141,63.21 %,0.367859,36.79 %,,
 wiki_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,clamp,radix_spline,209,0.165091,36.79 %,0.153763,26.42 %,0.318853,63.21 %,0.681146,36.79 %,,1.00 %
+wiki_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,clamp,pgm,2661,0.171043,36.79 %,,,,,,,,1.00 %
 wiki_200M_uint64,g++ 10.2.0,mcgraw (Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz),1,fast_modulo,murmur_finalizer64,10,0.367884,36.79 %,0.264254,26.42 %,0.632138,63.21 %,0.367862,36.79 %,,

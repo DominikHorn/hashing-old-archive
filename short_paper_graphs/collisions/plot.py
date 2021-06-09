@@ -16,11 +16,31 @@ mpl.rcParams.update({
 })
 
 # Style
-hr_names = {"radix_spline": "RadixSpline", "rmi": "rmi", "vp_rmi": "vp_rmi",
-        "mult_prime64": "mult", "mult_add64": "mult_add", "murmur_finalizer64":
-        "Murmur"}
+hr_names = {
+        "murmur_finalizer64": "Murmur",
+        "aqua": "AquaHash",
+        "xxh3": "XXH3",
+        "radix_spline": "RadixSpline",
+        #"mult_prime64": "mult", "mult_add64": "mult_add",
+        "rmi": "RMI",
+        "pgm": "PGM"
+        }
+all_palette = list(mcolors.TABLEAU_COLORS.keys())
+palette = all_palette[:-1]
+colors = {
+        "aqua": palette[3],
+        "murmur_finalizer64": palette[1],
+        "xxh3": palette[5],
+        "radix_spline": palette[0],
+        "rmi": "tab:cyan",
+        "pgm": palette[4]
+        }
+
 def name(hashfn):
     return hr_names.get(hashfn) or hashfn
+
+def color(h):
+    return colors.get(h) or all_palette[-1]
 
 def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
     DATASET_KEY="dataset"
@@ -55,7 +75,7 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
                 (data[HASH_KEY] == "murmur_finalizer64")
                # | (data[HASH_KEY].str.contains("rmi"))
                 | (data[HASH_KEY].str.match("radix_spline"))
-               # | (data[HASH_KEY].str.match("pgm"))
+                | (data[HASH_KEY].str.match("pgm"))
                 )
             ]
 
@@ -65,10 +85,6 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
             "murmur_finalizer64"] 
     learned_hashfns = list(dict.fromkeys(data[data[REDUCER_KEY] == CLAMP][HASH_KEY])) 
     all_hashfns = learned_hashfns + classical_hashfns
-
-    pallette = list(mcolors.TABLEAU_COLORS.keys())
-    colors = {h: pallette[i % len(pallette)] for i, h in enumerate(all_hashfns)}
-    datasets = sorted(set(data[DATASET_KEY]))
 
     # Generate plot
     fig, ax = plt.subplots(figsize=(7.00697/2,2.3))
@@ -88,7 +104,7 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
 
     for i, dataset in enumerate(datasets):
         d = data[data[DATASET_KEY] == dataset]
-        hashfns = list(set(d[HASH_KEY]))
+        hashfns = all_hashfns
 
         bars = {}
         for hashfn in hashfns:
@@ -109,7 +125,7 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
             linestyle="dashed", linewidth=1.0)
 
     # Plot style/info
-    yticks = np.linspace(0, ymax, 5)
+    yticks = np.linspace(0, ymax, 4)
     plt.ylim(0,ymax)
     plt.yticks(yticks, [f"{int(yt*100)}%" for yt in yticks], fontsize=15)
     plt.ylabel(f"{stat_key.replace('_', ' ').capitalize()}", fontsize=15)
@@ -127,18 +143,20 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
         handles=[mpatches.Patch(color=colors.get(h), label=name(h)) for h in all_hashfns],
         loc="upper left",
         fontsize=11,
+        borderpad=0.2,
+        labelspacing=0.1,
         ncol=1)
 
     plt.savefig(f"out/{stat_key}.pdf")
 
 #plot_expected_colliding_keys()
-plot_collision_statistic("colliding_keys", "Colliding keys", lambda load_fac : 1
-        - np.exp(-load_fac))
-plot_collision_statistic("colliding_slots", "Colliding slots", lambda load_fac :
-        1 - (((1 + 1/load_fac) * np.exp(-load_fac)) / (1 / load_fac)), ymax=0.5)
+#plot_collision_statistic("colliding_keys", "Colliding keys", lambda load_fac : 1
+#        - np.exp(-load_fac))
+#plot_collision_statistic("colliding_slots", "Colliding slots", lambda load_fac :
+#        1 - (((1 + 1/load_fac) * np.exp(-load_fac)) / (1 / load_fac)), ymax=0.5)
 plot_collision_statistic("empty_slots", "Empty slots", lambda load_fac:
         np.exp(-load_fac), ymax=1.0)
-plot_collision_statistic("exclusive_slots", "Exclusive slots (exactly one key)", lambda load_fac :
-        1 - (1 - (((1 + 1/load_fac) * np.exp(-load_fac)) / (1 / load_fac)) +
-            np.exp(-load_fac)))
+#plot_collision_statistic("exclusive_slots", "Exclusive slots (exactly one key)", lambda load_fac :
+#        1 - (1 - (((1 + 1/load_fac) * np.exp(-load_fac)) / (1 / load_fac)) +
+#            np.exp(-load_fac)))
 
