@@ -258,6 +258,13 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
 
       /// Chained
       for (const auto load_factor : {1.}) {
+         measure_chained<rs::RadixSpline<Data, 8, 140>>(dataset_name, dataset, load_factor, sample_chance, sample,
+                                                       outfile, iomutex);
+         measure_chained<rs::RadixSpline<Data, 10, 90>>(dataset_name, dataset, load_factor, sample_chance, sample,
+                                                       outfile, iomutex);
+         measure_chained<rs::RadixSpline<Data, 26, 7>>(dataset_name, dataset, load_factor, sample_chance, sample,
+                                                       outfile, iomutex);
+
          /// PGM (eps_rec 4)
          measure_chained<PGMHash<Data, 256, 4>>(dataset_name, dataset, load_factor, sample_chance, sample, outfile,
                                                 iomutex);
