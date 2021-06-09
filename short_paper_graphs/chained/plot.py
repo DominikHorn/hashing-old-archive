@@ -21,7 +21,7 @@ hr_names = {"radix_spline": "RadixSpline",
         "mult_prime64": "Mult", "mult_add64": "MultAdd", 
         "murmur_finalizer64": "Murmur"}
 colors = {"RadixSpline": "tab:blue", "Murmur": "tab:orange", "Mult": "black", "MultAdd": "gray"}
-markers = {"seq_200M_uint64": ".","gap_1%_200M_uint64": "x", "gap_10%_200M_uint64": "1", "wiki_200M_uint64": "+", "fb_200M_uint64": "*", "osm_200M_uint64": "v"}
+markers = {"seq_200M_uint64": ".","gap_1%_200M_uint64": "s", "gap_10%_200M_uint64": "h", "wiki_200M_uint64": "D", "fb_200M_uint64": "X", "osm_200M_uint64": "^"}
 
 def name_d(dataset):
     x = dataset
@@ -109,8 +109,11 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
             hash_name = name(hashfn)
             dataset_name = name_d(dataset)
 
-            ax.scatter(additional_buckets, median_probe_time, c=colors.get(hash_name), marker=markers.get(dataset), s=11)
-       
+            if hash_name == "Murmur":
+                ax.scatter(additional_buckets, median_probe_time, marker='+', s=15, c=colors.get(hash_name), linewidth=0.8)
+            else:       
+                ax.scatter(additional_buckets, median_probe_time, marker=markers.get(dataset), s=11, facecolors='none', edgecolors=colors.get(hash_name), linewidths=0.3)
+
         # Plot style/info
         ax.set_yscale('log')
         #ax.yaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
