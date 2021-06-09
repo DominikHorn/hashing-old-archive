@@ -20,7 +20,9 @@ mpl.rcParams.update({
 hr_names = {"radix_spline": "RadixSpline",
         "mult_prime64": "Mult", "mult_add64": "MultAdd", 
         "murmur_finalizer64": "Murmur"}
-colors = {"RadixSpline": "tab:blue", "Murmur": "tab:orange", "Mult": "tab:purple", "MultAdd": "tab:red"}
+colors = {"RadixSpline": "tab:blue", "Murmur": "tab:orange", "Mult": "black", "MultAdd": "gray"}
+markers = {"seq_200M_uint64": ".","gap_1%_200M_uint64": "x", "gap_10%_200M_uint64": "1", "wiki_200M_uint64": "+", "fb_200M_uint64": "*", "osm_200M_uint64": "v"}
+
 def name_d(dataset):
     x = dataset
     return x.replace(r"_200M", "").replace("_uint64", "").replace("_", " ")
@@ -28,6 +30,8 @@ def name(hashfn):
     if hashfn.startswith("radix_spline"):
         hashfn = "radix_spline"
     return hr_names.get(hashfn) or hashfn
+
+
 
 DATASET_KEY="dataset"
 MACHINE_KEY="machine"
@@ -107,7 +111,7 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
             hash_name = name(hashfn)
             dataset_name = name_d(dataset)
 
-            ax.scatter(additional_buckets, median_probe_time, c=colors.get(hash_name), marker='.', s=10)
+            ax.scatter(additional_buckets, median_probe_time, c=colors.get(hash_name), marker=markers.get(dataset), s=11)
 
             def x_adjust():
                 if dataset_name == "osm":
@@ -147,34 +151,40 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
                 return 0
 
 
-            if hash_name == "RadixSpline":
-                ax.annotate(
-                        f"{dataset_name}", 
-                        (additional_buckets + x_adjust(), median_probe_time + y_adjust()), 
-                        fontsize=5, 
-                        ha=ha(),
-                        va=va(),
-                        rotation=rotation())
+            #if hash_name == "RadixSpline":
+            #    ax.annotate(
+            #            f"{dataset_name}", 
+            #            (additional_buckets + x_adjust(), median_probe_time + y_adjust()), 
+            #            fontsize=5, 
+            #            ha=ha(),
+            #            va=va(),
+            #            rotation=rotation())
 
         # Plot style/info
-        ax.set_ylim(0, 1350)
-        ax.set_yticks([0, 250, 500, 750, 1000, 1250])
+        ax.set_yscale('log')
         ax.set_xlim(-0.1,1.1)
         ax.set_xticks([0.0, 0.33, 0.66, 1.0])
         ax.tick_params(axis='both', which='major', labelsize=8)
-        #ax.margins(x=0.1)
 
-        # Legend 
         if p == 1 and s == 1:
-            ax.legend(handles=[mpatches.Patch(color=colors.get(name(h)), label=name(h)) for h,_ in hr_names.items()],
+            l = ax.legend(
+                handles=[mpatches.Patch(color=colors.get(name(h)), label=name(h)) for h,_ in hr_names.items()],
                 loc="lower right",
-                fontsize=5)
+                fontsize=5,
+                ncol=1,
+                labelspacing=0.15,
+                columnspacing=0.15)
+            for r in l.legendHandles:
+                r.set_width(10.0)
+            for t in l.get_texts():
+                t.set_position((-5,0))
+
 
 
 fig.text(0.5, 0.02, 'Additional buckets per key [percent]', ha='center', fontsize=8)
 fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=8)
 
 plt.tight_layout()
-plt.subplots_adjust(left=0.15, bottom=0.175, wspace=0.1, hspace=0.45)
+plt.subplots_adjust(left=0.20, bottom=0.175, wspace=0.1, hspace=0.45)
 
 plt.savefig(f"out/chained.pdf")
