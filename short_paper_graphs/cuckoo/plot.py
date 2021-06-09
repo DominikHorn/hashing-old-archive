@@ -21,13 +21,11 @@ mpl.rcParams.update({
 })
 
 # Style
-hr_names = {
-        "radix_spline": "RadixSpline", 
-       # "pgm_hash_eps128": "pgm_hash", 
-       # "mult_prime64": "mult", 
-       # "mult_add64": "mult_add", 
-        "murmur_finalizer64": "Murmur"
-        }
+hr_names = {"radix_spline": "RadixSpline",
+        "mult_prime64": "Mult", "mult_add64": "MultAdd", 
+        "murmur_finalizer64": "Murmur"}
+colors = {"RadixSpline": "tab:blue", "Murmur": "tab:orange", "Mult": "black", "MultAdd": "gray"}
+markers = {"seq_200M_uint64": ".","gap_1%_200M_uint64": "x", "gap_10%_200M_uint64": "1", "wiki_200M_uint64": "+", "fb_200M_uint64": "*", "osm_200M_uint64": "v"}
 def name_d(dataset):
     x = dataset
     return x.replace(r"_200M", "").replace("_uint64", "").replace("_", " ")
@@ -56,10 +54,8 @@ csv = pd.read_csv(f"cuckoo.csv")
 partial_data = csv[csv[DATASET_KEY].isnull()]
 data = csv[csv[DATASET_KEY].notnull()]
 
-colors = {"RadixSpline": "tab:blue", "Murmur": "tab:orange"}
-letter = [["A", "B"], ["C", "D"]]
-
 # Generate plot
+letter = [["A", "B"], ["C", "D"]]
 fig, axs = plt.subplots(2,2,figsize=(7.00697/2,2),sharex=True,sharey=True)
 for l, load_factor in enumerate([0.95, 0.98]):
     for s, kicking_strat in enumerate(["balanced_kicking", "biased_kicking_10"]):
@@ -89,8 +85,8 @@ for l, load_factor in enumerate([0.95, 0.98]):
                 )
                 # Only use certain hash functions
                 & (
-                   # (data[HASH_KEY].str.match("mult_prime64")) |
-                   # (data[HASH_KEY].str.match("mult_add64")) |
+                   (data[HASH_KEY].str.match("mult_prime64")) |
+                   (data[HASH_KEY].str.match("mult_add64")) |
                     (data[HASH_KEY].str.match("murmur_finalizer64")) |
                    # (data[HASH_KEY].str.contains("rmi")) |
                     (data[HASH_KEY].str.match("radix_spline")) #|
@@ -98,7 +94,7 @@ for l, load_factor in enumerate([0.95, 0.98]):
                    )
                 ]
 
-        all_hashfns = list(set(d[d[REDUCER_KEY].str.match(CLAMP)][HASH_KEY])) + ["murmur_finalizer64"]
+        all_hashfns = list(set(d[d[REDUCER_KEY].str.match(CLAMP)][HASH_KEY])) + ["mult_prime64", "mult_add64", "murmur_finalizer64"]
 
         # Only one datapoint for murmur
         murmur_datapoints = list()
@@ -115,68 +111,29 @@ for l, load_factor in enumerate([0.95, 0.98]):
             hash_name = name(hashfn)
             dataset_name = name_d(dataset)
 
-            ax.scatter(primary_key_ratio, median_probe_time, c=colors.get(hash_name), marker='.', s=10)
-
-            def x_adjust():
-                if dataset_name == "seq":
-                    return 0.015
-                if dataset_name == "gap 1%":
-                    return -0.015 if s == 1 else 0.015
-                if dataset_name == "gap 10%" and s == 1:
-                    return -0.015 if l == 0 else -0.005
-                if dataset_name == "gap 10%" and s == 0:
-                    return -0.01
-                if dataset_name == "wiki" and s == 0:
-                    return -0.01
-                return 0
-            def y_adjust():
-                if dataset_name == "osm":
-                    return 40 if s == 1 and l == 1 else -75
-                if dataset_name == "fb":
-                    return -100
-                if dataset_name == "seq" and s == 0:
-                    return -20
-                return +40
-            def ha():
-                if dataset_name == "seq" and s == 0:
-                    return "left"
-                return 'center'
-            def va():
-                if dataset_name == "seq" and s == 0:
-                    return "center"
-                return 'baseline'
-            def rotation():
-                if dataset_name in {"gap 1%", "gap 10%", "wiki"}:
-                    return 90
-                if dataset_name == "seq" and s == 1:
-                    return 90
-
-                return 0
-
-
-            if hash_name != "Murmur":
-                ax.annotate(
-                        f"{dataset_name}", 
-                        (primary_key_ratio + x_adjust(), median_probe_time + y_adjust()), 
-                        fontsize=5, 
-                        ha=ha(),
-                        va=va(),
-                        rotation=rotation())
+            ax.scatter(primary_key_ratio, median_probe_time, c=colors.get(hash_name), marker=markers.get(dataset), s=11)
 
         # Plot style/info
+        ax.set_yscale('log')
         ax.set_xlim(0.35, 1.05)
         ax.set_xticks([0.4, 0.6, 0.8, 1.0])
         ax.tick_params(axis='both', which='major', labelsize=8)
+        ax.tick_params(axis='both', which='minor', labelsize=6)
 
         # Legend 
-        if l == 1 and s == 1:
-            ax.legend(handles=[mpatches.Patch(color=colors.get(name(h)), label=name(h)) for h,_ in hr_names.items()],
-                loc="lower left",
-                fontsize=5)
+        if l == 0 and s == 0:
+            ax.legend(
+                handles=[mpatches.Patch(color=colors.get(name(h)), label=name(h)) for h,_ in hr_names.items()],
+                loc="upper right",
+                fontsize=6,
+                ncol=1,
+                labelspacing=0.15,
+                handlelength=1.0,
+                columnspacing=0.1)
 
 fig.text(0.5, 0.02, 'Primary key ratio [percent]', ha='center', fontsize=8)
 fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=8)
 
 plt.tight_layout()
-plt.subplots_adjust(left=0.125, bottom=0.175, wspace=0.15, hspace=0.5)
+plt.subplots_adjust(left=0.20, bottom=0.175, wspace=0.15, hspace=0.5)
 plt.savefig(f"out/cuckoo.pdf")

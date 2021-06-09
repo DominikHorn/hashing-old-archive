@@ -32,7 +32,6 @@ def name(hashfn):
     return hr_names.get(hashfn) or hashfn
 
 
-
 DATASET_KEY="dataset"
 MACHINE_KEY="machine"
 COMPILER_KEY="compiler"
@@ -53,9 +52,8 @@ partial_data = csv[csv[DATASET_KEY].isnull()]
 data = csv[csv[DATASET_KEY].notnull()]
 
 # Generate plot
-fig, axs = plt.subplots(2,2,figsize=(7.00697/2,2), sharex=True, sharey=True)
-
 letter = [["A", "B"], ["C", "D"]]
+fig, axs = plt.subplots(2,2,figsize=(7.00697/2,2), sharex=True, sharey=True)
 for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
     for s, slots_per_bucket in enumerate(set(data[SLOTS_PER_BUCKET_KEY])):
         ax = axs[p][s]
@@ -112,54 +110,7 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
             dataset_name = name_d(dataset)
 
             ax.scatter(additional_buckets, median_probe_time, c=colors.get(hash_name), marker=markers.get(dataset), s=11)
-
-            def x_adjust():
-                if dataset_name == "osm":
-                    return -0.02 if s == 0 else 0.02
-                if dataset_name == "fb":
-                    return 0.02 if s == 0 else -0.02
-                if dataset_name in {"gap 1%", "gap 10%"}:
-                    return -0.01
-                if dataset_name == "seq":
-                    return 0.02
-                return 0
-            def y_adjust():
-                if dataset_name in set(["osm", "fb"]):
-                    return -50 if s == 0 else 100
-                if dataset_name == "wiki":
-                    return -200 if p == 1 else -175
-                if dataset_name == "seq":
-                    return -175 if p == 1 else -140
-                if dataset_name in {"gap 1%", "gap 10%"}:
-                    return 100
-                return +20
-            def ha():
-                if dataset_name == "osm":
-                    return "right" if s == 0 else "left"
-                if dataset_name == "fb":
-                    return "left" if s == 0 else "right"
-                if dataset_name == "seq":
-                    return "right"
-                return 'center'
-            def va():
-                if dataset_name in {"osm", "fb"}:
-                    return "center_baseline"
-                return 'baseline'
-            def rotation():
-                if dataset_name in {"gap 1%", "gap 10%"}:
-                    return 90
-                return 0
-
-
-            #if hash_name == "RadixSpline":
-            #    ax.annotate(
-            #            f"{dataset_name}", 
-            #            (additional_buckets + x_adjust(), median_probe_time + y_adjust()), 
-            #            fontsize=5, 
-            #            ha=ha(),
-            #            va=va(),
-            #            rotation=rotation())
-
+       
         # Plot style/info
         ax.set_yscale('log')
         #ax.yaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
