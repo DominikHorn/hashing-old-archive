@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import pandas as pd
 import math as math
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 # Latex figure export
 mpl.use("pgf")
@@ -20,9 +21,9 @@ mpl.rcParams.update({
 
 # Style
 hr_names = {"radix_spline": "RadixSpline",
-        "mult_prime64": "Mult", "mult_add64": "MultAdd", 
+        #"mult_prime64": "Mult", "mult_add64": "MultAdd", 
         "murmur_finalizer64": "Murmur"}
-colors = {"RadixSpline": "tab:blue", "Murmur": "tab:orange", "Mult": "black", "MultAdd": "gray"}
+colors = {"RadixSpline": "tab:blue", "Murmur": "tab:orange"}
 markers = {"seq_200M_uint64": ".","gap_1%_200M_uint64": "s", "gap_10%_200M_uint64": "h", "wiki_200M_uint64": "D", "fb_200M_uint64": "X", "osm_200M_uint64": "^"}
 
 def name_d(dataset):
@@ -55,11 +56,43 @@ data = csv[csv[DATASET_KEY].notnull()]
 
 # Generate plot
 letter = [["A", "B"], ["C", "D"]]
-fig, axs = plt.subplots(2,2,figsize=(7.00697/2,2), sharex=True, sharey=True)
+ylims = [[[(0,300), (1000,1150)], [(0,300), (500,550)]], [[(0,350), (1250,1320)], [(0,350), (635,665)]]]
+fig, axs = plt.subplots(2,2,figsize=(7.00697/2,2), sharex=True, sharey=False)
 for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
     for s, slots_per_bucket in enumerate(set(data[SLOTS_PER_BUCKET_KEY])):
         ax = axs[p][s]
-        ax.set_title(f"({letter[p][s]}) {payload_size}B payload {slots_per_bucket} slots", fontsize=6)
+
+        # break y-axis
+        divider = make_axes_locatable(ax)
+        ax2 = divider.new_vertical(size="100%", pad=0.1)
+        fig.add_axes(ax2)
+
+        # tune this for each plot
+        ylim1 = ylims[p][s][0]
+        ax.set_ylim(ylim1[0],ylim1[1])
+        ax.set_xlim(-0.1,1.1)
+        ax.set_xticks([0.0, 0.33, 0.66, 1.0])
+        ax.tick_params(axis='both', which='major', labelsize=8)
+        ax.spines['top'].set_visible(False)
+        ylim2 = ylims[p][s][1]
+        ax2.set_ylim(ylim2[0],ylim2[1])
+        ax2.tick_params(bottom=False, labelbottom=False)
+        ax2.set_xlim(-0.1,1.1)
+        ax2.tick_params(axis='both', which='major', labelsize=8)
+        ax2.spines['bottom'].set_visible(False)
+
+        # From https://matplotlib.org/examples/pylab_examples/broken_axis.html
+        d = .015  # how big to make the diagonal lines in axes coordinates
+        # arguments to pass to plot, just so we don't keep repeating them
+        kwargs = dict(transform=ax2.transAxes, color='k', clip_on=False)
+        ax2.plot((-d, +d), (-d, +d), **kwargs)        # top-left diagonal
+        ax2.plot((1 - d, 1 + d), (-d, +d), **kwargs)  # top-right diagonal
+
+        kwargs.update(transform=ax.transAxes)  # switch to the bottom axes
+        ax.plot((-d, +d), (1 - d, 1 + d), **kwargs)  # bottom-left diagonal
+        ax.plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)  # bottom-right diagonal
+
+        ax2.set_title(f"({letter[p][s]}) {payload_size}B payload {slots_per_bucket} slots", fontsize=6)
 
         # Filter data
         d = data[
@@ -110,21 +143,15 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
         for (dataset, additional_buckets, median_probe_time, hashfn) in other_datapoints + [murmur_datapoint]:
             hash_name = name(hashfn)
             dataset_name = name_d(dataset)
+            a = ax2 if dataset_name in {"fb", "osm"} else ax
 
             if hash_name == "Murmur":
                 ax.scatter(additional_buckets, median_probe_time, marker='+', s=15, c=colors.get(hash_name), linewidth=0.8)
             else:       
-                ax.scatter(additional_buckets, median_probe_time, marker=markers.get(dataset), s=11, facecolors='none', edgecolors=colors.get(hash_name), linewidths=0.5)
-
-        # Plot style/info
-        ax.set_yscale('log')
-        ax.set_xlim(-0.1,1.1)
-        ax.set_xticks([0.0, 0.33, 0.66, 1.0])
-        ax.tick_params(axis='both', which='major', labelsize=8)
-        ax.tick_params(axis='both', which='minor', labelsize=6)
+                a.scatter(additional_buckets, median_probe_time, marker=markers.get(dataset), s=11, facecolors='none', edgecolors=colors.get(hash_name), linewidths=0.5)
 
         if p == 0 and s == 1:
-            ax.legend(
+            ax2.legend(
                 handles=[mpatches.Patch(color=colors.get(name(h)), label=name(h)) for h,_ in hr_names.items()],
                 loc="upper right",
                 fontsize=5,
@@ -133,7 +160,7 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
                 handlelength=1.0,
                 columnspacing=0.1)
         if p == 1 and s == 1:
-            ax.legend(
+            ax2.legend(
                     handles=[Line2D([0], [0], marker=m, color='w', label=name_d(d), markerfacecolor='none', markeredgecolor="black", markeredgewidth=0.5,markersize=2) for d, m in markers.items()],
                     fontsize=5,
                     markerscale=2,
@@ -146,6 +173,6 @@ fig.text(0.5, 0.02, 'Additional buckets per key [percent]', ha='center', fontsiz
 fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=8)
 
 plt.tight_layout()
-plt.subplots_adjust(left=0.20, bottom=0.175, wspace=0.1, hspace=0.45)
+plt.subplots_adjust(left=0.15, bottom=0.175, wspace=0.35, hspace=0.45)
 
 plt.savefig(f"out/chained.pdf")
