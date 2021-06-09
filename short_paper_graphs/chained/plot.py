@@ -22,8 +22,10 @@ mpl.rcParams.update({
 # Style
 hr_names = {"radix_spline": "RadixSpline",
         #"mult_prime64": "Mult", "mult_add64": "MultAdd", 
-        "murmur_finalizer64": "Murmur"}
-colors = {"RadixSpline": "tab:blue", "Murmur": "tab:orange"}
+        "murmur_finalizer64": "Murmur",
+        "aqua0_64": "AquaHash",
+        "xxh3": "XXH3"}
+colors = {"RadixSpline": "tab:blue", "Murmur": "tab:orange", "AquaHash": "tab:red", "XXH3": "tab:brown"}
 markers = {"seq_200M_uint64": ".","gap_1%_200M_uint64": "s", "gap_10%_200M_uint64": "h", "wiki_200M_uint64": "D", "fb_200M_uint64": "X", "osm_200M_uint64": "^"}
 
 def name_d(dataset):
@@ -120,6 +122,8 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
                    #(data[HASH_KEY] == "mult_prime64")
                    #| (data[HASH_KEY] == "mult_add64")
                     (data[HASH_KEY] == "murmur_finalizer64")
+                    | (data[HASH_KEY] == "aqua0_64")
+                    | (data[HASH_KEY] == "xxh3")
                    # | (data[HASH_KEY].str.contains("rmi"))
                     | (data[HASH_KEY].str.match("radix_spline"))
                    # | (data[HASH_KEY].str.match("pgm"))
@@ -131,22 +135,36 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
 
         # Only one datapoint for murmur
         murmur_datapoints = list()
+        aqua_datapoints = list()
+        xxh_datapoints = list()
         other_datapoints = list()
         for (d, a, m, h) in list(zip(d[DATASET_KEY], d[ADDITIONAL_BUCKETS_KEY], d[MEDIAN_PROBE_TIME_KEY], d[HASH_KEY])):
             if name(h) == "Murmur":
                 murmur_datapoints.append((d, a, m, h))
+            elif name(h) == "AquaHash":
+                aqua_datapoints.append((d, a, m, h))
+            elif name(h) == "XXH3":
+                xxh_datapoints.append((d, a, m, h))
             else:
                 other_datapoints.append((d, a, m, h))
         murmur_datapoints = sorted(murmur_datapoints, key=lambda t: t[2])
         murmur_datapoint = murmur_datapoints[int(len(murmur_datapoints)/2)]
+        aqua_datapoints = sorted(aqua_datapoints, key=lambda t: t[2])
+        aqua_datapoint = aqua_datapoints[int(len(murmur_datapoints)/2)]
+        xxh_datapoints = sorted(xxh_datapoints, key=lambda t: t[2])
+        xxh_datapoint = xxh_datapoints[int(len(murmur_datapoints)/2)]
 
-        for (dataset, additional_buckets, median_probe_time, hashfn) in other_datapoints + [murmur_datapoint]:
+        for (dataset, additional_buckets, median_probe_time, hashfn) in other_datapoints + [murmur_datapoint, aqua_datapoint, xxh_datapoint]:
             hash_name = name(hashfn)
             dataset_name = name_d(dataset)
             a = ax2 if dataset_name in {"fb", "osm"} else ax
 
             if hash_name == "Murmur":
-                ax.scatter(additional_buckets, median_probe_time, marker='+', s=15, c=colors.get(hash_name), linewidth=0.8)
+                ax.scatter(additional_buckets, median_probe_time, marker='x', s=15, c=colors.get(hash_name), linewidth=0.8)
+            elif hash_name == "AquaHash":
+                ax.scatter(additional_buckets, median_probe_time, marker='1', s=15, c=colors.get(hash_name), linewidth=0.8)
+            elif hash_name == "XXH3":
+                ax.scatter(additional_buckets, median_probe_time, marker='2', s=15, c=colors.get(hash_name), linewidth=0.8)
             else:       
                 a.scatter(additional_buckets, median_probe_time, marker=markers.get(dataset), s=11, facecolors='none', edgecolors=colors.get(hash_name), linewidths=0.5)
 
