@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib as mpl
+import matplotlib.markers as mmark
 import matplotlib.patches as mpatches
+from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import pandas as pd
@@ -82,9 +84,9 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
                 )
                 # Only use certain hash functions
                 & (
-                   (data[HASH_KEY] == "mult_prime64")
-                   | (data[HASH_KEY] == "mult_add64")
-                   | (data[HASH_KEY] == "murmur_finalizer64")
+                   #(data[HASH_KEY] == "mult_prime64")
+                   #| (data[HASH_KEY] == "mult_add64")
+                    (data[HASH_KEY] == "murmur_finalizer64")
                    # | (data[HASH_KEY].str.contains("rmi"))
                     | (data[HASH_KEY].str.match("radix_spline"))
                    # | (data[HASH_KEY].str.match("pgm"))
@@ -112,26 +114,32 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
             if hash_name == "Murmur":
                 ax.scatter(additional_buckets, median_probe_time, marker='+', s=15, c=colors.get(hash_name), linewidth=0.8)
             else:       
-                ax.scatter(additional_buckets, median_probe_time, marker=markers.get(dataset), s=11, facecolors='none', edgecolors=colors.get(hash_name), linewidths=0.3)
+                ax.scatter(additional_buckets, median_probe_time, marker=markers.get(dataset), s=11, facecolors='none', edgecolors=colors.get(hash_name), linewidths=0.5)
 
         # Plot style/info
         ax.set_yscale('log')
-        #ax.yaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
-        #ax.yaxis.set_minor_formatter(mpl.ticker.ScalarFormatter())
         ax.set_xlim(-0.1,1.1)
         ax.set_xticks([0.0, 0.33, 0.66, 1.0])
         ax.tick_params(axis='both', which='major', labelsize=8)
         ax.tick_params(axis='both', which='minor', labelsize=6)
 
-        if p == 1 and s == 1:
-            l = ax.legend(
+        if p == 0 and s == 1:
+            ax.legend(
                 handles=[mpatches.Patch(color=colors.get(name(h)), label=name(h)) for h,_ in hr_names.items()],
-                loc="lower right",
-                fontsize=6,
+                loc="upper right",
+                fontsize=5,
                 ncol=1,
                 labelspacing=0.15,
                 handlelength=1.0,
                 columnspacing=0.1)
+        if p == 1 and s == 1:
+            ax.legend(
+                    handles=[Line2D([0], [0], marker=m, color='w', label=name_d(d), markerfacecolor='none', markeredgecolor="black", markeredgewidth=0.5,markersize=2) for d, m in markers.items()],
+                    fontsize=5,
+                    markerscale=2,
+                    labelspacing=0.15,
+                    columnspacing=0.1,
+                    )
 
 
 fig.text(0.5, 0.02, 'Additional buckets per key [percent]', ha='center', fontsize=8)
