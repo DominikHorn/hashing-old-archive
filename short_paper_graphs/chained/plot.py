@@ -162,23 +162,22 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
 
         # Plot style/info
         ax.set_yscale('log')
+        #ax.yaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
+        #ax.yaxis.set_minor_formatter(mpl.ticker.ScalarFormatter())
         ax.set_xlim(-0.1,1.1)
         ax.set_xticks([0.0, 0.33, 0.66, 1.0])
         ax.tick_params(axis='both', which='major', labelsize=8)
+        ax.tick_params(axis='both', which='minor', labelsize=6)
 
         if p == 1 and s == 1:
             l = ax.legend(
                 handles=[mpatches.Patch(color=colors.get(name(h)), label=name(h)) for h,_ in hr_names.items()],
                 loc="lower right",
-                fontsize=5,
+                fontsize=6,
                 ncol=1,
                 labelspacing=0.15,
-                columnspacing=0.15)
-            for r in l.legendHandles:
-                r.set_width(10.0)
-            for t in l.get_texts():
-                t.set_position((-5,0))
-
+                handlelength=1.0,
+                columnspacing=0.1)
 
 
 fig.text(0.5, 0.02, 'Additional buckets per key [percent]', ha='center', fontsize=8)
