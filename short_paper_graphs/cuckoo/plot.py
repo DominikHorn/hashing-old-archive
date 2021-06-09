@@ -125,7 +125,7 @@ for l, load_factor in enumerate([0.95, 0.98]):
             ax.legend(
                 handles=[mpatches.Patch(color=colors.get(name(h)), label=name(h)) for h,_ in hr_names.items()],
                 loc="upper right",
-                fontsize=6,
+                fontsize=5,
                 ncol=1,
                 labelspacing=0.15,
                 handlelength=1.0,
