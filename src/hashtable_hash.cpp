@@ -307,80 +307,82 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
       measure_chained<MurmurFinalizer<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
       measure_chained<PrimeMultiplicationHash64>(dataset_name, dataset, load_factor, outfile, iomutex);
       measure_chained<MultAddHash64>(dataset_name, dataset, load_factor, outfile, iomutex);
-      //   measure_chained<FibonacciHash64>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_chained<FibonacciHash64>(dataset_name, dataset, load_factor, outfile, iomutex);
       measure_chained<XXHash3<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
    }
 
-//   /// Cuckoo
-//   for (const auto load_factor : {0.98, 0.95}) {
-//      measure_cuckoo<AquaHash<Data>, Murmur3FinalizerCuckoo2Func>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //   measure_cuckoo<MeowHash64<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //   measure_cuckoo<CityHash64<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //   measure_cuckoo<LargeTabulationHash<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      measure_cuckoo<MurmurFinalizer<Data>, Murmur3FinalizerCuckoo2Func>(dataset_name, dataset, load_factor, outfile,
-//                                                                         iomutex);
-//      measure_cuckoo<PrimeMultiplicationHash64, Murmur3FinalizerCuckoo2Func>(dataset_name, dataset, load_factor,
-//                                                                             outfile, iomutex);
-//      measure_cuckoo<MultAddHash64, Murmur3FinalizerCuckoo2Func>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //   measure_cuckoo<FibonacciHash64>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      measure_cuckoo<XXHash3<Data>, Murmur3FinalizerCuckoo2Func>(dataset_name, dataset, load_factor, outfile, iomutex);
-//   }
-//
-//   /// Probing
-//   for (const auto load_factor : {1.0 / 1.25, 1.0 / 1.5}) {
-//      //      measure_probing<AquaHash<Data>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //      measure_probing<AquaHash<Data>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //      measure_probing<AquaHash<Data>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //      measure_probing<AquaHash<Data>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //
-//      //      //      measure_probing<MeowHash64<Data>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //      //      measure_probing<MeowHash64<Data>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //      //      measure_probing<MeowHash64<Data>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //      //      measure_probing<MeowHash64<Data>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //
-//      //      //      measure_probing<CityHash64<Data>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //      //      measure_probing<CityHash64<Data>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //      //      measure_probing<CityHash64<Data>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //      //      measure_probing<CityHash64<Data>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //
-//      //      //      measure_probing<LargeTabulationHash<Data>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //      //      measure_probing<LargeTabulationHash<Data>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //      //      measure_probing<LargeTabulationHash<Data>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //      //      measure_probing<LargeTabulationHash<Data>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //
-//      //      measure_probing<MurmurFinalizer<Data>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile,
-//      //                                                                     iomutex);
-//      //      measure_probing<MurmurFinalizer<Data>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile,
-//      //                                                                      iomutex);
-//      //      measure_probing<MurmurFinalizer<Data>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile,
-//      //                                                                      iomutex);
-//      //      measure_probing<MurmurFinalizer<Data>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile,
-//      //                                                                      iomutex);
-//      //
-//      //      measure_probing<PrimeMultiplicationHash64, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile,
-//      //                                                                         iomutex);
-//      //      measure_probing<PrimeMultiplicationHash64, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile,
-//      //                                                                          iomutex);
-//      //      measure_probing<PrimeMultiplicationHash64, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile,
-//      //                                                                          iomutex);
-//      //      measure_probing<PrimeMultiplicationHash64, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile,
-//      //                                                                          iomutex);
-//      //
-//      //      measure_probing<MultAddHash64, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //      measure_probing<MultAddHash64, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //      measure_probing<MultAddHash64, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //      measure_probing<MultAddHash64, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //
-//      //      //      measure_probing<FibonacciHash64, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //      //      measure_probing<FibonacciHash64, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //      //      measure_probing<FibonacciHash64, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //      //      measure_probing<FibonacciHash64, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //
-//      //      measure_probing<XXHash3<Data>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //      measure_probing<XXHash3<Data>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //      measure_probing<XXHash3<Data>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//      //      measure_probing<XXHash3<Data>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
-//   }
+   /// Cuckoo
+   for (const auto load_factor : {0.98, 0.95}) {
+      measure_cuckoo<AquaHash<Data>, Murmur3FinalizerCuckoo2Func>(dataset_name, dataset, load_factor, outfile, iomutex);
+      //   measure_cuckoo<MeowHash64<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
+      //   measure_cuckoo<CityHash64<Data>>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_cuckoo<LargeTabulationHash<Data>, Murmur3FinalizerCuckoo2Func>(dataset_name, dataset, load_factor,
+                                                                             outfile, iomutex);
+      measure_cuckoo<MurmurFinalizer<Data>, Murmur3FinalizerCuckoo2Func>(dataset_name, dataset, load_factor, outfile,
+                                                                         iomutex);
+      measure_cuckoo<PrimeMultiplicationHash64, Murmur3FinalizerCuckoo2Func>(dataset_name, dataset, load_factor,
+                                                                             outfile, iomutex);
+      measure_cuckoo<MultAddHash64, Murmur3FinalizerCuckoo2Func>(dataset_name, dataset, load_factor, outfile, iomutex);
+      measure_cuckoo<FibonacciHash64, Murmur3FinalizerCuckoo2Func>(dataset_name, dataset, load_factor, outfile,
+                                                                   iomutex);
+      measure_cuckoo<XXHash3<Data>, Murmur3FinalizerCuckoo2Func>(dataset_name, dataset, load_factor, outfile, iomutex);
+   }
+
+   //   /// Probing
+   //   for (const auto load_factor : {1.0 / 1.25, 1.0 / 1.5}) {
+   //      //      measure_probing<AquaHash<Data>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //      measure_probing<AquaHash<Data>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //      measure_probing<AquaHash<Data>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //      measure_probing<AquaHash<Data>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //
+   //      //      //      measure_probing<MeowHash64<Data>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //      //      measure_probing<MeowHash64<Data>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //      //      measure_probing<MeowHash64<Data>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //      //      measure_probing<MeowHash64<Data>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //
+   //      //      //      measure_probing<CityHash64<Data>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //      //      measure_probing<CityHash64<Data>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //      //      measure_probing<CityHash64<Data>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //      //      measure_probing<CityHash64<Data>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //
+   //      //      //      measure_probing<LargeTabulationHash<Data>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //      //      measure_probing<LargeTabulationHash<Data>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //      //      measure_probing<LargeTabulationHash<Data>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //      //      measure_probing<LargeTabulationHash<Data>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //
+   //      //      measure_probing<MurmurFinalizer<Data>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile,
+   //      //                                                                     iomutex);
+   //      //      measure_probing<MurmurFinalizer<Data>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile,
+   //      //                                                                      iomutex);
+   //      //      measure_probing<MurmurFinalizer<Data>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile,
+   //      //                                                                      iomutex);
+   //      //      measure_probing<MurmurFinalizer<Data>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile,
+   //      //                                                                      iomutex);
+   //      //
+   //      //      measure_probing<PrimeMultiplicationHash64, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile,
+   //      //                                                                         iomutex);
+   //      //      measure_probing<PrimeMultiplicationHash64, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile,
+   //      //                                                                          iomutex);
+   //      //      measure_probing<PrimeMultiplicationHash64, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile,
+   //      //                                                                          iomutex);
+   //      //      measure_probing<PrimeMultiplicationHash64, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile,
+   //      //                                                                          iomutex);
+   //      //
+   //      //      measure_probing<MultAddHash64, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //      measure_probing<MultAddHash64, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //      measure_probing<MultAddHash64, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //      measure_probing<MultAddHash64, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //
+   //      //      //      measure_probing<FibonacciHash64, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //      //      measure_probing<FibonacciHash64, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //      //      measure_probing<FibonacciHash64, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //      //      measure_probing<FibonacciHash64, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //
+   //      //      measure_probing<XXHash3<Data>, UNSUCCESSFUL_0_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //      measure_probing<XXHash3<Data>, UNSUCCESSFUL_25_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //      measure_probing<XXHash3<Data>, UNSUCCESSFUL_50_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //      //      measure_probing<XXHash3<Data>, UNSUCCESSFUL_75_PERCENT>(dataset_name, dataset, load_factor, outfile, iomutex);
+   //   }
 }
 
 int main(int argc, char* argv[]) {
