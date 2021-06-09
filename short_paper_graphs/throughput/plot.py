@@ -23,6 +23,7 @@ hr_names = {
         "xxh3": "XXH3",
         "radix_spline": "RadixSpline",
         #"mult_prime64": "mult", "mult_add64": "mult_add",
+        "pgm": "PGM",
         "rmi": "RMI"
         }
 all_palette = list(mcolors.TABLEAU_COLORS.keys())
@@ -30,8 +31,9 @@ palette = all_palette[:-1]
 colors = {
         "aqua": palette[3],
         "murmur_finalizer64": palette[1],
-        "xxh3": palette[4],
+        "xxh3": palette[5],
         "radix_spline": palette[0],
+        "pgm": palette[4],
         "rmi": palette[2]
         }
 
@@ -99,7 +101,7 @@ for i, (hashfn, median_time) in enumerate(classic_plt_dat):
 next_pos += group_gap
 for i, (hashfn, median_times, model_cnts) in enumerate([(h, list(data[data[HASH_KEY] == h][THROUGHPUT_KEY]),
     list(data[data[HASH_KEY] == h][MODELCOUNT_KEY])) for
-    h in dict.fromkeys(data[(data[HASH_KEY] == "rmi") | (data[HASH_KEY] == "radix_spline")][HASH_KEY]).keys()]):
+    h in dict.fromkeys(data[(data[HASH_KEY] == "rmi") | (data[HASH_KEY] == "radix_spline") | (data[HASH_KEY] == "pgm")][HASH_KEY]).keys()]):
     def nearest_pow_10_exp(num):
         return int(round(math.log10(num)))
 
