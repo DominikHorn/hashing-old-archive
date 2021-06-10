@@ -107,6 +107,7 @@ def uniform(start=0, end=pow(2, 64)):
 # write datasets
 write_dataset(name="debug", numbers=duplicated(start=1), amount=1000000, bytes_per_number=8)
 write_dataset(name="uniform_200M", numbers=uniform(), amount=2 * (10**8), bytes_per_number=8)
+write_dataset(name="uniform_clipped_200M", numbers=uniform(end=pow(2,50)), amount=2 * (10**8), bytes_per_number=8)
 write_dataset(name="consecutive_200M", numbers=dense(start=1000), amount=2 * (10**8), bytes_per_number=8)
 write_dataset(name="consecutive_100M", numbers=dense(start=1000), amount=1 * (10 ** 8), bytes_per_number=8)
 write_dataset(name="consecutive_90437011", numbers=dense(start=1000), amount=90437011, bytes_per_number=8)
