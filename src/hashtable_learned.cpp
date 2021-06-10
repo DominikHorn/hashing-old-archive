@@ -258,11 +258,11 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
 
       /// Chained
       for (const auto load_factor : {1.}) {
-         measure_chained<rs::RadixSpline<Data, 8, 140>>(dataset_name, dataset, load_factor, sample_chance, sample,
+         measure_chained<rs::RadixSplineHash<Data, 8, 140>>(dataset_name, dataset, load_factor, sample_chance, sample,
                                                        outfile, iomutex);
-         measure_chained<rs::RadixSpline<Data, 10, 90>>(dataset_name, dataset, load_factor, sample_chance, sample,
+         measure_chained<rs::RadixSplineHash<Data, 10, 90>>(dataset_name, dataset, load_factor, sample_chance, sample,
                                                        outfile, iomutex);
-         measure_chained<rs::RadixSpline<Data, 26, 7>>(dataset_name, dataset, load_factor, sample_chance, sample,
+         measure_chained<rs::RadixSplineHash<Data, 26, 7>>(dataset_name, dataset, load_factor, sample_chance, sample,
                                                        outfile, iomutex);
 
          /// PGM (eps_rec 4)
@@ -304,6 +304,13 @@ static void benchmark(const std::string& dataset_name, const std::vector<Data>& 
 
       /// Cuckoo
       for (const auto load_factor : {0.98, 0.95}) {
+         measure_cuckoo<rs::RadixSplineHash<Data, 8, 140>>(dataset_name, dataset, load_factor, sample_chance, sample,
+                                                       outfile, iomutex);
+         measure_cuckoo<rs::RadixSplineHash<Data, 10, 90>>(dataset_name, dataset, load_factor, sample_chance, sample,
+                                                       outfile, iomutex);
+         measure_cuckoo<rs::RadixSplineHash<Data, 26, 7>>(dataset_name, dataset, load_factor, sample_chance, sample,
+                                                       outfile, iomutex);
+         
          /// PGM (eps_rec 4)
          measure_cuckoo<PGMHash<Data, 256, 4>>(dataset_name, dataset, load_factor, sample_chance, sample, outfile,
                                                iomutex);
