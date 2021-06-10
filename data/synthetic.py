@@ -34,9 +34,14 @@ def write_dataset(name, numbers, amount, bytes_per_number=8):
     # write payload to file
     path = os.path.realpath(os.path.dirname(__file__))
     filename = f"{name}_uint{bytes_per_number * 8}"
+    filepath = f"{path}/{filename}"
     buffering = 2 ** 10
 
-    with open(f"{path}/{filename}", 'wb', buffering=buffering) as file:
+    if os.path.isfile(filepath):
+        print(f"file {filepath} already exists. Skipping generation")
+        return
+
+    with open(filepath, 'wb', buffering=buffering) as file:
         update_progress(name=filename, progress=0.0)
 
         # header contains the amount of elements in the list (8 bytes in little endian)
