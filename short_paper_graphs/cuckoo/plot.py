@@ -67,8 +67,8 @@ for l, load_factor in enumerate([0.95, 0.98]):
         ax = axs[l][s]
 
         # tune this for each plot
-        ax.set_ylim(0,850)
-        ax.set_yticks([0, 250, 500, 750])
+        ax.set_ylim(200,800)
+        ax.set_yticks([250, 500, 750])
         ax.set_xlim(0.35, 1.05)
         ax.set_xticks([0.4, 0.6, 0.8, 1.0])
         ax.tick_params(axis='both', which='major', labelsize=8)
