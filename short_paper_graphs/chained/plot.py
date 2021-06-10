@@ -58,7 +58,7 @@ data = csv[csv[DATASET_KEY].notnull()]
 
 # Generate plot
 letter = [["A", "B"], ["C", "D"]]
-ylims = [[[(0,300), (1000,1150)], [(0,300), (500,550)]], [[(0,350), (1250,1320)], [(0,350), (635,665)]]]
+ylims = [[[(175,275), (1000,1150)], [(175,275), (500,550)]], [[(225,325), (1250,1320)], [(225,325), (635,665)]]]
 fig, axs = plt.subplots(2,2,figsize=(7.00697/2,2), sharex=True, sharey=False)
 for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
     for s, slots_per_bucket in enumerate(set(data[SLOTS_PER_BUCKET_KEY])):
