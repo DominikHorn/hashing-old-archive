@@ -59,7 +59,7 @@ data = csv[csv[DATASET_KEY].notnull()]
 # Generate plot
 letter = [["A", "B"], ["C", "D"]]
 ylims = [[[(190,249), (1000,1150)], [(190,249), (500,550)]], [[(230,310), (1250,1320)], [(230,310), (635,665)]]]
-fig, axs = plt.subplots(2,2,figsize=(7.00697/2,3.5), sharex=True, sharey=False)
+fig, axs = plt.subplots(2,2,figsize=(7.00697/2,2.5), sharex=True, sharey=False)
 for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
     for s, slots_per_bucket in enumerate(set(data[SLOTS_PER_BUCKET_KEY])):
         ax = axs[p][s]
@@ -191,6 +191,5 @@ fig.text(0.5, 0.02, 'Additional buckets per key [percent]', ha='center', fontsiz
 fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=8)
 
 plt.tight_layout()
-plt.subplots_adjust(left=0.15, bottom=0.125, wspace=0.3, hspace=0.2)
-
+plt.subplots_adjust(left=0.15, bottom=0.15, wspace=0.3, hspace=0.3)
 plt.savefig(f"out/chained.pdf")
