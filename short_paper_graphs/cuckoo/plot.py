@@ -61,18 +61,43 @@ data = csv[csv[DATASET_KEY].notnull()]
 
 # Generate plot
 letter = [["A", "B"], ["C", "D"]]
-fig, axs = plt.subplots(2,2,figsize=(7.00697/2,2),sharex=True,sharey=True)
+ylims = [[[(220,280), (400,750)], [(220,280), (350,750)]], [[(220,280), (350,830)], [(220,280), (350,850)]]]
+fig, axs = plt.subplots(2,2,figsize=(7.00697/2,2),sharex=True,sharey=False)
 for l, load_factor in enumerate([0.95, 0.98]):
     for s, kicking_strat in enumerate(["balanced_kicking", "biased_kicking_10"]):
         ax = axs[l][s]
 
+        # break y-axis
+        divider = make_axes_locatable(ax)
+        ax2 = divider.new_vertical(size="100%", pad=0.1)
+        fig.add_axes(ax2)
+
         # tune this for each plot
-        ax.set_ylim(200,800)
-        ax.set_yticks([250, 500, 750])
+        ylim1 = ylims[l][s][0]
+        ax.set_ylim(ylim1[0],ylim1[1])
         ax.set_xlim(0.35, 1.05)
         ax.set_xticks([0.4, 0.6, 0.8, 1.0])
         ax.tick_params(axis='both', which='major', labelsize=8)
-        ax.set_title(f"({letter[l][s]}) {load_factor}, {kicking_strat[0:kicking_strat.find('_')]} kicking", fontsize=6)
+        ax.spines['top'].set_visible(False)
+        ylim2 = ylims[l][s][1]
+        ax2.set_ylim(ylim2[0],ylim2[1])
+        ax2.tick_params(bottom=False, labelbottom=False)
+        ax2.set_xlim(-0.1,1.1)
+        ax2.tick_params(axis='both', which='major', labelsize=8)
+        ax2.spines['bottom'].set_visible(False)
+
+        # From https://matplotlib.org/examples/pylab_examples/broken_axis.html
+        d = .015  # how big to make the diagonal lines in axes coordinates
+        # arguments to pass to plot, just so we don't keep repeating them
+        kwargs = dict(transform=ax2.transAxes, color='k', clip_on=False)
+        ax2.plot((-d, +d), (-d, +d), **kwargs)        # top-left diagonal
+        ax2.plot((1 - d, 1 + d), (-d, +d), **kwargs)  # top-right diagonal
+
+        kwargs.update(transform=ax.transAxes)  # switch to the bottom axes
+        ax.plot((-d, +d), (1 - d, 1 + d), **kwargs)  # bottom-left diagonal
+        ax.plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)  # bottom-right diagonal
+
+        ax2.set_title(f"({letter[l][s]}) {load_factor}, {kicking_strat[0:kicking_strat.find('_')]} kicking", fontsize=6)
 
         # Filter data
         d = data[
@@ -132,6 +157,7 @@ for l, load_factor in enumerate([0.95, 0.98]):
         for (dataset, primary_key_ratio, median_probe_time, hashfn) in other_datapoints + [murmur_datapoint, aqua_datapoint, xxh_datapoint]:
             hash_name = name(hashfn)
             dataset_name = name_d(dataset)
+            a = ax2 if dataset_name in {"fb", "osm"} else ax
 
             if hash_name == "Murmur":
                 ax.scatter(primary_key_ratio, median_probe_time, marker='x', s=15, c=colors.get(hash_name), linewidth=0.8)
@@ -140,14 +166,14 @@ for l, load_factor in enumerate([0.95, 0.98]):
             elif hash_name == "XXH3":
                 ax.scatter(primary_key_ratio, median_probe_time, marker='2', s=15, c=colors.get(hash_name), linewidth=0.8)
             else:       
-                ax.scatter(primary_key_ratio, median_probe_time, marker=markers.get(dataset), s=11, facecolors='none', edgecolors=colors.get(hash_name), linewidths=0.5)
+                a.scatter(primary_key_ratio, median_probe_time, marker=markers.get(dataset), s=11, facecolors='none', edgecolors=colors.get(hash_name), linewidths=0.5)
 
         # Legend 
-        if l == 1 and s == 0:
+        if l == 0 and s == 1:
             ax.legend(
                 handles=[mpatches.Patch(color=colors.get(name(h)), label=name(h)) for h,_ in hr_names.items()],
-                loc="upper right",
-                bbox_to_anchor=(1.01, 1.02),
+                loc="lower left",
+                bbox_to_anchor=(-0.01, -0.1),
                 fontsize=5,
                 ncol=1,
                 borderpad=0.2,
@@ -155,13 +181,10 @@ for l, load_factor in enumerate([0.95, 0.98]):
                 handlelength=1.0,
                 columnspacing=0.1)
         if l == 1 and s == 1:
-            ax.legend(
+            ax2.legend(
                     handles=[Line2D([0], [0], marker=m, color='w', label=name_d(d), markerfacecolor='none', markeredgecolor="black", markeredgewidth=0.5,markersize=2) for d, m in markers.items()],
-                    loc="lower left",
-                    bbox_to_anchor=(-0.01, -0.03),
                     fontsize=5,
                     markerscale=2,
-                    borderpad=0.1,
                     labelspacing=0.15,
                     columnspacing=0.1,
                     )
@@ -170,5 +193,5 @@ fig.text(0.5, 0.02, 'Primary key ratio [percent]', ha='center', fontsize=8)
 fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=8)
 
 plt.tight_layout()
-plt.subplots_adjust(left=0.14, bottom=0.175, wspace=0.12, hspace=0.45)
+plt.subplots_adjust(left=0.15, bottom=0.175, wspace=0.35, hspace=0.45)
 plt.savefig(f"out/cuckoo.pdf")
