@@ -24,8 +24,8 @@ hr_names = {
 all_palette = list(mcolors.TABLEAU_COLORS.keys())
 palette = all_palette[:-1]
 colors = {
-        "murmur_finalizer64": palette[1],
-        "radix_spline": palette[0],
+        "murmur_finalizer64": ["tab:orange", "gold"],
+        "radix_spline": [palette[0], "tab:cyan"],
         }
 
 def name(hashfn):
@@ -90,18 +90,18 @@ def plot(payload_size):
 
     # tune this for each plot
     xticks=[i+0.5 for i in range(0, len(datasets))]
-    ylim1 = [0,250] if payload_size == 16 else [0,350]
+    ylim1 = [180,260] if payload_size == 16 else [225,330]
     ax.set_ylim(ylim1[0],ylim1[1])
-    ax.tick_params(axis='both', which='major', labelsize=8)
+    ax.tick_params(axis='both', which='major', labelsize=15)
     ax.set_xticks(xticks)
     ax.set_xticklabels([d.replace(r"_200M",
         "").replace("_uint64", "").replace("_", " ") for d in datasets],
         va="center_baseline",position=(0.5,-0.05), fontsize=11, rotation=35, ha="right")
     ax.spines['top'].set_visible(False)
-    ylim2 = [400,800] if payload_size == 16 else [550,1000]
+    ylim2 = [400,800] if payload_size == 16 else [550,850]
     ax2.set_ylim(ylim2[0],ylim2[1])
     ax2.tick_params(bottom=False, labelbottom=False)
-    ax2.tick_params(axis='both', which='major', labelsize=8)
+    ax2.tick_params(axis='both', which='major', labelsize=15)
     ax2.spines['bottom'].set_visible(False)
 
     # From https://matplotlib.org/examples/pylab_examples/broken_axis.html
@@ -127,8 +127,8 @@ def plot(payload_size):
             chained_bars[hashfn] = list(chained[chained[HASH_KEY] == hashfn][MEDIAN_PROBE_KEY])
 
         empty_space = 0.2
-        bar_width = (0.8 - empty_space) / (len(cuckoo_bars.items()) + len(chained_bars.items()))
-        gap_width = 0.05 #0.1 / len(plt_data)
+        bar_width = (0.9 - empty_space) / (len(cuckoo_bars.items()) + len(chained_bars.items()))
+        gap_width = 0.02 #0.1 / len(plt_data)
         for j, (hname, probe_time) in enumerate(cuckoo_bars.items()):
             if len(probe_time) == 0:
                 print("Missing datapoint:", hname, probe_time, "cuckoo", dataset)
@@ -137,7 +137,7 @@ def plot(payload_size):
                 print("ERR, TO MANY DATAPOINTS FOR SINGLE BAR:", hname, probe_time, "cuckoo", dataset)
                 exit()
             for a in {ax, ax2}:
-                a.bar(i + j * (bar_width+gap_width), probe_time, bar_width, color=colors.get(hname) or "purple", edgecolor=colors.get(hname) or "purple")
+                a.bar(i + j * (bar_width+gap_width), probe_time, bar_width, color=colors.get(hname)[0] or "purple")
 
         for k, (hname, probe_time) in enumerate(chained_bars.items()):
             if len(probe_time) == 0:
@@ -148,24 +148,28 @@ def plot(payload_size):
                 exit()
             j = k + len(cuckoo_bars.items())
             for a in {ax, ax2}:
-                a.bar(i + j * (bar_width+gap_width), probe_time, bar_width, edgecolor=colors.get(hname) or "purple", fill=False)
+                a.bar(i + j * (bar_width+gap_width), probe_time, bar_width, color=colors.get(hname)[1] or "purple")
 
 
     plt.tight_layout()
-    plt.subplots_adjust(left=0.2)
+    plt.subplots_adjust(left=0.2, bottom=0.34)
 
     ax2.legend(
-        handles=[mpatches.Patch(color=colors.get(h), label=name(h)) for h in all_hashfns] +
-            [mpatches.Rectangle((0,0), 10, 5, color='black', label="Cuckoo"),
-               mpatches.Rectangle((0,0), 10, 5, color='black', label="Chained", fill=False) ],
+        handles=
+            #[mpatches.Rectangle((0,0), 0, 0, color='w', label=r"$\textbf{Cuckoo}$")] +
+            [mpatches.Patch(color=c, label=f"{name(h)} (cuckoo)") for h in all_hashfns for i, c in enumerate(colors.get(h)) if i == 0] + 
+            #[mpatches.Rectangle((0,0), 0, 0, color='w', label=r"$\textbf{Chained}$")] +
+            [mpatches.Patch(color=c, label=f"{name(h)} (chained)") for h in all_hashfns for i, c in enumerate(colors.get(h)) if i == 1],
         loc="upper left",
-        fontsize=6,
+        fontsize=9,
         labelspacing=0.1,
-        ncol=2)
+        columnspacing=0.4,
+        borderpad=0.2,
+        ncol=1)
 
 
-    fig.text(0.5, 0.02, 'Dataset', ha='center', fontsize=11)
-    fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=11)
+    fig.text(0.5, 0.02, 'Dataset', ha='center', fontsize=15)
+    fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=15)
 
     plt.savefig(f"out/probe_times_overall_{payload_size}.pdf")
 
