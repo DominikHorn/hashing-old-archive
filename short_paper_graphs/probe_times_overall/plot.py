@@ -96,7 +96,7 @@ def plot(payload_size):
     ax.set_xticks(xticks)
     ax.set_xticklabels([d.replace(r"_200M",
         "").replace("_uint64", "").replace("_", " ") for d in datasets],
-        va="center_baseline",position=(0.5,-0.05), fontsize=15, rotation=35, ha="right")
+        va="center_baseline",position=(0.5,-0.05), fontsize=11, rotation=35, ha="right")
     ax.spines['top'].set_visible(False)
     ylim2 = [400,800] if payload_size == 16 else [550,1000]
     ax2.set_ylim(ylim2[0],ylim2[1])
@@ -152,6 +152,7 @@ def plot(payload_size):
 
 
     plt.tight_layout()
+    plt.subplots_adjust(left=0.2)
 
     ax2.legend(
         handles=[mpatches.Patch(color=colors.get(h), label=name(h)) for h in all_hashfns] +
@@ -163,8 +164,8 @@ def plot(payload_size):
         ncol=2)
 
 
-    fig.text(0.5, 0.02, 'Dataset', ha='center', fontsize=8)
-    fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=8)
+    fig.text(0.5, 0.02, 'Dataset', ha='center', fontsize=11)
+    fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=11)
 
     plt.savefig(f"out/probe_times_overall_{payload_size}.pdf")
 
