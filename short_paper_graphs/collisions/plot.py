@@ -23,7 +23,7 @@ hr_names = {
         "radix_spline": "RadixSpline",
         #"mult_prime64": "mult", "mult_add64": "mult_add",
         "rmi": "RMI",
-        "pgm": "PGM"
+        #"pgm": "PGM"
         }
 all_palette = list(mcolors.TABLEAU_COLORS.keys())
 palette = all_palette[:-1]
@@ -33,7 +33,7 @@ colors = {
         "xxh3": palette[5],
         "radix_spline": palette[0],
         "rmi": "tab:cyan",
-        "pgm": palette[4]
+        #"pgm": palette[4]
         }
 
 def name(hashfn):
@@ -75,7 +75,7 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
                 (data[HASH_KEY] == "murmur_finalizer64")
                # | (data[HASH_KEY].str.contains("rmi"))
                 | (data[HASH_KEY].str.match("radix_spline"))
-                | (data[HASH_KEY].str.match("pgm"))
+               # | (data[HASH_KEY].str.match("pgm"))
                 )
             ]
 
@@ -137,6 +137,7 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
 
     plt.margins(x=0.01,y=0.2)
     plt.tight_layout()
+    plt.subplots_adjust(bottom=0.4, top=0.95)
 
     # Legend
     ax.legend(
