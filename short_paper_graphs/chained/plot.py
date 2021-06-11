@@ -193,3 +193,4 @@ fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical',
 plt.tight_layout()
 plt.subplots_adjust(left=0.15, bottom=0.15, wspace=0.3, hspace=0.3)
 plt.savefig(f"out/chained.pdf")
+plt.savefig(f"out/chained.pgf")

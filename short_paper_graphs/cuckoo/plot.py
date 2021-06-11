@@ -61,7 +61,7 @@ data = csv[csv[DATASET_KEY].notnull()]
 
 # Generate plot
 letter = [["A", "B"], ["C", "D"]]
-ylims = [[[(200,1000), (1000,2000)], [(200,1000), (1000,2000)]], [[(200,1000), (1000,2000)], [(200,1000), (1000,2000)]]]
+ylims = [[[(220,280), (410,700)], [(220,280), (410,700)]], [[(220,280), (350,830)], [(220,280), (350,850)]]]
 fig, axs = plt.subplots(2,2,figsize=(7.00697/2,2.5),sharex=True,sharey=False)
 for l, load_factor in enumerate([0.95, 0.98]):
     for s, kicking_strat in enumerate(["balanced_kicking", "biased_kicking_10"]):
@@ -109,7 +109,7 @@ for l, load_factor in enumerate([0.95, 0.98]):
                 & (data[LOAD_FACTOR_KEY] == load_factor)
                 & (data[KICKING_STRAT_KEY] == kicking_strat)
                 # Only use 16 byte payload numbers
-                & (data[PAYLOAD_SIZE_KEY] == 64)
+                & (data[PAYLOAD_SIZE_KEY] == 16)
                 # Only use these select datasets for now
                 & (
                     (data[DATASET_KEY] == "seq_200M_uint64")
@@ -193,3 +193,4 @@ fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical',
 plt.tight_layout()
 plt.subplots_adjust(left=0.15, bottom=0.15, wspace=0.3, hspace=0.3)
 plt.savefig(f"out/cuckoo.pdf")
+plt.savefig(f"out/cuckoo.pgf")

@@ -143,3 +143,4 @@ for t in l.get_texts():
     t.set_position((-20,0))
 
 plt.savefig(f"out/median_throughput.pdf")
+plt.savefig(f"out/median_throughput.pgf")

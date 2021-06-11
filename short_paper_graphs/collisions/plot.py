@@ -149,6 +149,7 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
         ncol=1)
 
     plt.savefig(f"out/{stat_key}.pdf")
+    plt.savefig(f"out/{stat_key}.pgf")
 
 #plot_expected_colliding_keys()
 #plot_collision_statistic("colliding_keys", "Colliding keys", lambda load_fac : 1

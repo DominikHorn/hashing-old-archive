@@ -172,6 +172,7 @@ def plot(payload_size):
     fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=15)
 
     plt.savefig(f"out/probe_times_overall_{payload_size}.pdf")
+    plt.savefig(f"out/probe_times_overall_{payload_size}.pgf")
 
 plot(16)
 plot(64)
