@@ -24,7 +24,7 @@ hr_names = {
         "radix_spline": "RadixSpline",
         #"mult_prime64": "mult", "mult_add64": "mult_add",
         "rmi": "RMI",
-        "pgm": "PGM"
+        #"pgm": "PGM"
         }
 all_palette = list(mcolors.TABLEAU_COLORS.keys())
 palette = all_palette[:-1]
@@ -34,7 +34,7 @@ colors = {
         "xxh3": palette[5],
         "radix_spline": palette[0],
         "rmi": "tab:cyan",
-        "pgm": palette[4]
+        #"pgm": palette[4]
         }
 
 def hr_name(h):
@@ -68,7 +68,7 @@ data = data[
         ]
 
 # Create plot
-fig, ax = plt.subplots(figsize=(7.00697/2,2.3))
+fig, ax = plt.subplots(figsize=(7.00697/2,2.5))
 
 # Extract data
 machine = set(data[data[MACHINE_KEY].notnull()][MACHINE_KEY]).pop()
@@ -101,7 +101,7 @@ for i, (hashfn, median_time) in enumerate(classic_plt_dat):
 next_pos += group_gap
 for i, (hashfn, median_times, model_cnts) in enumerate([(h, list(data[data[HASH_KEY] == h][THROUGHPUT_KEY]),
     list(data[data[HASH_KEY] == h][MODELCOUNT_KEY])) for
-    h in dict.fromkeys(data[(data[HASH_KEY] == "rmi") | (data[HASH_KEY] == "radix_spline") | (data[HASH_KEY] == "pgm")][HASH_KEY]).keys()]):
+    h in dict.fromkeys(data[(data[HASH_KEY] == "rmi") | (data[HASH_KEY] == "radix_spline")][HASH_KEY]).keys()]):
     def nearest_pow_10_exp(num):
         return int(round(math.log10(num)))
 
@@ -128,7 +128,7 @@ plt.margins(x=0.01,y=0.2)
 plt.tight_layout()
 
 # Legend
-plt.subplots_adjust(left=0.2, bottom=0.52)
+plt.subplots_adjust(left=0.2, bottom=0.47)
 l = fig.legend(
     handles=[mpatches.Patch(color=color, label=hr_name(h)) for h,color in colors.items()],
     loc="lower center",
