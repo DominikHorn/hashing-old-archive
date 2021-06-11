@@ -61,7 +61,7 @@ data = csv[csv[DATASET_KEY].notnull()]
 
 # Generate plot
 letter = [["A", "B"], ["C", "D"]]
-ylims = [[[(220,280), (410,700)], [(220,280), (410,700)]], [[(220,280), (350,830)], [(220,280), (350,850)]]]
+ylims = [[[(200,1000), (1000,2000)], [(200,1000), (1000,2000)]], [[(200,1000), (1000,2000)], [(200,1000), (1000,2000)]]]
 fig, axs = plt.subplots(2,2,figsize=(7.00697/2,2.5),sharex=True,sharey=False)
 for l, load_factor in enumerate([0.95, 0.98]):
     for s, kicking_strat in enumerate(["balanced_kicking", "biased_kicking_10"]):
@@ -109,7 +109,7 @@ for l, load_factor in enumerate([0.95, 0.98]):
                 & (data[LOAD_FACTOR_KEY] == load_factor)
                 & (data[KICKING_STRAT_KEY] == kicking_strat)
                 # Only use 16 byte payload numbers
-                & (data[PAYLOAD_SIZE_KEY] == 16)
+                & (data[PAYLOAD_SIZE_KEY] == 64)
                 # Only use these select datasets for now
                 & (
                     (data[DATASET_KEY] == "seq_200M_uint64")
@@ -131,7 +131,7 @@ for l, load_factor in enumerate([0.95, 0.98]):
                    )
                 ]
 
-        all_hashfns = list(set(d[d[REDUCER_KEY].str.match(CLAMP)][HASH_KEY])) + ["mult_prime64", "mult_add64", "murmur_finalizer64"]
+        all_hashfns = list(set(d[d[REDUCER_KEY].str.match(CLAMP)][HASH_KEY])) + ["aqua0_64", "xxh3", "murmur_finalizer64"]
 
         # Only one datapoint for murmur
         murmur_datapoints = list()
