@@ -73,7 +73,7 @@ def plot_collision_statistic(stat_key, title, expected_fun, ymax=1):
                # (data[HASH_KEY] == "mult_prime64")
                # | (data[HASH_KEY] == "mult_add64")
                 (data[HASH_KEY] == "murmur_finalizer64")
-               # | (data[HASH_KEY].str.contains("rmi"))
+                | (data[HASH_KEY].str.contains("rmi"))
                 | (data[HASH_KEY].str.match("radix_spline"))
                # | (data[HASH_KEY].str.match("pgm"))
                 )
