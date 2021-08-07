@@ -62,7 +62,7 @@ data = csv[csv[DATASET_KEY].notnull()]
 # Generate plot
 letter = [["A", "B"], ["C", "D"]]
 ylims = [[[(220,280), (410,700)], [(220,280), (410,700)]], [[(220,280), (350,830)], [(220,280), (350,850)]]]
-fig, axs = plt.subplots(2,2,figsize=(7.00697/2,2.5),sharex=True,sharey=False)
+fig, axs = plt.subplots(2,2,figsize=(7.00697/2,2),sharex=True,sharey=False)
 for l, load_factor in enumerate([0.95, 0.98]):
     for s, kicking_strat in enumerate(["balanced_kicking", "biased_kicking_10"]):
         ax = axs[l][s]
@@ -97,7 +97,7 @@ for l, load_factor in enumerate([0.95, 0.98]):
         ax.plot((-d, +d), (1 - d, 1 + d), **kwargs)  # bottom-left diagonal
         ax.plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)  # bottom-right diagonal
 
-        ax2.set_title(f"({letter[l][s]}) {load_factor}, {kicking_strat[0:kicking_strat.find('_')]} kicking", fontsize=6)
+        ax2.set_title(f"({letter[l][s]}) {load_factor}, {kicking_strat[0:kicking_strat.find('_')]} kicking", fontsize=6, pad=3)
 
         # Filter data
         d = data[
@@ -191,6 +191,6 @@ fig.text(0.5, 0.02, 'Primary key ratio [percent]', ha='center', fontsize=8)
 fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=8)
 
 plt.tight_layout()
-plt.subplots_adjust(left=0.15, bottom=0.15, wspace=0.3, hspace=0.3)
+plt.subplots_adjust(left=0.15, top=0.91, bottom=0.18, wspace=0.3, hspace=0.3)
 plt.savefig(f"out/cuckoo.pdf")
 plt.savefig(f"out/cuckoo.pgf")

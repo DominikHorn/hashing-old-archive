@@ -21,7 +21,7 @@ mpl.rcParams.update({
 
 # Style
 hr_names = {"radix_spline": "RadixSpline",
-        #"mult_prime64": "Mult", "mult_add64": "MultAdd", 
+        #"mult_prime64": "Mult", "mult_add64": "MultAdd",
         "murmur_finalizer64": "Murmur",
         "aqua0_64": "AquaHash",
         "xxh3": "XXH3"}
@@ -59,7 +59,7 @@ data = csv[csv[DATASET_KEY].notnull()]
 # Generate plot
 letter = [["A", "B"], ["C", "D"]]
 ylims = [[[(190,249), (1000,1150)], [(190,249), (500,550)]], [[(230,310), (1250,1320)], [(230,310), (635,665)]]]
-fig, axs = plt.subplots(2,2,figsize=(7.00697/2,2.5), sharex=True, sharey=False)
+fig, axs = plt.subplots(2,2,figsize=(7.00697/2,2), sharex=True, sharey=False)
 for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
     for s, slots_per_bucket in enumerate(set(data[SLOTS_PER_BUCKET_KEY])):
         ax = axs[p][s]
@@ -94,7 +94,7 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
         ax.plot((-d, +d), (1 - d, 1 + d), **kwargs)  # bottom-left diagonal
         ax.plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)  # bottom-right diagonal
 
-        ax2.set_title(f"({letter[p][s]}) {payload_size}B payload {slots_per_bucket} slots", fontsize=6)
+        ax2.set_title(f"({letter[p][s]}) {payload_size}B payload {slots_per_bucket} slots", fontsize=6, pad=3)
 
         # Filter data
         d = data[
@@ -165,7 +165,7 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
                 ax.scatter(additional_buckets, median_probe_time, marker='1', s=15, c=colors.get(hash_name), linewidth=0.8)
             elif hash_name == "XXH3":
                 ax.scatter(additional_buckets, median_probe_time, marker='2', s=15, c=colors.get(hash_name), linewidth=0.8)
-            else:       
+            else:
                 a.scatter(additional_buckets, median_probe_time, marker=markers.get(dataset), s=11, facecolors='none', edgecolors=colors.get(hash_name), linewidths=0.5)
 
         if p == 0 and s == 1:
@@ -191,6 +191,6 @@ fig.text(0.5, 0.02, 'Additional buckets per key [percent]', ha='center', fontsiz
 fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=8)
 
 plt.tight_layout()
-plt.subplots_adjust(left=0.15, bottom=0.15, wspace=0.3, hspace=0.3)
+plt.subplots_adjust(left=0.15, top=0.91, bottom=0.18, wspace=0.3, hspace=0.3)
 plt.savefig(f"out/chained.pdf")
 plt.savefig(f"out/chained.pgf")
