@@ -188,9 +188,10 @@ for p, payload_size in enumerate(set(data[PAYLOAD_SIZE_KEY])):
 
 
 fig.text(0.5, 0.02, 'Additional buckets per key [percent]', ha='center', fontsize=8)
-fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=8)
+fig.text(0.00, 0.5, '(a)', va='center', fontsize=8)
+fig.text(0.05, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=8)
 
 plt.tight_layout()
-plt.subplots_adjust(left=0.15, top=0.91, bottom=0.18, wspace=0.3, hspace=0.3)
+plt.subplots_adjust(left=0.18, top=0.91, bottom=0.18, wspace=0.3, hspace=0.3)
 plt.savefig(f"out/chained.pdf")
 plt.savefig(f"out/chained.pgf")

@@ -188,9 +188,10 @@ for l, load_factor in enumerate([0.95, 0.98]):
                     )
 
 fig.text(0.5, 0.02, 'Primary key ratio [percent]', ha='center', fontsize=8)
-fig.text(0.01, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=8)
+fig.text(0.00, 0.5, '(b)', va='center', fontsize=8)
+fig.text(0.05, 0.5, 'Probe time per key [ns]', va='center', rotation='vertical', fontsize=8)
 
 plt.tight_layout()
-plt.subplots_adjust(left=0.15, top=0.91, bottom=0.18, wspace=0.3, hspace=0.3)
+plt.subplots_adjust(left=0.18, top=0.91, bottom=0.18, wspace=0.3, hspace=0.3)
 plt.savefig(f"out/cuckoo.pdf")
 plt.savefig(f"out/cuckoo.pgf")
